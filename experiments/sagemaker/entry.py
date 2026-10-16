@@ -1,6 +1,7 @@
 """SageMaker entry point: runs the paired training comparison; results go to /opt/ml/model."""
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -19,7 +20,8 @@ def main():
     for key, value in vars(args).items():
         command += [f"--{key.replace('_', '-')}", value]
     print("running:", " ".join(command), flush=True)
-    subprocess.run(command, check=True)
+    env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
+    subprocess.run(command, check=True, env=env)
 
 
 if __name__ == "__main__":

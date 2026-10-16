@@ -82,15 +82,16 @@ class Runner:
         width = max(len(s) for s in seqs)
         ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
         mask = torch.zeros_like(ids)
-        target = torch.zeros(len(seqs), width, dtype=torch.bool, device=self.device)
         for i, ((p, r), s) in enumerate(zip(pairs, seqs)):
             ids[i, : len(s)] = s
             mask[i, : len(s)] = 1
-            target[i, len(p): len(s)] = True
         with self.autocast:
-            logits = self.model(input_ids=ids, attention_mask=mask).logits[:, :-1].float()
-        logp = torch.log_softmax(logits, dim=-1).gather(2, ids[:, 1:, None]).squeeze(2)
-        return (logp * target[:, 1:]).sum(dim=1)
+            logits = self.model(input_ids=ids, attention_mask=mask).logits
+        sums = []
+        for i, (p, r) in enumerate(pairs):
+            rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
+            sums.append((rows.gather(1, r[:, None]).squeeze(1) - torch.logsumexp(rows, dim=-1)).sum())
+        return torch.stack(sums)
 
     def grad_sq_norm(self):
         return float(sum((p.grad.float() ** 2).sum() for p in self.params if p.grad is not None))
@@ -185,7 +186,7 @@ def main():
     parser.add_argument("--max-new", type=int, default=512)
     parser.add_argument("--lr", type=float, default=1e-6)
     parser.add_argument("--clip", type=float, default=1.0)
-    parser.add_argument("--train-batch", type=int, default=8)
+    parser.add_argument("--train-batch", type=int, default=4)
     parser.add_argument("--gen-batch", type=int, default=64)
     parser.add_argument("--eval-every", type=int, default=50)
     parser.add_argument("--eval-limit", type=int, default=None)
