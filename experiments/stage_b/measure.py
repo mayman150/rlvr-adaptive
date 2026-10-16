@@ -129,6 +129,7 @@ def main():
     parser.add_argument("--answers", type=int, default=16)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--seed", type=int, default=20261016)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     parser.add_argument("--out", default=str(HERE / "results"))
@@ -137,6 +138,7 @@ def main():
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     problems = json.loads(Path(args.problems).read_text())[: args.limit]
+    offset = args.start
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32).to(args.device)
     model.eval()
@@ -147,6 +149,8 @@ def main():
 
     records = []
     for qi, prob in enumerate(problems):
+        if qi < offset:
+            continue
         start = time.time()
         prompt_ids = tokenizer(build_prompt(tokenizer, prob["question"]), return_tensors="pt").input_ids.to(args.device)
         responses = sample(model, prompt_ids, args.answers, args.max_tokens, args.seed + 7919 * qi, eos)
