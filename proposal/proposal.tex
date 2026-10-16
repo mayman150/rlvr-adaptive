@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,enumitem,xcolor,array,tabularx}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[round]{natbib}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\definecolor{pale}{HTML}{EEF4F8}
+\definecolor{edge}{HTML}{2C5F7C}
+\newcommand{\keybox}[1]{%
+  \medskip\noindent\fcolorbox{edge}{pale}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#1}}\medskip}
+\setlength{\emergencystretch}{2em}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\setcounter{secnumdepth}{0}
+\newcommand{\E}{\mathbb{E}}
+\hypersetup{pdftitle={WORTH: Which Rollouts Are Worth Generating?}}
+\title{\textbf{WORTH: Which Rollouts Are Worth Generating?}\\[5pt]
+\large An exact bias, variance, and cost theory of adaptive rollout collection in RLVR}
+\author{}
+\date{Research proposal, Draft v1\\October 16, 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reinforcement learning with verifiable rewards spends most of its compute generating answers, and modern pipelines decide adaptively how many to generate for each prompt: they drop prompts whose answers all agree, abandon prompts after a short probe, sample until a correct answer appears, or reallocate a budget toward prompts that look informative. Each such rule silently changes what training optimizes and how noisy each update is. For binary rewards, recent work shows that fixed-size, reward-only weightings optimize an explicit function of each prompt's success probability. We extend this to the rules practitioners actually use, which stop based on the rewards seen so far and so produce groups of random size, and we add the missing half: the update's second moment. For any such rule, the first two moments of a prompt's update are fixed by four numbers per prompt, which we have verified by exact enumeration. Together with expected cost, this makes the bias, variance, and price of every collection rule computable exactly, and turns rollout collection into a sequential decision problem with an exact objective. The project derives the optimal rule, measures the four numbers in a real model, and tests in training whether the optimal rule beats current heuristics at a matched rollout budget.
+\end{abstract}
+
+\section{1. The question}
+A collection rule decides, answer by answer, whether to keep sampling a prompt, stop, or abandon it, and then assigns advantages to the answers it kept. DAPO's dynamic sampling, SARA's early verdicts, sample-until-correct, and budget allocators are all collection rules \citep{yu2025dapo,sara2026,xiong2025reinforceada,knapsack2025,yao2025gvm}. They are tuned for compute savings, but each one also changes the expected direction of the update, its noise, and its cost.
+
+\keybox{\textbf{Main question:} For a fixed budget of generated answers, which collection rule produces the most useful training signal, and how far are current rules from that optimum?}
+
+The intended contribution is an exact theory that answers this for binary rewards, an optimal rule derived from it, and a test of whether the optimum matters in practice.
+
+\section{2. What is already known}
+With a binary reward, the expected score of an answer given its reward points along the gradient of the prompt's success probability $p$: it equals $\nabla p/p$ for a correct answer and $-\nabla p/(1-p)$ for an incorrect one. Davis and Recht use this to show that any fixed-size, reward-only weighting performs gradient ascent on an explicit function $h(p)$ of each prompt's success probability, with exact finite-sample formulas \citep{davis2025objective}. Follow-up work gives the implicit objectives of GRPO, Dr. GRPO, pass@k shaping, and maximum-likelihood variants \citep{mroueh2025grpo,thrampoulidis2025shaping,zheng2026rl2ml,tajwar2026maxrl,heckel2026asym}. ARCUS proves the same conditioning step and shows that dropping all-agreeing groups rescales the update without changing its direction \citep{okonkwo2026arcus}. I build on these results and do not claim them.
+
+Three things are open. Rules that stop based on the rewards seen so far produce groups of random size; only fragments of their implicit objectives exist \citep{okonkwo2026arcus,davis2025objective,xiong2025reinforceada}, and SARA does not analyze the bias of its own rule \citep{sara2026}. No general second-moment result exists: RL2ML derives the exact covariance for success-only estimators with fixed group size \citep{zheng2026rl2ml}, and every allocation method optimizes a proxy or a bound \citep{yao2025gvm,xiong2025reinforceada,sara2026}. And no rule has been designed rollout by rollout against an exact criterion.
+
+\section{3. Evidence so far}
+I checked the central claims by exact enumeration over softmax policies with several answers per prompt, including prompts with equal success probability but different internal structure (\path{theory/exact.py}).
+
+\textbf{Mean.} For every rule tested, the expected update of a prompt is $c_S(p)\,\nabla p$, and $c_S$ depends only on the rule and $p$, not on how probability is spread across answers. The rules tested include two with random group size: probe two answers and abandon if they agree, else fill to four; and sample until both outcomes appear, between two and six answers.
+
+\textbf{Second moment.} For the same rules, the second moment equals
+\[
+\E\|g\|^2=\E_r\Big[\sum_iA_i^2F_{r_i}+\|\nabla p\|^2\sum_{i\neq j}A_iA_j\kappa(r_i)\kappa(r_j)\Big],
+\qquad \kappa(1)=\tfrac1p,\ \kappa(0)=-\tfrac1{1-p},
+\]
+where $A_i$ are the advantages and $F_r=\E[\|\text{score}\|^2\mid r]$. So the first two moments of any reward-only rule depend on four numbers per prompt: $p$, $\|\nabla p\|^2$, $F_0$, and $F_1$. The expectation over reward sequences is a finite sum that can be computed exactly for any rule.
+
+\textbf{Breakers.} Token-level length normalization with unequal answer lengths moves the expected update off $\nabla p$, contrary to an implementation remark in ARCUS that it only changes scale, and three reward levels move a reward-based stopping rule off the reward gradient.
+
+\textbf{Rules reweight difficulty.} Relative to plain mean-centering, the exact weights $c_S(p)$ show that probe-then-fill shifts weight toward prompts of medium difficulty, sample-until-mixed shifts it toward easy and hard prompts (31\% more weight at $p=0.05$ than at $p=0.5$), and std normalization with groups of four barely reweights at all (about 6\%).
+
+\section{4. Plan}
+Each stage ends with a go or no-go decision whose detailed protocol is fixed before the stage starts.
+
+\textbf{Stage A: exact theory.} Prove the mean and second-moment results for every rule whose decisions are stopping times with respect to the reward sequence, using the conditional independence of answers given their rewards and Wald-type identities \citep{wald1945sequential}. Compute $c_S$, the second-moment coefficients, and expected cost for the rules in use: DAPO dynamic sampling, SARA's thresholds, sample-until-$K$-correct, and Reinforce-Ada's exit and downsampling rules. Characterize which implicit objectives are reachable by some stopping rule. Then pose collection as a sequential decision problem over the counts of correct and incorrect answers seen so far, with the exact first-order improvement of a target objective, minus a variance penalty, per unit cost as the criterion, and solve it by dynamic programming \citep{chow1971great}. Give an exact decomposition of the length-normalization breaker. \emph{Go if} the optimal rule beats the best current rule by a material margin over a realistic range of the four numbers.
+
+\textbf{Stage B: measure the four numbers.} On Qwen2.5-Math-1.5B and math prompts, estimate $p$ by sampling, $\|\nabla p\|^2$ without bias from pairs of correct answers, since $\|\nabla p\|^2=\E[r_ir_j\langle\ell_i,\ell_j\rangle]$ for independent answers, and $F_0,F_1$ from per-answer gradient norms. Exact per-answer gradients in declared parameter blocks are available from the STOP tooling. Check the predicted variance of each rule against direct measurement. \emph{Go if} the measured numbers vary across prompts in a way that changes the optimal rule, and the predictions match measurement.
+
+\textbf{Stage C: offline replay at a fixed checkpoint.} Generate a large pool of answers per prompt once, replay every rule on the pools, and measure realized first-order improvement per generated answer at matched cost. \emph{Go if} the optimal rule's advantage survives on real gradients.
+
+\textbf{Stage D: training.} Train with the optimal rule, DAPO dynamic sampling, SARA, sample-until-correct, and fixed groups at a matched budget of generated answers, and evaluate MATH-500 accuracy (multi-sample pass@1) and pass@k, with the statistical protocol fixed in advance \citep{shao2024deepseekmath}.
+
+\section{5. Fair comparison}
+All rules share the policy, verifier, optimizer, and loss, and are compared at the same total number of generated tokens. Every answer a rule generates is charged to it, including probes it later abandons. The theory's assumptions are on-policy sampling without clipping or importance ratios and without token-level normalization; the training stage reports how far clipping and normalization move the measured update from the prediction.
+
+\section{6. Risks}
+\begin{itemize}[leftmargin=*,itemsep=2pt,topsep=2pt]
+\item \textbf{Scoop.} The group behind ARCUS and SARA already has the sequential framing and the exact first moment, and RL2ML's covariance result extends naturally. Stage A is mostly pencil and exact computation and should be written up first.
+\item \textbf{Small gains.} Current rules may already sit near the optimum, which would make the result a characterization: a map of what each rule optimizes, its noise, and its price.
+\item \textbf{Batch effects.} Per-prompt sufficiency does not cover cross-prompt gradient inner products, which enter the batch second moment; Stage B measures them.
+\item \textbf{Assumptions.} Clipping, stale data, and token normalization break the exact structure; the analysis states its scope and measures the departure.
+\end{itemize}
+
+\section{7. Possible outcomes}
+\begin{itemize}[leftmargin=*,itemsep=2pt,topsep=2pt]
+\item \textbf{A better rule:} the optimal stopping rule improves accuracy per generated answer over DAPO, SARA, and sample-until-correct.
+\item \textbf{A complete map:} exact implicit objectives, variances, and costs for every rule in use, with a measured verdict on which is closest to optimal.
+\item \textbf{Assumptions dominate:} clipping and normalization move practice far from the clean theory, which is itself a measured result about where the theory applies.
+\end{itemize}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
