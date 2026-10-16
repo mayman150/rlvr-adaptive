@@ -56,7 +56,7 @@ def sample(model, prefix_ids, n, max_new, seed, eos_id):
     return [trim_at_eos(row[prefix_ids.shape[1]:], eos_id) for row in out]
 
 
-def token_factors(model, prompt_ids, response):
+def token_factors(model, prompt_ids, response, head=True):
     """Per-token gradient factors of one answer in the head and mlp blocks."""
     ids = torch.cat([prompt_ids[0], response])[None]
     n_prompt, T = prompt_ids.shape[1], len(response)
@@ -80,12 +80,14 @@ def token_factors(model, prompt_ids, response):
         for h in handles:
             h.remove()
         model.zero_grad(set_to_none=True)
-    with torch.no_grad():
-        E = -logp.exp()
-        rows = torch.arange(T, device=E.device)
-        E[rows, response] = -torch.expm1(logp[rows, response])
-    return {"E": E.detach(), "h": captured["h"][pos].float(), "a": captured["a"][pos].float(),
-            "d": captured["d"][pos].float()}
+    out = {"a": captured["a"][pos].float(), "d": captured["d"][pos].float()}
+    if head:
+        with torch.no_grad():
+            E = -logp.exp()
+            rows = torch.arange(T, device=E.device)
+            E[rows, response] = -torch.expm1(logp[rows, response])
+        out.update({"E": E.detach(), "h": captured["h"][pos].float()})
+    return out
 
 
 def answer_gram(factors):
@@ -94,7 +96,7 @@ def answer_gram(factors):
     for i in range(n):
         for j in range(i, n):
             fi, fj = factors[i], factors[j]
-            hv = float(((fi["E"] @ fj["E"].T) * (fi["h"] @ fj["h"].T)).cpu().double().sum())
+            hv = float(((fi["E"] @ fj["E"].T) * (fi["h"] @ fj["h"].T)).cpu().double().sum()) if "E" in fi else 0.0
             mv = float(((fi["d"] @ fj["d"].T) * (fi["a"] @ fj["a"].T)).cpu().double().sum())
             head[i, j] = head[j, i] = hv
             mlp[i, j] = mlp[j, i] = mv
@@ -130,6 +132,8 @@ def main():
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--start", type=int, default=0)
+    parser.add_argument("--mlp-only", action="store_true")
+    parser.add_argument("--gen-batch", type=int, default=32)
     parser.add_argument("--seed", type=int, default=20261016)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     parser.add_argument("--out", default=str(HERE / "results"))
@@ -153,9 +157,12 @@ def main():
             continue
         start = time.time()
         prompt_ids = tokenizer(build_prompt(tokenizer, prob["question"]), return_tensors="pt").input_ids.to(args.device)
-        responses = sample(model, prompt_ids, args.answers, args.max_tokens, args.seed + 7919 * qi, eos)
+        responses = []
+        for b in range(0, args.answers, args.gen_batch):
+            k = min(args.gen_batch, args.answers - b)
+            responses += sample(model, prompt_ids, k, args.max_tokens, args.seed + 7919 * qi + 104729 * b, eos)
         rewards = [reward(tokenizer.decode(x), prob["answer"]) for x in responses]
-        factors = [token_factors(model, prompt_ids, x) for x in responses]
+        factors = [token_factors(model, prompt_ids, x, head=not args.mlp_only) for x in responses]
         head, mlp = answer_gram(factors)
         del factors
         if args.device == "mps":
