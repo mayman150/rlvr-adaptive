@@ -3,3 +3,4 @@ __pycache__/
 *.log
 data/raw/
 data/raw_eval/
+experiments/training/results/*/training/*.bin
