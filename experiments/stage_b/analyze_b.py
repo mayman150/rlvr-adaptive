@@ -13,7 +13,7 @@ import numpy as np
 
 SHAPES = {"p^2 (1-p)^2": lambda p: (p * (1 - p)) ** 2, "p (1-p)": lambda p: p * (1 - p),
           "constant": lambda p: np.ones_like(p)}
-BINS = [(0.0, 0.0), (1e-9, 0.25), (0.25, 0.5), (0.5, 0.75), (0.75, 1 - 1e-9), (1.0, 1.0)]
+BINS = [(0.0, 0.0), (0.0, 0.25), (0.25, 0.5), (0.5, 0.75), (0.75, 1.0), (1.0, 1.0)]
 
 
 def boot(values, rng, n=2000):
@@ -56,7 +56,10 @@ def main():
     print("\n2. |grad p|^2 against difficulty (c = 1/2 statistic, valid for all prompts)")
     centers, means = [], []
     for lo_b, hi_b in BINS:
-        sel = [e for e in est if lo_b <= e["p"] <= hi_b]
+        if lo_b == hi_b:
+            sel = [e for e in est if e["p"] == lo_b]
+        else:
+            sel = [e for e in est if lo_b < e["p"] <= hi_b and e["p"] < 1]
         if not sel:
             continue
         m, lo, hi = boot([e["G2_half"] for e in sel], rng)
