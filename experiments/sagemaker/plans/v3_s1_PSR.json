@@ -1,0 +1,48 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "common": [
+  "--seed",
+  "1",
+  "--steps",
+  "150",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "256",
+  "--eval-steps",
+  "0,25,50,75,100,125,150",
+  "--sample-eval-steps",
+  "50,100",
+  "--sample-k",
+  "4",
+  "--passk-steps",
+  "150",
+  "--passk-n",
+  "64",
+  "--final-eval",
+  "eval_math_test_numeric.json",
+  "--diagnostics",
+  "--within-ref",
+  "--entropy-every",
+  "5",
+  "--save-model",
+  "/opt/ml/model/final_{arm}"
+ ],
+ "gpus": [
+  [
+   [
+    "PSR",
+    [
+     "--arms",
+     "psr"
+    ]
+   ]
+  ]
+ ]
+}

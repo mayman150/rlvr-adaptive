@@ -1,0 +1,60 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "common": [
+  "--seed",
+  "1",
+  "--steps",
+  "3",
+  "--group",
+  "8",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--eval-steps",
+  "0,3",
+  "--eval-limit",
+  "256",
+  "--sample-eval-steps",
+  "3",
+  "--sample-k",
+  "4",
+  "--final-eval",
+  "eval_math_test_numeric.json",
+  "--final-limit",
+  "256",
+  "--diagnostics",
+  "--gen-batch",
+  "256"
+ ],
+ "gpus": [
+  [
+   [
+    "SMOKE512",
+    [
+     "--arms",
+     "baseline",
+     "--prompts-per-step",
+     "64"
+    ]
+   ],
+   [
+    "SMOKE128g64",
+    [
+     "--arms",
+     "baseline",
+     "--prompts-per-step",
+     "16",
+     "--gen-batch",
+     "64",
+     "--eval-steps",
+     "0",
+     "--sample-eval-steps",
+     "",
+     "--final-limit",
+     "0"
+    ]
+   ]
+  ]
+ ]
+}

@@ -17,6 +17,7 @@ Both arms generate exactly the same number of answers.
 
 import argparse
 import json
+import math
 import random
 import sys
 import time
@@ -203,6 +204,60 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
+FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce")
+
+
+def fixed_advantage(arm, r, m, w, pos_weight):
+    """Advantage of one answer with reward r in a fixed group with mean reward m.
+
+    psr rewards only correct answers, nsr penalizes only wrong ones, and wreinforce
+    weights correct answers by pos_weight (Zhu et al. 2025). On-policy, psr and nsr have
+    exactly the same expected update, n grad p per prompt."""
+    if arm == "psr":
+        return float(r)
+    if arm == "nsr":
+        return float(r) - 1.0
+    if arm == "wreinforce":
+        return pos_weight if r else -1.0
+    a = r - m
+    return a * w if (arm == "scaled" and r == 0) else a
+
+
+def pass_at_k(n, c, k):
+    """Unbiased pass@k from c correct out of n samples."""
+    if n - c < k:
+        return 1.0
+    return 1.0 - math.prod((n - c - i) / (n - i) for i in range(k))
+
+
+@torch.no_grad()
+def probe_entropy(runner, args, answers, rewards, owner):
+    """Token entropy and mean token log-probability of the first ref_block answers of
+    every prompt (an on-policy sample whatever the arm), split by correctness."""
+    seen, idx = {}, []
+    for k, j in enumerate(owner):
+        seen[j] = seen.get(j, 0) + 1
+        if seen[j] <= args.ref_block:
+            idx.append(k)
+    out = {1: [0.0, 0.0, 0], 0: [0.0, 0.0, 0]}
+    for s in range(0, len(idx), args.train_batch):
+        chunk = idx[s:s + args.train_batch]
+        ent = []
+        lps = runner.logprob_sum([answers[k] for k in chunk], ent)
+        for k, e, lp in zip(chunk, ent, lps.tolist()):
+            o = out[int(rewards[k])]
+            o[0] += e
+            o[1] += lp
+            o[2] += len(answers[k][1])
+    tot_tokens = out[1][2] + out[0][2]
+    res = {"entropy": (out[1][0] + out[0][0]) / tot_tokens if tot_tokens else None}
+    for r, name in ((1, "correct"), (0, "wrong")):
+        if out[r][2]:
+            res[f"entropy_{name}"] = out[r][0] / out[r][2]
+            res[f"logprob_{name}"] = out[r][1] / out[r][2]
+    return res
+
+
 def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None):
     """Accumulate the gradient of -sum_k weights[k] log pi(answer_k) / norm into .grad."""
     for s in range(0, len(idx), args.train_batch):
@@ -239,6 +294,28 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
     runner.model.zero_grad(set_to_none=True)
     backward_weighted(runner, args, answers, sorted(ref_w), ref_w, norm)
     ref = runner.grad_snapshot()
+    ref2 = None
+    if args.within_ref:
+        # Second reference from answers ref_block+1 .. 2 ref_block of the same prompts, with its
+        # own mean: independent of ref given the prompts, so <ref, ref2> measures the
+        # per-prompt signal |grad p_x|^2 and not only the shared part.
+        second = {}
+        for k, j in enumerate(owner):
+            if j not in half_a:
+                second.setdefault(j, [])
+                if k not in first[j] and len(second[j]) < args.ref_block:
+                    second[j].append(k)
+        ref2_w = {}
+        for j, ks in second.items():
+            if len(ks) < args.ref_block:
+                continue
+            m = sum(rewards[k] for k in ks) / len(ks)
+            for k in ks:
+                if rewards[k] != m:
+                    ref2_w[k] = rewards[k] - m
+        runner.model.zero_grad(set_to_none=True)
+        backward_weighted(runner, args, answers, sorted(ref2_w), ref2_w, norm)
+        ref2 = runner.grad_snapshot()
     runner.model.zero_grad(set_to_none=True)
     live_a = [k for k, a in enumerate(adv) if a != 0 and owner[k] in half_a]
     live_b = [k for k, a in enumerate(adv) if a != 0 and owner[k] not in half_a]
@@ -246,8 +323,10 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
     ga = runner.grad_snapshot()
     backward_weighted(runner, args, answers, live_b, adv, norm, entropy)
     stats = dict.fromkeys(("aa", "bb", "ab", "ar", "br", "rr"), 0.0)
+    if ref2 is not None:
+        stats.update(dict.fromkeys(("r1r2", "r2r2", "ar2"), 0.0))
     with torch.no_grad():
-        for p, a_cpu, r_cpu in zip(runner.params, ga, ref):
+        for i, (p, a_cpu, r_cpu) in enumerate(zip(runner.params, ga, ref)):
             g = p.grad if p.grad is not None else torch.zeros_like(p)
             a = a_cpu.to(runner.device).flatten()
             r = r_cpu.to(runner.device).flatten()
@@ -258,6 +337,11 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
             stats["ar"] += float(torch.dot(a, r))
             stats["br"] += float(torch.dot(b, r))
             stats["rr"] += float(torch.dot(r, r))
+            if ref2 is not None:
+                r2 = ref2[i].to(runner.device).flatten()
+                stats["r1r2"] += float(torch.dot(r, r2))
+                stats["r2r2"] += float(torch.dot(r2, r2))
+                stats["ar2"] += float(torch.dot(a, r2))
     stats.update({"prompts_a": len(half_a), "prompts_b": len(prompts) - len(half_a),
                   "answers_a": sum(1 for j in owner if j in half_a),
                   "answers_b": sum(1 for j in owner if j not in half_a),
@@ -279,6 +363,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     eval_steps = ({int(s) for s in args.eval_steps.split(",")} if args.eval_steps
                   else set(range(0, args.steps + 1, args.eval_every)))
     sample_steps = {int(s) for s in args.sample_eval_steps.split(",") if s}
+    passk_steps = {int(s) for s in args.passk_steps.split(",") if s}
+    passk = []
     for step in range(args.steps + 1):
         if step in eval_steps:
             acc, per = runner.evaluate(eval_set, args.seed)
@@ -290,18 +376,31 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             sampled.append({"step": step, "accuracy": acc, "k": args.sample_k, "correct": per})
             print(f"[{arm}] step {step} sampled accuracy {acc:.4f} (k={args.sample_k})", flush=True)
             (out_dir / f"{arm}_sampled_eval.json").write_text(json.dumps(sampled))
+        if step in passk_steps:
+            _, per = runner.evaluate(eval_set, args.seed + 31 * step, k=args.passk_n, greedy=False)
+            curve = {k: sum(pass_at_k(args.passk_n, c, k) for c in per) / len(per)
+                     for k in (1, 2, 4, 8, 16, 32, 64) if k <= args.passk_n}
+            passk.append({"step": step, "n": args.passk_n, "counts": per, "pass_at_k": curve})
+            print(f"[{arm}] step {step} pass@k " + " ".join(f"{k}:{v:.3f}" for k, v in curve.items()), flush=True)
+            (out_dir / f"{arm}_passk.json").write_text(json.dumps(passk))
         if step == args.steps:
             if final_set:
                 acc, per = runner.evaluate(final_set, args.seed)
                 print(f"[{arm}] final held-out accuracy {acc:.4f} over {len(final_set)} problems", flush=True)
                 (out_dir / f"{arm}_final_eval.json").write_text(
                     json.dumps({"step": step, "accuracy": acc, "n": len(final_set), "correct": per}))
+            if args.save_model:
+                path = Path(args.save_model.replace("{arm}", arm))
+                bf16 = {k: v.detach().to(torch.bfloat16) for k, v in runner.model.state_dict().items()}
+                runner.model.save_pretrained(path, state_dict=bf16, safe_serialization=True)
+                runner.tok.save_pretrained(path)
+                print(f"[{arm}] saved model to {path}", flush=True)
             break
         if runner.device == "cuda":
             torch.cuda.reset_peak_memory_stats()
         start = time.time()
         extra = {}
-        if arm in ("baseline", "scaled"):
+        if arm in FIXED_ARMS:
             batch = [problems[order[(step * args.prompts_per_step + j) % len(order)]] for j in range(args.prompts_per_step)]
             texts = [build_prompt(runner.tok, q["question"]) for q in batch]
             answers = runner.generate(texts, args.group, args.max_new, args.seed * 100003 + step)
@@ -311,8 +410,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 g = rewards[j * args.group:(j + 1) * args.group]
                 m = sum(g) / len(g)
                 for r in g:
-                    a = r - m
-                    adv.append(a * w if (arm == "scaled" and r == 0) else a)
+                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight))
             groups = [[sum(rewards[j * args.group:(j + 1) * args.group]), args.group] for j in range(args.prompts_per_step)]
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
@@ -346,6 +444,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             backward_weighted(runner, args, answers, live, adv, norm, entropy)
             n_live = len(live)
         live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
+        if args.entropy_every and step % args.entropy_every == 0:
+            extra["probe"] = probe_entropy(runner, args, answers, rewards, owner)
         seen, first_block = {}, []
         for k, j in enumerate(owner):
             seen[j] = seen.get(j, 0) + 1
@@ -393,8 +493,15 @@ def main():
     parser.add_argument("--sample-k", type=int, default=4, help="answers per problem for sampled accuracy")
     parser.add_argument("--final-eval", default=None, help="larger held-out set, evaluated greedily after the last step")
     parser.add_argument("--final-limit", type=int, default=None)
+    parser.add_argument("--pos-weight", type=float, default=0.1, help="weight of correct answers in wreinforce")
+    parser.add_argument("--entropy-every", type=int, default=0, help="probe entropy on first-block answers every k steps")
+    parser.add_argument("--passk-steps", default="", help="steps at which to measure pass@k")
+    parser.add_argument("--passk-n", type=int, default=64, help="samples per problem for pass@k")
+    parser.add_argument("--save-model", default=None, help="directory for the final model ({arm} is replaced)")
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
     parser.add_argument("--ref-block", type=int, default=4)
+    parser.add_argument("--within-ref", action="store_true",
+                        help="second independent reference within prompts (measures per-prompt signal)")
     parser.add_argument("--eval-limit", type=int, default=None)
     parser.add_argument("--calib-prompts", type=int, default=16)
     parser.add_argument("--budget", type=int, default=None, help="answers per step; default prompts x group")
