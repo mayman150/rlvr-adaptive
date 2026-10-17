@@ -346,11 +346,17 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             backward_weighted(runner, args, answers, live, adv, norm, entropy)
             n_live = len(live)
         live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
+        seen, first_block = {}, []
+        for k, j in enumerate(owner):
+            seen[j] = seen.get(j, 0) + 1
+            if seen[j] <= args.ref_block:
+                first_block.append(rewards[k])
         grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
         if n_live:
             opt.step()
         mixed = sum(0 < k < n for k, n in groups)
-        rec = {"step": step, "mean_reward": sum(rewards) / len(rewards), "mixed_groups": mixed,
+        rec = {"step": step, "mean_reward": sum(rewards) / len(rewards),
+               "first_block_reward": sum(first_block) / len(first_block), "mixed_groups": mixed,
                "groups": len(groups), "grad_norm": grad_norm, "answers": len(answers),
                "tokens": sum(len(r) for _, r in answers),
                "mean_length": sum(len(r) for _, r in answers) / len(answers),

@@ -1,0 +1,37 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "common": [
+  "--seed",
+  "2",
+  "--steps",
+  "150",
+  "--group",
+  "8",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--eval-steps",
+  "0,10,20,30,40,50,75,100,125,150",
+  "--sample-eval-steps",
+  "50,100,150",
+  "--sample-k",
+  "4",
+  "--final-eval",
+  "eval_math_test_numeric.json",
+  "--diagnostics"
+ ],
+ "gpus": [
+  [
+   [
+    "O64",
+    [
+     "--arms",
+     "optimal",
+     "--prompts-per-step",
+     "8"
+    ]
+   ]
+  ]
+ ]
+}

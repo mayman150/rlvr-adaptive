@@ -1,4 +1,4 @@
-# The story of the paper (living document, October 16, 2026)
+# The story of the paper (living document, updated October 17, 2026)
 
 Draft: `worth_paper.pdf` (source `worth_paper.tex`). Red "pending" markers show where
 running results go.
@@ -32,7 +32,21 @@ times larger gradients, so their advantages should be scaled down by that ratio.
    gradient signal fades for very easy and very hard prompts, which makes the optimal
    rule robust.
 5. **Prediction and test.** Scale failure advantages by F1/F0: predicted 1.12 to 1.56
-   times efficiency in 11 of 12 settings. Pre-registered two-seed training test.
+   times efficiency in 11 of 12 settings. Pre-registered two-seed pilot: no accuracy gain.
+6. **Why a better rule can be worth nothing (new, October 17).** Without orthogonal
+   prompts, a rule's one-step progress at B answers per step is
+   <grad J, mu>^2 / (2L (s + nV/B)). The critical budget B* = nV/s (the rule's gradient
+   noise scale in answers) splits two regimes: below it a rule with k times the efficiency
+   is worth k times the answers (about sqrt(k) under Adam at a fixed learning rate); above
+   it no reweighting helps and the unweighted estimator is best. Every term is measurable
+   inside a training run, so the theory says not only which rule is best but whether it
+   matters at your budget.
+7. **Tests of the regime theory.** A budget ladder (Dr. GRPO at 32 to 256 answers per step)
+   with in-training measurements of B*, the optimal rule at 64 and 128, and the scaled rule
+   at 128, two seeds (Pre-registration 3).
+
+New one-line pitch: *a theory of what each rollout is worth, and of when being smarter
+about rollouts is worth anything at all.*
 
 ## How the story changes with the pending results
 
@@ -64,5 +78,7 @@ times larger gradients, so their advantages should be scaled down by that ratio.
 | F1 / F0 asymmetry (last layer and full model) | Measured |
 | Shape of the gradient signal against difficulty | Done: fades at the extremes (ratio 0.05; flat rejected), optimal rule robust |
 | Training pilot, seed 1 | Done. Baseline 47.5%, scaled 45.3% (minus 2.2 points, within evaluation noise). Training reward higher for scaled in the first 100 steps, tied afterwards (0.586 both over the last 50 steps) |
-| Training pilot, seed 2 | Baseline 46.7%; scaled arm running |
+| Training pilot, seed 2 | Baseline 46.7%; scaled arm running (41.2 vs 40.9 at step 50, 42.9 vs 44.2 at step 100) |
+| Critical-budget theorem (no orthogonality) and Adam reading | Written (theory/THEORY.md, paper Section 4) |
+| Budget ladder and in-training diagnostics, 14 runs | Launched October 17; 3 training, the rest waiting for GPU capacity |
 | Bibliography author names | Several placeholders to fill before submission |

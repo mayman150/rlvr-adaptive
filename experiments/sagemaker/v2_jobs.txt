@@ -1,0 +1,14 @@
+us-east-2:worth-v2-L128-s1-20261017-054911
+us-east-2:worth-v2-O128-s1-20261017-054914
+us-east-2:worth-v2-L256-s1-20261017-054918
+us-east-1:worth-v2-S128-s1-20261017-054922
+us-west-2:worth-v2-L64-s1-20261017-055028
+us-west-2:worth-v2-O64-s1-20261017-055032
+us-west-2:worth-v2-L32-s1-20261017-055034
+us-east-2:worth-v2-L128-s2-20261017-055038
+us-east-2:worth-v2-O128-s2-20261017-055041
+us-east-2:worth-v2-L256-s2-20261017-055045
+us-east-1:worth-v2-S128-s2-20261017-055049
+us-east-1:worth-v2-L64-s2-20261017-055052
+us-west-2:worth-v2-O64-s2-20261017-055056
+us-west-2:worth-v2-L32-s2-20261017-055100

@@ -52,6 +52,56 @@ sampling with refill is covered prompt by prompt (keeping is a reward function, 
 part of A); dividing the batch by the random number of kept groups is not exactly covered,
 because the denominator couples prompts.
 
+## Progress per step without orthogonal prompts: the critical budget
+
+The efficiency criterion used for the optimal rule treats gradients of different prompts
+as orthogonal, so it counts progress only on the prompts in the batch. Held-out progress
+comes from the part of each prompt's gradient shared with the population gradient
+grad J = E_x grad p_x, and the cross-prompt terms above do not vanish. The exact
+statement is short.
+
+Let a step use P prompts drawn independently from the prompt distribution, each processed
+by the same rule, and let g = (1/P) sum_x u_x with u_x the rule's update for prompt x.
+Write mu = E u = E_x[c(p_x) grad p_x], s = |mu|^2, m2 = E|u|^2 (the two-moment theorem
+gives it prompt by prompt), V = m2 - s, and n = E N. Then, exactly,
+
+    E g = mu,        E|g|^2 = s + V / P = s + n V / B,
+
+with B = P n the answers per step. For a J that is L-smooth along the step, the best
+SGD step size gives the guaranteed one-step progress
+
+    Delta(B) = <grad J, mu>^2 / (2 L (s + n V / B)).
+
+Two regimes follow, separated by the **critical budget** B* = n V / s (the gradient noise
+scale of the rule, measured in answers):
+
+- **Noise-limited, B << B*.** Delta = B <grad J, mu>^2 / (2 L n V): progress is linear in
+  the budget and proportional to the per-answer efficiency
+  Eff = <grad J, mu>^2 / (n m2) (up to s << m2). Under orthogonal prompts
+  <grad J, mu> reduces to E[c(p) |grad p|^2] / |dataset|, the criterion optimized
+  above. A rule with k times the efficiency is worth k times the answers.
+- **Curvature-limited, B >> B*.** Delta = |grad J|^2 cos^2(grad J, mu) / (2 L): progress
+  does not depend on the budget or on the rule's noise, only on the direction of its mean
+  update. Reweighting prompts (c(p) not constant) can only lose here, because the
+  unweighted estimator (Dr. GRPO, c constant) points exactly along grad J.
+
+At any budget the progress ratio of rule R to rule 0 is
+
+    Delta_R(B) / Delta_0(B) = (<grad J, mu_R>^2 / <grad J, mu_0>^2) * (s_0 + n_0 V_0 / B) / (s_R + n_R V_R / B).
+
+Every quantity on the right is measurable during training from two independent halves of
+a batch and an independent unbiased reference for grad J (`experiments/training`,
+diagnostics), so the regime and the expected gain of a rule can be read off a run.
+
+**Adam.** With a fixed learning rate and the second-moment estimate dominated by noise,
+Adam's update is roughly the gradient divided by its per-coordinate noise level. Reducing
+the noise variance k-fold then raises first-order progress per step by about sqrt(k),
+while the size of the step, and hence the second-order penalty, stays the same. So in the
+noise-limited regime a rule with k times the efficiency gives about sqrt(k) times the
+progress per step at a fixed learning rate, and the full k only if the learning rate is
+raised (the square-root scaling rule for adaptive methods). Doubling the budget, likewise,
+gives about 1.41 times the progress.
+
 ## Where the structure breaks
 
 - **Token-level length normalization.** Weights such as 1/|y_i| or |y_i| / sum_j |y_j|
