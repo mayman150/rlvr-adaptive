@@ -52,6 +52,32 @@ sampling with refill is covered prompt by prompt (keeping is a reward function, 
 part of A); dividing the batch by the random number of kept groups is not exactly covered,
 because the denominator couples prompts.
 
+## Positive and negative reinforcement have the same expected update
+
+Take n answers per prompt and advantages that depend only on an answer's own reward:
+a for a correct answer and b for a wrong one. The theorem gives
+
+    E g = n (a - b) grad p,
+    E|g|^2 = n (a^2 p F1 + b^2 (1-p) F0) + n (n-1) (a-b)^2 |grad p|^2.
+
+So every rule with the same a - b has the same expected update. Positive-sample
+reinforcement (PSR: a = 1, b = 0) and negative-sample reinforcement (NSR: a = 0, b = -1)
+both have mean n grad p; W-REINFORCE (a = lambda, b = -1) has n (1 + lambda) grad p, the
+same direction. This is the on-policy baseline invariance of REINFORCE written per prompt,
+and it holds exactly for binary rewards, with no approximation.
+
+The two rules differ only in their noise, n p F1 for PSR and n (1-p) F0 for NSR:
+
+- PSR spends its noise on easy prompts, NSR on hard ones.
+- With F0 / F1 = 2.5 (measured), NSR is the noisier rule on every prompt with p < 0.71.
+
+To first order in the step size, the expected change of any smooth functional of the
+policy, its entropy included, is therefore identical for PSR and NSR. Differences in
+entropy, pass@k, or stability between them must come from second-order effects of the
+noise, from an optimizer that is not linear in the gradient (Adam normalizes by a noise
+estimate), or from implementation choices outside the theorem: token-level aggregation,
+clipping, and reuse of stale samples.
+
 ## Progress per step without orthogonal prompts: the critical budget
 
 The efficiency criterion used for the optimal rule treats gradients of different prompts

@@ -1,5 +1,44 @@
 # The story of the paper (living document, updated October 17, 2026)
 
+## Current direction (October 17): positive and negative samples, same mean, different noise
+
+**Why we changed.** A literature review (three agents, key claims verified by hand) found
+that the critical-budget framing is already published: Bansal, Mohri, Abreu,
+Alvarez-Melis, Kakade, "Critical Batch Size for LLM Policy Optimization" (HiLD at ICML
+2026, verified on OpenReview), which splits GRPO noise into inter- and intra-prompt terms
+and finds the intra-prompt term dominant; Li et al. (arXiv 2608.29296) on square-root
+learning-rate scaling; IsoCompute (arXiv 2603.12151) on rollouts per problem.
+
+**What is ours.**
+1. Wrong answers carry about 2.5 times larger squared gradients than correct ones. No
+   paper measures gradient norms by correctness, and two 2026 variance papers assume the
+   opposite (VSR, arXiv 2610.15888, Assumption B.3, verified verbatim; BICC 2603.13134).
+2. The exact second moment of any reward-adapted rule with separate F0 and F1 and random
+   group sizes (the mean part is known: Davis and Recht; ARCUS Corollary 1).
+3. A consequence nobody states: on-policy, positive-only and negative-only reinforcement
+   have exactly the same expected update, n grad p. The famous difference between them
+   (Zhu et al., NeurIPS 2025: negatives preserve entropy and pass@k) must live in the noise,
+   which NSR puts on hard prompts and makes 2.5 times larger per answer, or in
+   implementation choices.
+
+**Pitch.** *Rewarding right answers and penalizing wrong ones push the model the same way.
+Everything that separates them is noise, and wrong answers carry most of it.*
+
+**Tests.** Pre-registration 4: Dr. GRPO, PSR, NSR, W-REINFORCE, strictly on-policy, two
+seeds, with in-training measurement of each arm's mean and noise, an on-policy entropy
+probe, and pass@64. Next, depending on the outcome: implementation factors (token-mean
+aggregation, clipped reuse) or optimizer (Adam versus SGD), and a second model family
+(Qwen2.5-Math is suspect for small effects; Spurious Rewards, arXiv 2506.10947).
+
+**Second section.** Exact accounting of adaptive rollout rules (dynamic sampling has the
+per-answer efficiency of the group it filters; sample-until-correct is worst), set against
+the literature's accounting flaws: gains plotted against steps while spending 2 to 3 times
+more answers, learning rate not retuned, single seeds, 30-problem benchmarks.
+
+---
+
+## Earlier framing (kept for the record)
+
 Draft: `worth_paper.pdf` (source `worth_paper.tex`). Red "pending" markers show where
 running results go.
 
