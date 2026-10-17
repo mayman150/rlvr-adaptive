@@ -2,6 +2,6 @@ us-west-2:worth-v2-L128-s1-20261017-060658
 us-west-2:worth-v2-O128-s1-20261017-060705
 us-east-1:worth-v2-S128-s1-20261017-054922
 us-west-2:worth-v2-L128-s2-20261017-062244
-us-east-2:worth-v2-O128-s2-20261017-090022
+us-west-2:worth-v2-O128-s2-20261017-155126
 us-east-1:worth-v2-S128-s2-20261017-055049
 us-east-1:worth-probe-s2-20261017-082726

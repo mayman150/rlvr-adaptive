@@ -1,0 +1,4 @@
+us-west-2:worth-v5-PSR-s3-20261017-164938
+us-east-1:worth-v5-NSR-s3-20261017-164942
+us-east-2:worth-v5-PSR-s4-20261017-164946
+us-west-2:worth-v5-NSR-s4-20261017-164950

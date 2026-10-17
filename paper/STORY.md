@@ -30,6 +30,24 @@ probe, and pass@64. Next, depending on the outcome: implementation factors (toke
 aggregation, clipped reuse) or optimizer (Adam versus SGD), and a second model family
 (Qwen2.5-Math is suspect for small effects; Spurious Rewards, arXiv 2506.10947).
 
+**Results so far (October 17, afternoon).**
+- Pre-registration 4, seed 1 (seed 2 running): pass@64 NSR 83.0 vs PSR 83.2 (minus 0.3;
+  pre-registered threshold 3 points, not met); pass@1 PSR 42.4 vs NSR 37.7; entropy over
+  steps 100 to 150 NSR / PSR = 1.11 (threshold 1.20, not met). Base model pass@64 79.9.
+- The second-moment theorem holds in the real model: measured per-prompt second moment /
+  theorem = 0.71 to 1.00 for all arms and seeds (pre-registered tolerance 30%).
+- NSR = PSR minus sum_i grad log pi(y_i), a zero-mean term (exact identity). Its noise is
+  6.4 times PSR's (theorem: about 7), and it learns more slowly (first-block training reward
+  33.6 vs 51.3 over steps 25 to 49), as a noisier estimator should.
+- Equal-mean test (projection on the population gradient) is underpowered: 90% intervals
+  include both 1 (theory) and 0.
+- Working claim: negative reinforcement is positive reinforcement slowed by extra noise.
+  Pre-registration 5 tests it directly: at matched pass@1, equal pass@32 (seeds 3 and 4).
+- Rollout rules at matched answers (Pre-registration 3): optimal rule +1.1 (0.4) points on
+  the 3,382-problem set in seed 1 (seed 2 running); probe-then-fill +2.0 and +0.8 on
+  MATH-500; scaled failures -0.4 and +1.1. Noise scale grows from about 900 answers early
+  to over 10,000 later.
+
 **Second section.** Exact accounting of adaptive rollout rules (dynamic sampling has the
 per-answer efficiency of the group it filters; sample-until-correct is worst), set against
 the literature's accounting flaws: gains plotted against steps while spending 2 to 3 times
