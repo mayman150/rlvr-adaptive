@@ -12,3 +12,9 @@ batch update. Token-mean length normalization and non-binary rewards break the s
 ```
 cd theory && python3 exact.py
 ```
+
+## Paper
+
+- `paper/worth_paper.pdf`: working draft with every result so far; pending results are marked.
+- `paper/STORY.md`: the narrative, how it changes with pending results, and status.
+- `proposal/proposal.pdf`: the original proposal.

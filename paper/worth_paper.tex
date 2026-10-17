@@ -1,0 +1,101 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,enumitem,xcolor,array,tabularx}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[round]{natbib}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlength{\emergencystretch}{2em}
+\newtheorem{theorem}{Theorem}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\pending}[1]{\textcolor{red!60!black}{[pending: #1]}}
+\hypersetup{pdftitle={Which Rollouts Are Worth Generating?}}
+\title{\textbf{Which Rollouts Are Worth Generating?}\\[4pt]
+\large Exact Bias, Variance, and Cost of Adaptive Rollout Collection in RLVR}
+\author{Mohamed Ayman\\\small Working draft, October 16, 2026. Results marked \pending{} are running.}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reinforcement learning with verifiable rewards spends most of its compute generating answers, and practical systems decide adaptively how many answers to generate per prompt: they drop groups whose answers all agree, abandon prompts after a short probe, or sample until a correct answer appears. Each rule changes what training optimizes, how noisy each update is, and what it costs, yet rules are compared through heuristics and proxies. We show that for binary rewards, the first two moments of the update produced by any rule that decides from the rewards seen so far, including rules with random group size, depend on only four numbers per prompt: its success probability, the squared norm of the gradient of that probability, and the mean squared gradient norms of correct and of wrong answers. This makes the bias, variance, and cost of every such rule exactly computable, and makes rollout collection an optimization problem that we solve exactly. Under this accounting, DAPO's dynamic sampling has exactly the per-answer efficiency of the fixed group it filters, sample-until-correct rules are the least efficient rules in use, and the optimal rule improves on the best rule in use by a factor between 1.15 and 4 depending on how gradient signal varies with difficulty. Measuring the four numbers in Qwen2.5-Math-1.5B reveals that wrong answers carry about 2.5 times larger squared gradients than correct ones, which the theory turns into a one-line change to GRPO: scale failure advantages by the measured ratio. \pending{pre-registered training comparison of that change against Dr. GRPO at a matched budget}
+\end{abstract}
+
+\section{Introduction}
+Generating answers dominates the cost of RL with verifiable rewards, so a family of rules now decides adaptively how many answers each prompt receives. DAPO drops groups whose answers all agree and refills the batch \citep{yu2025dapo}; SARA abandons prompts after a short probe \citep{sara2026}; Reinforce-Ada and related methods sample until enough correct answers appear \citep{xiong2025reinforceada}; allocation methods move a budget toward prompts that look informative \citep{knapsack2025,yao2025gvm}. Each such rule does three things at once: it changes the implicit objective, it changes the update's noise, and it changes the cost. Existing comparisons optimize one of these through a proxy.
+
+For binary rewards, recent work shows that fixed-size, reward-only weightings optimize an explicit function of each prompt's success probability \citep{davis2025objective,mroueh2025grpo,thrampoulidis2025shaping}, and that dropping all-agreeing groups rescales the update without changing its direction \citep{okonkwo2026arcus}. These results concern the mean of the update for fixed group sizes. The rules practitioners use have random group sizes, and the quantity that decides their value is the update's noise per unit cost.
+
+\textbf{Contributions.}
+\begin{enumerate}[leftmargin=*,itemsep=2pt,topsep=2pt]
+\item \textbf{A two-moment theorem} (Section~\ref{sec:theory}). For any rule that stops and assigns advantages from the rewards observed so far, the mean update is $c(p)\nabla p$ and the second moment is $F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p)$, where $F_1,F_0$ are the mean squared gradient norms of correct and wrong answers. Random group sizes need no special treatment.
+\item \textbf{Exact accounting and the optimal rule} (Section~\ref{sec:optimal}). An exact lattice engine evaluates any rule, and dynamic programming finds the rule that maximizes training value per generated answer. We compare the rules in use against it.
+\item \textbf{Measurements in a real model} (Section~\ref{sec:measure}). Wrong answers carry about 2.5 to 2.8 times larger squared gradients than correct ones in Qwen2.5-Math-1.5B, both in the last layer and over all parameters, while being only 9\% longer.
+\item \textbf{A tested prediction} (Section~\ref{sec:training}). The theory implies that failure advantages should be scaled by $F_1/F_0$. We test this in a pre-registered training comparison. \pending{result}
+\end{enumerate}
+
+\section{The two-moment theorem}\label{sec:theory}
+A prompt has policy $\pi$, score $\ell(y)=\nabla\log\pi(y)$, binary reward $R(y)$, and success probability $p$. A reward-adapted rule draws answers independently, stops at a bounded stopping time $N$ of the reward sequence, and returns $g=\sum_{i\le N}A_i\ell(y_i)$ with each $A_i$ a function of $(r_1,\dots,r_N)$; filtering and abandonment are $A=0$. Let $\kappa(1)=1/p$, $\kappa(0)=-1/(1-p)$, and $F_r=\E[\|\ell\|^2\mid R=r]$.
+
+\begin{theorem}
+For every reward-adapted rule, $\E g=c(p)\nabla p$ with $c(p)=\E\sum_{i\le N}A_i\kappa(r_i)$, and
+\[
+\E\|g\|^2=F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p),
+\]
+with $D_r=\E\sum_{i\le N:\,r_i=r}A_i^2$ and $X=\E\sum_{i\neq j\le N}A_iA_j\kappa(r_i)\kappa(r_j)$. The functions $c,D_0,D_1,X$ and the expected cost $\E N$ depend only on the rule and $p$.
+\end{theorem}
+\emph{Proof.} $\E[\ell\,1\{R=1\}]=\nabla p$ and $\E\ell=0$ give $\E[\ell\mid R=r]=\kappa(r)\nabla p$. Couple the rule to an infinite i.i.d.\ sequence; given the reward sequence, $N$ and the $A_i$ are constants and the answers are independent with that conditional mean and conditional second moment $F_{r_i}$. Take expectations over the rewards, whose law depends only on $p$. $\square$
+
+The structure breaks under token-level length normalization, where weights depend on lengths rather than rewards, under non-binary rewards, and under clipping or stale samples; exact counterexamples are in the code. All statements are checked by exact enumeration over softmax policies, including two rules with random group size.
+
+\section{Exact accounting and the optimal rule}\label{sec:optimal}
+\textbf{Criterion.} Prompts come from a difficulty distribution and gradients of different prompts are treated as orthogonal. With the step size chosen optimally, the improvement in mean accuracy per generated answer is proportional to $\mathrm{Eff}=\mathrm{Sig}^2/(\mathrm{Cost}\cdot\mathrm{M2})$, where $\mathrm{Sig}=\E[c(p)\|\nabla p\|^2]$, $\mathrm{M2}$ is the mean second moment, and $\mathrm{Cost}$ the mean number of answers. Because rescaling advantages leaves $\mathrm{Eff}$ unchanged, the optimal rule is found by dynamic programming over the lattice of (wrong, correct) counts after a Dinkelbach transform; a solved policy, re-evaluated by the independent lattice engine, matches to six digits.
+
+\textbf{Rules in use.} Table~\ref{tab:catalog} gives efficiency relative to the optimal rule in the main model, $\|\nabla p\|^2\propto p^2(1-p)^2$ with equal $F_0$ and $F_1$ in the high-noise regime that real models occupy. Three conclusions are exact within the model. DAPO's dynamic sampling has the per-answer efficiency of the fixed group it filters, because dropped groups cost their answers and contribute nothing. Sample-until-correct rules are the least efficient, spending budget on hard prompts that carry little gradient. A probe that abandons all-agreeing prompts and fills the rest is the best rule in use.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth}YYYY@{}}
+\toprule
+\textbf{Rule} & \textbf{Uniform} & \textbf{Mostly hard} & \textbf{U-shaped} & \textbf{Mostly easy}\\
+\midrule
+Fixed group of 8 (GRPO, Dr.\ GRPO, DAPO) & 0.61 & 0.38 & 0.40 & 0.38\\
+Fixed group of 16 & 0.65 & 0.41 & 0.43 & 0.41\\
+Fixed group of 8, std-normalized & 0.57 & 0.35 & 0.36 & 0.35\\
+Probe 4, abandon if all agree, fill to 16 & 0.77 & 0.60 & 0.67 & 0.60\\
+Sample until 1 correct, cap 16 & 0.26 & 0.09 & 0.12 & 0.30\\
+Sample until 2 correct and 2 wrong, cap 16 & 0.41 & 0.22 & 0.22 & 0.22\\
+\bottomrule
+\end{tabularx}
+\caption{Efficiency relative to the optimal rule, by difficulty distribution of the prompts.}
+\label{tab:catalog}
+\end{table}
+
+\textbf{Structure of the optimum.} The optimal rule samples at least three answers, continues while the minority outcome stays above about a quarter of the answers, and stops when outcomes are lopsided; it assigns advantages state by state, nearly zeroing lopsided low-signal groups. A two-parameter band rule that copies only the stopping region reaches just 18\% to 59\% of the optimum, so the advantage sizing matters as much as the stopping.
+
+\textbf{Sensitivity.} The size of the gain depends on how $\|\nabla p\|^2$ varies with difficulty: the optimal rule beats the best rule in use by 1.29 to 1.66 times when the signal fades as $p^2(1-p)^2$, by 1.15 to 1.33 times for $p(1-p)$, and by 2.3 to 4.2 times if it is flat. A policy solved under either fading shape keeps at least 96\% of the optimum under the other, but falls to 10\% to 31\% if the truth is flat, and no mixture policy is robust to both. The shape must therefore be measured before the optimal rule is deployed (Section~\ref{sec:measure}).
+
+\section{Measuring the four numbers}\label{sec:measure}
+\textbf{Method.} In Qwen2.5-Math-1.5B \citep{yang2024qwen25math}, we sample answers to MATH training problems on-policy and compute exact per-answer gradients in the output projection and the last-layer MLP, using the single-backward identity of the companion STOP study. $F_1$ and $F_0$ are averages of squared answer-gradient norms; $\|\nabla p\|^2$ is estimated without bias from pairs, since $\E[(r_i-c)(r_j-c)\langle\ell_i,\ell_j\rangle]=\|\nabla p\|^2$ for independent answers and any $c$ independent of the pair.
+
+\textbf{Gradient asymmetry.} Over 40 prompts with 16 answers each, $F_1=4.2\times10^5$ (90\% interval $[3.6,4.8]\times10^5$) and $F_0=1.17\times10^6$ ($[1.04,1.30]\times10^6$), so $F_1/F_0=0.36$, while wrong answers are only 9\% longer (421 versus 386 tokens). Over all 1.5B parameters, calibration before training gives $F_1/F_0=0.395$ from 29 correct and 99 wrong answers. Wrong answers carry larger gradients because their tokens are less likely.
+
+\textbf{Signal against difficulty.} $\|\nabla p\|^2$ is small against per-answer noise (ratio of order $10^3$ to $10^4$), and 16 answers per prompt do not resolve its shape; heavy tails from a few long wrong answers make naive intervals too narrow. A measurement with 96 answers per prompt in the MLP block is running. On its first 10 prompts, all hard (success rates up to 0.34), pooled signal on the hardest prompts is $0.74\pm0.62$ and the fading shape $p^2(1-p)^2$ fits best, but the medium and easy prompts that discriminate the shapes are \pending{remaining 14 prompts}.
+
+\section{A tested prediction: scaled failure advantages}\label{sec:training}
+\textbf{Prediction.} When $F_0>F_1$, the optimal advantages weight a failure at about $F_1/F_0$ relative to a success on mixed groups, whatever the shape of $\|\nabla p\|^2$. Applied to a fixed group of 8 with the measured ratio, this alone raises efficiency by 1.12 to 1.56 times in 11 of 12 combinations of shape and difficulty distribution; the exception is mostly easy prompts with flat signal (0.85). It is a one-line change to GRPO.
+
+\textbf{Design (pre-registered).} Qwen2.5-Math-1.5B base, 3{,}920 numeric-answer MATH training problems, on-policy updates with one gradient step per batch, 16 prompts by 8 answers, 150 steps, AdamW at $10^{-6}$. The arms differ only in advantages, Dr.\ GRPO's $r-\bar r$ \citep{liu2025drgrpo} versus the same with failures scaled by $w=F_1/F_0$ measured before training, so both generate the same number of answers. Two seeds, each running both arms on one L40S. Primary endpoint: greedy accuracy on the 364 numeric MATH-500 problems after 150 steps.
+
+\textbf{Results.} In seed 1 the baseline arm rose from 13.2\% to 41.8\% accuracy by step 50, mostly from learning to finish with a boxed answer, and its training reward from 0.27 to 0.58 by step 83. \pending{scaled arm for seed 1; both arms for seed 2; pre-registered verdict}
+
+\section{Related work}
+The implicit objectives of fixed-size reward-only weightings are given by \citet{davis2025objective}, with GRPO, Dr.\ GRPO, pass@k, and maximum-likelihood variants worked out in \citet{mroueh2025grpo,thrampoulidis2025shaping,zheng2026rl2ml,tajwar2026maxrl,heckel2026asym}. ARCUS proves the score-conditioning identity and the dynamic-sampling corollary \citep{okonkwo2026arcus}. RL2ML gives the covariance of success-only estimators with fixed group size \citep{zheng2026rl2ml}. Allocation and stopping methods optimize proxies or bounds \citep{yao2025gvm,xiong2025reinforceada,sara2026,knapsack2025}. Our results add random group sizes, the full second moment with both $F_0$ and $F_1$, the exact optimal rule, and measurements of the four numbers in a real model.
+
+\section{Limitations}
+The efficiency criterion is one step of progress on mean accuracy with orthogonal prompt gradients; it ignores exploration effects and Adam's preconditioning. Cost is counted in answers, not tokens. The shape of $\|\nabla p\|^2$ is not yet measured, and the training comparison is a two-seed pilot on one model.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
