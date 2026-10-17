@@ -51,6 +51,8 @@ def run_plan(plan):
     (LIVE / "status.json").write_text(json.dumps(status, indent=1))
     shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True)
     print("status:", status, flush=True)
+    if any(code != 0 for code in status.values()):
+        sys.exit(1)
 
 
 def main():

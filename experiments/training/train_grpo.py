@@ -454,6 +454,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
         if n_live:
             opt.step()
+        opt.zero_grad(set_to_none=True)
         mixed = sum(0 < k < n for k, n in groups)
         rec = {"step": step, "mean_reward": sum(rewards) / len(rewards),
                "first_block_reward": sum(first_block) / len(first_block), "mixed_groups": mixed,
