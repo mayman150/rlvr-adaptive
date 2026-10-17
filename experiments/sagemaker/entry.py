@@ -18,7 +18,16 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TRAIN = HERE / "training" / "train_grpo.py"
 LIVE = Path("/opt/ml/checkpoints")
+MODEL_CHANNEL = Path("/opt/ml/input/data/model")
 FINAL = Path("/opt/ml/model")
+
+
+def local_model_args():
+    """Load the model from the S3 input channel when present (no Hugging Face Hub calls)."""
+    if (MODEL_CHANNEL / "config.json").exists():
+        os.environ["HF_HUB_OFFLINE"] = "1"
+        return ["--model", str(MODEL_CHANNEL)]
+    return []
 
 
 def run_one(name, cmd, gpu, status):
@@ -32,14 +41,16 @@ def run_one(name, cmd, gpu, status):
 
 
 def run_plan(plan):
-    from huggingface_hub import snapshot_download
-    snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
+    local = local_model_args()
+    if not local:
+        from huggingface_hub import snapshot_download
+        snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
     status = {}
 
     def lane(gpu, runs):
         for name, extra in runs:
             out = LIVE / name
-            cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(out), *plan["common"], *extra]
+            cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(out), *plan["common"], *extra, *local]
             run_one(name, cmd, gpu, status)
 
     threads = [threading.Thread(target=lane, args=(g, runs)) for g, runs in enumerate(plan["gpus"])]
@@ -69,6 +80,7 @@ def main():
     command = [sys.executable, str(TRAIN), "--device", "cuda", "--out", "/opt/ml/model/training"]
     for key, value in vars(args).items():
         command += [f"--{key.replace('_', '-')}", value]
+    command += local_model_args()
     print("running:", " ".join(command), flush=True)
     env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
     subprocess.run(command, check=True, env=env)

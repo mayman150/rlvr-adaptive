@@ -46,6 +46,7 @@ ${AWS} sagemaker create-training-job --training-job-name "${JOB}" \
     \"arms\": \"${ARMS:-baseline,scaled}\"
   }" \
   --resource-config "InstanceType=${INSTANCE},InstanceCount=1,VolumeSizeInGB=60" \
+  --input-data-config "[{\"ChannelName\": \"model\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"s3://${BUCKET}/models/${MODEL_DIR:-Qwen2.5-Math-1.5B}/\", \"S3DataDistributionType\": \"FullyReplicated\"}}}]" \
   --output-data-config "S3OutputPath=s3://${BUCKET}/output/" \
   --checkpoint-config "S3Uri=s3://${BUCKET}/checkpoints/${JOB}/,LocalPath=/opt/ml/checkpoints" \
   ${SPOT_FLAGS[@]+"${SPOT_FLAGS[@]}"} \
