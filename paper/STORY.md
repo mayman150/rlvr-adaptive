@@ -43,8 +43,8 @@ aggregation, clipped reuse) or optimizer (Adam versus SGD), and a second model f
   include both 1 (theory) and 0.
 - Working claim: negative reinforcement is positive reinforcement slowed by extra noise.
   Pre-registration 5 tests it directly: at matched pass@1, equal pass@32 (seeds 3 and 4).
-- Rollout rules at matched answers (Pre-registration 3): optimal rule +1.1 (0.4) points on
-  the 3,382-problem set in seed 1 (seed 2 running); probe-then-fill +2.0 and +0.8 on
+- Rollout rules at matched answers (Pre-registration 3): optimal rule +1.1 (0.4) and +3.3 (0.5) points on
+  the 3,382-problem set in seeds 1 and 2 (pre-registered 1.5-in-both rule not met because of seed 1); probe-then-fill +2.0 and +0.8 on
   MATH-500; scaled failures -0.4 and +1.1. Noise scale grows from about 900 answers early
   to over 10,000 later.
 

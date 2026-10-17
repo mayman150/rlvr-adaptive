@@ -30,7 +30,7 @@
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
 \item \textbf{An exact theorem.} For right-or-wrong rewards, the average update and the noise of \emph{any} answer-collection rule depend on only four numbers per question. This holds even when the number of answers per question is random.
 \item \textbf{A new measurement.} In Qwen2.5-Math-1.5B, wrong answers have about 2.5 to 3 times larger squared gradients than right ones, while being only 9\% longer. Nobody had measured this. Two 2026 papers assume the opposite.
-\item \textbf{A null result that taught us something.} Using that measurement to scale down wrong answers did not improve training (minus 2.2 and minus 2.7 points in two seeds). Smarter answer-collection rules gave only small gains at equal cost (plus 1.1 points for our optimal rule, plus 2.0 and plus 0.8 for probe-then-fill).
+\item \textbf{A null result that taught us something.} Using that measurement to scale down wrong answers did not improve training (minus 2.2 and minus 2.7 points in two seeds). Smarter answer-collection rules gave small but consistent gains at equal cost: plus 1.1 and plus 3.3 points for our optimal rule on 3{,}382 held-out problems, plus 2.0 and plus 0.8 for probe-then-fill.
 \item \textbf{The main finding.} Rewarding only right answers (PSR) and penalizing only wrong answers (NSR) have \emph{exactly the same average update}. Penalizing wrong answers equals rewarding right answers plus a term whose average is zero, pure noise. Because wrong answers carry larger gradients, NSR is about 6 times noisier (theory about 7, measured 6.4). In our experiments NSR learns more slowly, ends with lower pass@1, and reaches the \emph{same} pass@64 as PSR and Dr.\ GRPO (83.0, 83.2, 83.2 in seed 1). This contradicts the explanation in a NeurIPS 2025 paper that negative samples are special for preserving diversity.
 \item \textbf{Our noise formula holds in the real model.} The measured gradient noise matches the theorem within 0 to 30\% for every rule in both seeds.
 \end{enumerate}
@@ -164,7 +164,7 @@ All experiments use Qwen2.5-Math-1.5B base, 3{,}920 numeric MATH training proble
 \toprule
 \textbf{Run (versus Dr.\ GRPO at 128 answers per step)} & \textbf{Seed 1} & \textbf{Seed 2}\\
 \midrule
-Optimal rule, 128 answers per step (paired, 3{,}382 problems) & $+1.1\pm0.4$ & \status{running}\\
+Optimal rule, 128 answers per step (paired, 3{,}382 problems) & $+1.1\pm0.4$ & $+3.3\pm0.5$\\
 Scaled failures (paired, 3{,}382 problems) & $-0.4\pm0.4$ & $+1.1\pm0.4$\\
 Dr.\ GRPO with 32 answers per step (paired, 3{,}382 problems) & $-4.4\pm0.5$ & not run\\
 Probe-then-fill (MATH-500 greedy, against the pilot's Dr.\ GRPO) & $+2.0$ & $+0.8$\\
@@ -172,7 +172,7 @@ Probe-then-fill (MATH-500 greedy, against the pilot's Dr.\ GRPO) & $+2.0$ & $+0.
 \end{tabular}
 \caption{Accuracy differences in points (standard errors for paired comparisons).}
 \end{table}
-\textbf{Reading.} The optimal rule's gain is real in seed 1 (2.7 standard errors) but below the pre-registered 1.5-point threshold; probe-then-fill is positive in both seeds. Gains are much smaller than the one-step theory predicts, consistent with Adam's square-root effect. Fewer answers per step clearly hurts (32 vs 128: minus 4.4 points).
+\textbf{Reading.} The optimal rule gains in both seeds, $+1.1\pm0.4$ and $+3.3\pm0.5$ (2.7 and 6.6 standard errors), with matched answers (19{,}172 and 19{,}200) and about 1\% more tokens. The strict pre-registered rule (at least 1.5 points in both seeds) is not met because seed 1 falls short. Probe-then-fill is positive in both seeds. Gains are much smaller than the one-step theory predicts, consistent with Adam's square-root effect. Fewer answers per step clearly hurts (32 vs 128: minus 4.4 points).
 
 \subsection{Literature review and change of direction}
 Three literature reviews (verified by hand on the key papers) found:
@@ -249,7 +249,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \item In clean on-policy training, how you score right and wrong answers matters mainly through \emph{noise}, and the noise is predictable from four numbers per question.
 \item Wrong answers dominate the noise, because their gradients are 2.5 to 3 times larger.
 \item Penalizing wrong answers alone does not preserve diversity in our setting; it learns more slowly and reaches the same pass@64.
-\item Smarter answer collection helps a little at equal cost (about 1 to 2 points), much less than one-step theory predicts. Adam's response to noise is the likely reason.
+\item Smarter answer collection helps at equal cost: our optimal rule gains 1.1 and 3.3 points in two seeds, less than one-step theory predicts. Adam's response to noise is the likely reason the gain is smaller.
 \end{enumerate}
 
 \textbf{How confident should we be?}
@@ -285,7 +285,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \midrule
 1 & Scaled failure advantages beat Dr.\ GRPO? & No evidence ($-2.2$, $-2.7$)\\
 2 & Optimal rule and probe-then-fill at matched answers? & Probe $+2.0$, $+0.8$; optimal replaced by 3\\
-3 & Budget ladder, in-training noise, optimal rule at 128 & Optimal $+1.1\pm0.4$ (s1); s2 running\\
+3 & Budget ladder, in-training noise, optimal rule at 128 & Optimal $+1.1\pm0.4$, $+3.3\pm0.5$; rule not met\\
 4 & PSR vs NSR vs Dr.\ GRPO vs W-REINFORCE & Separation not met (s1); s2 nearly done\\
 5 & Equal diversity at equal pass@1 (seeds 3, 4) & Running; so far $-2.2$ and $+1.6$\\
 6 & NSR paper's implementation choices & Running\\
