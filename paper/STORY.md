@@ -63,6 +63,6 @@ times larger gradients, so their advantages should be scaled down by that ratio.
 | Lattice engine, optimal rule, catalog, sensitivity, robustness | Done |
 | F1 / F0 asymmetry (last layer and full model) | Measured |
 | Shape of the gradient signal against difficulty | Done: fades at the extremes (ratio 0.05; flat rejected), optimal rule robust |
-| Training pilot, seed 1 | Baseline 47.5%; scaled arm running (tied at step 50, training reward slightly higher in every window) |
+| Training pilot, seed 1 | Done. Baseline 47.5%, scaled 45.3% (minus 2.2 points, within evaluation noise). Training reward higher for scaled in the first 100 steps, tied afterwards (0.586 both over the last 50 steps) |
 | Training pilot, seed 2 | Baseline 46.7%; scaled arm running |
 | Bibliography author names | Several placeholders to fill before submission |
