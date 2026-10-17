@@ -69,8 +69,16 @@ class Runner:
         items = [t for t in texts for _ in range(n_each)]
         outs = []
         torch.manual_seed(seed)
-        for s in range(0, len(items), self.args.gen_batch):
-            enc = self.tok(items[s:s + self.args.gen_batch], return_tensors="pt", padding=True).to(self.device)
+        budget = self.args.gen_batch * self.args.prefill_tokens
+        s = 0
+        while s < len(items):
+            b = self.args.gen_batch
+            enc = self.tok(items[s:s + b], return_tensors="pt", padding=True)
+            while b > 1 and enc.input_ids.shape[1] * b > budget:
+                b = max(1, budget // enc.input_ids.shape[1])
+                enc = self.tok(items[s:s + b], return_tensors="pt", padding=True)
+            enc = enc.to(self.device)
+            s += b
             kwargs = dict(do_sample=False) if greedy else dict(do_sample=True, temperature=1.0, top_p=1.0, top_k=0)
             with self.autocast:
                 gen = self.model.generate(**enc, max_new_tokens=max_new, eos_token_id=self.stop_ids,
@@ -384,17 +392,20 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             print(f"[{arm}] step {step} pass@k " + " ".join(f"{k}:{v:.3f}" for k, v in curve.items()), flush=True)
             (out_dir / f"{arm}_passk.json").write_text(json.dumps(passk))
         if step == args.steps:
-            if final_set:
-                acc, per = runner.evaluate(final_set, args.seed)
-                print(f"[{arm}] final held-out accuracy {acc:.4f} over {len(final_set)} problems", flush=True)
-                (out_dir / f"{arm}_final_eval.json").write_text(
-                    json.dumps({"step": step, "accuracy": acc, "n": len(final_set), "correct": per}))
             if args.save_model:
                 path = Path(args.save_model.replace("{arm}", arm))
                 bf16 = {k: v.detach().to(torch.bfloat16) for k, v in runner.model.state_dict().items()}
                 runner.model.save_pretrained(path, state_dict=bf16, safe_serialization=True)
                 runner.tok.save_pretrained(path)
                 print(f"[{arm}] saved model to {path}", flush=True)
+                del bf16
+                if runner.device == "cuda":
+                    torch.cuda.empty_cache()
+            if final_set:
+                acc, per = runner.evaluate(final_set, args.seed)
+                print(f"[{arm}] final held-out accuracy {acc:.4f} over {len(final_set)} problems", flush=True)
+                (out_dir / f"{arm}_final_eval.json").write_text(
+                    json.dumps({"step": step, "accuracy": acc, "n": len(final_set), "correct": per}))
             break
         if runner.device == "cuda":
             torch.cuda.reset_peak_memory_stats()
@@ -488,6 +499,8 @@ def main():
     parser.add_argument("--clip", type=float, default=1.0)
     parser.add_argument("--train-batch", type=int, default=4)
     parser.add_argument("--gen-batch", type=int, default=64)
+    parser.add_argument("--prefill-tokens", type=int, default=256,
+                        help="shrink a generation batch so batch x padded prompt length stays under gen-batch x this")
     parser.add_argument("--eval-every", type=int, default=50)
     parser.add_argument("--eval-steps", default=None, help="comma-separated greedy evaluation steps (overrides --eval-every)")
     parser.add_argument("--sample-eval-steps", default="", help="steps at which to measure sampled accuracy")
