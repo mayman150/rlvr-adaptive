@@ -1,0 +1,15 @@
+us-west-2:worth-v2-L128-s1-20261017-060658
+us-west-2:worth-v2-O128-s1-20261017-060705
+us-east-1:worth-v2-S128-s1-20261017-054922
+us-west-2:worth-v2-L128-s2-20261017-062244
+us-east-2:worth-v2-O128-s2-20261017-090022
+us-east-1:worth-v2-S128-s2-20261017-055049
+us-east-1:worth-probe-s2-20261017-082726
+us-east-2:worth-v3-DR-s1-20261017-084258
+us-east-2:worth-v3-PSR-s1-20261017-084302
+us-east-2:worth-v3-NSR-s1-20261017-084307
+us-east-2:worth-v3-WR-s1-20261017-090237
+us-west-2:worth-v3-DR-s2-20261017-090251
+us-west-2:worth-v3-PSR-s2-20261017-090255
+us-east-1:worth-v3-NSR-s2-20261017-090018
+us-east-2:worth-v3-WR-s2-20261017-084325
