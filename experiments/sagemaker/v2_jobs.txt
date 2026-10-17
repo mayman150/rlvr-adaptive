@@ -1,6 +1,6 @@
-us-east-2:worth-v2-L128-s1-20261017-054911
-us-east-2:worth-v2-O128-s1-20261017-054914
-us-east-2:worth-v2-L256-s1-20261017-054918
+us-west-2:worth-v2-L128-s1-20261017-060658
+us-west-2:worth-v2-O128-s1-20261017-060705
+us-east-2:worth-v2-L256-s1-20261017-060853
 us-east-1:worth-v2-S128-s1-20261017-054922
 us-west-2:worth-v2-L64-s1-20261017-055028
 us-west-2:worth-v2-O64-s1-20261017-055032
