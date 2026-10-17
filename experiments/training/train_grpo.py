@@ -16,6 +16,7 @@ Both arms generate exactly the same number of answers.
 """
 
 import argparse
+import gzip
 import json
 import math
 import random
@@ -157,11 +158,16 @@ class Runner:
                 "groups": [[c, group] for c in counts]}
 
     @torch.no_grad()
-    def evaluate(self, eval_set, seed, k=1, greedy=True):
-        """Accuracy over k answers per problem, and the number correct for each problem."""
+    def evaluate(self, eval_set, seed, k=1, greedy=True, samples=None):
+        """Accuracy over k answers per problem, and the number correct for each problem.
+
+        If `samples` is a list, (problem index, response text, reward) is appended for every answer."""
         texts = [build_prompt(self.tok, q["question"]) for q in eval_set]
         outs = self.generate(texts, k, self.args.max_new, seed, greedy=greedy)
+        decoded = [self.tok.decode(r, skip_special_tokens=True) for _, r in outs]
         correct = [reward(self.tok.decode(r), eval_set[i // k]["answer"]) for i, (_, r) in enumerate(outs)]
+        if samples is not None:
+            samples.extend((i // k, t, c) for i, (t, c) in enumerate(zip(decoded, correct)))
         per_problem = [sum(correct[i * k:(i + 1) * k]) for i in range(len(eval_set))]
         return sum(correct) / len(correct), per_problem
 
@@ -431,7 +437,15 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             print(f"[{arm}] step {step} sampled accuracy {acc:.4f} (k={args.sample_k})", flush=True)
             (out_dir / f"{arm}_sampled_eval.json").write_text(json.dumps(sampled))
         if step in passk_steps:
-            _, per = runner.evaluate(eval_set[: args.passk_limit], args.seed + 31 * step, k=args.passk_n, greedy=False)
+            samples = [] if args.save_passk_texts else None
+            _, per = runner.evaluate(eval_set[: args.passk_limit], args.seed + 31 * step, k=args.passk_n,
+                                     greedy=False, samples=samples)
+            if samples is not None:
+                subset = eval_set[: args.passk_limit]
+                with gzip.open(out_dir / f"{arm}_passk_texts_step{step}.json.gz", "wt") as fh:
+                    json.dump({"step": step, "n": args.passk_n,
+                               "problems": [{"question": q["question"], "answer": q["answer"]} for q in subset],
+                               "samples": [{"problem": i, "text": t, "reward": c} for i, t, c in samples]}, fh)
             curve = {k: sum(pass_at_k(args.passk_n, c, k) for c in per) / len(per)
                      for k in (1, 2, 4, 8, 16, 32, 64) if k <= args.passk_n}
             passk.append({"step": step, "n": args.passk_n, "counts": per, "pass_at_k": curve})
@@ -580,6 +594,7 @@ def main():
     parser.add_argument("--passk-steps", default="", help="steps at which to measure pass@k")
     parser.add_argument("--passk-n", type=int, default=64, help="samples per problem for pass@k")
     parser.add_argument("--passk-limit", type=int, default=None, help="evaluate pass@k on the first problems only")
+    parser.add_argument("--save-passk-texts", action="store_true", help="save every pass@k answer text (for CoT judging)")
     parser.add_argument("--save-model", default=None, help="directory for the final model ({arm} is replaced)")
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
     parser.add_argument("--ref-block", type=int, default=4)
