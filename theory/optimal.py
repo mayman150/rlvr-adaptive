@@ -46,7 +46,7 @@ def rule_efficiency(rule, p, w, R):
     return sig * sig / (cost * m2), cost
 
 
-def solve(p, w, R, n_max=32, theta=0.0, force_until=None):
+def solve(p, w, R, n_max=32, theta=0.0, force_until=None, stop_allowed=None):
     """Value of the best rule for a given theta; returns (value, policy)."""
     G2, F0, F1 = model(p, R)
     kap1, kap0 = 1 / p, -1 / (1 - p)
@@ -76,7 +76,8 @@ def solve(p, w, R, n_max=32, theta=0.0, force_until=None):
                 V[(n0, n1)], policy[(n0, n1)] = stop_value, stop_entry
                 continue
             cont = -theta * mass.sum() + V[(n0, n1 + 1)] + V[(n0 + 1, n1)]
-            must_continue = force_until is not None and n < force_until
+            must_continue = (force_until is not None and n < force_until) or \
+                (stop_allowed is not None and n > 0 and not stop_allowed(n))
             if must_continue or cont > stop_value:
                 V[(n0, n1)], policy[(n0, n1)] = cont, ("continue", 0.0, 0.0)
             else:
@@ -84,18 +85,18 @@ def solve(p, w, R, n_max=32, theta=0.0, force_until=None):
     return V[(0, 0)], policy
 
 
-def optimal_efficiency(p, w, R, n_max=32, force_until=None):
+def optimal_efficiency(p, w, R, n_max=32, force_until=None, stop_allowed=None):
     """Largest Eff = 2 theta with value(theta) = 0, by bisection."""
     lo, hi = 0.0, 1.0
-    while solve(p, w, R, n_max, hi, force_until)[0] > 0:
+    while solve(p, w, R, n_max, hi, force_until, stop_allowed)[0] > 0:
         hi *= 2
     for _ in range(60):
         mid = (lo + hi) / 2
-        if solve(p, w, R, n_max, mid, force_until)[0] > 0:
+        if solve(p, w, R, n_max, mid, force_until, stop_allowed)[0] > 0:
             lo = mid
         else:
             hi = mid
-    value, policy = solve(p, w, R, n_max, lo, force_until)
+    value, policy = solve(p, w, R, n_max, lo, force_until, stop_allowed)
     return 2 * lo, policy
 
 

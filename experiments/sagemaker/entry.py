@@ -12,7 +12,8 @@ HERE = Path(__file__).resolve().parent
 def main():
     parser = argparse.ArgumentParser()
     for name, default in (("seed", "1"), ("steps", "150"), ("prompts-per-step", "16"), ("group", "8"),
-                          ("max-new", "512"), ("lr", "1e-6"), ("eval-every", "50")):
+                          ("max-new", "512"), ("lr", "1e-6"), ("eval-every", "50"),
+                          ("arms", "baseline,scaled")):
         parser.add_argument(f"--{name}", default=default)
     args, _ = parser.parse_known_args()
     command = [sys.executable, str(HERE / "training" / "train_grpo.py"), "--device", "cuda",

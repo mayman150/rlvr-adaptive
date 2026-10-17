@@ -15,7 +15,7 @@ AWS="aws --profile ${PROFILE} --region ${REGION}"
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 EXPERIMENTS=$(dirname "${HERE}")
-JOB=worth-train-s${SEED:-1}-$(date -u +%Y%m%d-%H%M%S)
+JOB=worth-${ARMS_TAG:-train}-s${SEED:-1}-$(date -u +%Y%m%d-%H%M%S)
 STAGE=$(mktemp -d)
 trap 'rm -rf "${STAGE}"' EXIT
 
@@ -39,7 +39,8 @@ ${AWS} sagemaker create-training-job --training-job-name "${JOB}" \
     \"sagemaker_program\": \"entry.py\",
     \"sagemaker_submit_directory\": \"s3://${BUCKET}/code/${JOB}/sourcedir.tar.gz\",
     \"sagemaker_region\": \"${REGION}\",
-    \"seed\": \"${SEED:-1}\"
+    \"seed\": \"${SEED:-1}\",
+    \"arms\": \"${ARMS:-baseline,scaled}\"
   }" \
   --resource-config "InstanceType=${INSTANCE},InstanceCount=1,VolumeSizeInGB=60" \
   --output-data-config "S3OutputPath=s3://${BUCKET}/output/" \
