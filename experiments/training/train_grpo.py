@@ -385,7 +385,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             print(f"[{arm}] step {step} sampled accuracy {acc:.4f} (k={args.sample_k})", flush=True)
             (out_dir / f"{arm}_sampled_eval.json").write_text(json.dumps(sampled))
         if step in passk_steps:
-            _, per = runner.evaluate(eval_set, args.seed + 31 * step, k=args.passk_n, greedy=False)
+            _, per = runner.evaluate(eval_set[: args.passk_limit], args.seed + 31 * step, k=args.passk_n, greedy=False)
             curve = {k: sum(pass_at_k(args.passk_n, c, k) for c in per) / len(per)
                      for k in (1, 2, 4, 8, 16, 32, 64) if k <= args.passk_n}
             passk.append({"step": step, "n": args.passk_n, "counts": per, "pass_at_k": curve})
@@ -511,6 +511,7 @@ def main():
     parser.add_argument("--entropy-every", type=int, default=0, help="probe entropy on first-block answers every k steps")
     parser.add_argument("--passk-steps", default="", help="steps at which to measure pass@k")
     parser.add_argument("--passk-n", type=int, default=64, help="samples per problem for pass@k")
+    parser.add_argument("--passk-limit", type=int, default=None, help="evaluate pass@k on the first problems only")
     parser.add_argument("--save-model", default=None, help="directory for the final model ({arm} is replaced)")
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
     parser.add_argument("--ref-block", type=int, default=4)
