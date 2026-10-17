@@ -32,7 +32,7 @@ times larger gradients, so their advantages should be scaled down by that ratio.
    gradient signal fades for very easy and very hard prompts, which makes the optimal
    rule robust.
 5. **Prediction and test.** Scale failure advantages by F1/F0: predicted 1.12 to 1.56
-   times efficiency in 11 of 12 settings. Pre-registered two-seed pilot: no accuracy gain.
+   times efficiency in 11 of 12 settings. Pre-registered two-seed pilot: no evidence (minus 2.2 and minus 2.7 points).
 6. **Why a better rule can be worth nothing (new, October 17).** Without orthogonal
    prompts, a rule's one-step progress at B answers per step is
    <grad J, mu>^2 / (2L (s + nV/B)). The critical budget B* = nV/s (the rule's gradient
@@ -78,7 +78,7 @@ about rollouts is worth anything at all.*
 | F1 / F0 asymmetry (last layer and full model) | Measured |
 | Shape of the gradient signal against difficulty | Done: fades at the extremes (ratio 0.05; flat rejected), optimal rule robust |
 | Training pilot, seed 1 | Done. Baseline 47.5%, scaled 45.3% (minus 2.2 points, within evaluation noise). Training reward higher for scaled in the first 100 steps, tied afterwards (0.586 both over the last 50 steps) |
-| Training pilot, seed 2 | Baseline 46.7%; scaled arm running (41.2 vs 40.9 at step 50, 42.9 vs 44.2 at step 100) |
+| Training pilot, seed 2 | Done. Baseline 46.7%, scaled 44.0% (minus 2.7). Pre-registered verdict over both seeds: NO EVIDENCE (mean minus 2.5 points) |
 | Critical-budget theorem (no orthogonality) and Adam reading | Written (theory/THEORY.md, paper Section 4) |
 | Budget ladder and in-training diagnostics, 14 runs | Launched October 17; 3 training, the rest waiting for GPU capacity |
 | Bibliography author names | Several placeholders to fill before submission |
