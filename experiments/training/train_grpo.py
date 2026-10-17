@@ -112,6 +112,23 @@ class Runner:
                     entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return torch.stack(sums)
 
+    def logprob_tokens(self, pairs):
+        """Per-token response log-probabilities for each (prompt_ids, response_ids) pair."""
+        seqs = [torch.cat([p, r]) for p, r in pairs]
+        width = max(len(s) for s in seqs)
+        ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
+        mask = torch.zeros_like(ids)
+        for i, ((p, r), s) in enumerate(zip(pairs, seqs)):
+            ids[i, : len(s)] = s
+            mask[i, : len(s)] = 1
+        with self.autocast:
+            logits = self.model(input_ids=ids, attention_mask=mask).logits
+        out = []
+        for i, (p, r) in enumerate(pairs):
+            rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
+            out.append(rows.gather(1, r[:, None]).squeeze(1) - torch.logsumexp(rows, dim=-1))
+        return out
+
     def grad_snapshot(self):
         return [p.grad.detach().to("cpu", copy=True) if p.grad is not None else torch.zeros(p.shape)
                 for p in self.params]
@@ -275,6 +292,30 @@ def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None):
         (-(wt * lp).sum()).backward()
 
 
+def backward_surrogate(runner, args, answers, idx, adv, old_lp, norm):
+    """PPO-style clipped surrogate over tokens; with old_lp from the current policy (ratio 1)
+    and no length normalization this equals the sequence-sum REINFORCE loss."""
+    for s in range(0, len(idx), args.train_batch):
+        chunk = idx[s:s + args.train_batch]
+        new = runner.logprob_tokens([answers[k] for k in chunk])
+        total = 0.0
+        for k, lp in zip(chunk, new):
+            ratio = torch.exp(lp - old_lp[k])
+            a = adv[k]
+            surr = torch.minimum(ratio * a, torch.clamp(ratio, 1 - args.clip_ratio, 1 + args.clip_ratio) * a)
+            term = surr.mean() * args.max_new if args.length_norm else surr.sum()
+            total = total + term
+        (-total / norm).backward()
+
+
+@torch.no_grad()
+def old_logprobs(runner, args, answers):
+    out = []
+    for s in range(0, len(answers), args.train_batch):
+        out.extend(t.detach() for t in runner.logprob_tokens(answers[s:s + args.train_batch]))
+    return out
+
+
 def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy):
     """Backward pass with split-half gradient statistics.
 
@@ -372,6 +413,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                   else set(range(0, args.steps + 1, args.eval_every)))
     sample_steps = {int(s) for s in args.sample_eval_steps.split(",") if s}
     passk_steps = {int(s) for s in args.passk_steps.split(",") if s}
+    surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
+    assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
+    assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
     passk = []
     for step in range(args.steps + 1):
         if step in eval_steps:
@@ -412,17 +456,26 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         start = time.time()
         extra = {}
         if arm in FIXED_ARMS:
-            batch = [problems[order[(step * args.prompts_per_step + j) % len(order)]] for j in range(args.prompts_per_step)]
-            texts = [build_prompt(runner.tok, q["question"]) for q in batch]
-            answers = runner.generate(texts, args.group, args.max_new, args.seed * 100003 + step)
-            rewards = [reward(runner.tok.decode(r), batch[k // args.group]["answer"]) for k, (_, r) in enumerate(answers)]
+            pps, G = args.prompts_per_step, args.group
+            if step % args.reuse == 0:
+                n_pool = pps * args.reuse
+                batch = [problems[order[(step * pps + j) % len(order)]] for j in range(n_pool)]
+                texts = [build_prompt(runner.tok, q["question"]) for q in batch]
+                pool_answers = runner.generate(texts, G, args.max_new, args.seed * 100003 + step)
+                pool_rewards = [reward(runner.tok.decode(r), batch[k // G]["answer"]) for k, (_, r) in enumerate(pool_answers)]
+                pool_old = old_logprobs(runner, args, pool_answers) if surrogate else None
+            j0 = (step % args.reuse) * pps * G
+            answers = pool_answers[j0:j0 + pps * G]
+            rewards = pool_rewards[j0:j0 + pps * G]
+            old_lp = pool_old[j0:j0 + pps * G] if surrogate else None
             adv = []
-            for j in range(args.prompts_per_step):
-                g = rewards[j * args.group:(j + 1) * args.group]
+            for j in range(pps):
+                g = rewards[j * G:(j + 1) * G]
                 m = sum(g) / len(g)
                 for r in g:
                     adv.append(fixed_advantage(arm, r, m, w, args.pos_weight))
-            groups = [[sum(rewards[j * args.group:(j + 1) * args.group]), args.group] for j in range(args.prompts_per_step)]
+            groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
+            extra["stale"] = step % args.reuse
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)
@@ -447,7 +500,13 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         opt.zero_grad(set_to_none=True)
         owner = [j for j, (_, n) in enumerate(groups) for _ in range(n)]
         entropy = []
-        if args.diagnostics:
+        if surrogate:
+            live = [k for k, a in enumerate(adv) if a != 0]
+            step_norm = (len(live) * args.max_new if args.norm_selected else norm)
+            if live:
+                backward_surrogate(runner, args, answers, live, adv, old_lp, step_norm)
+            n_live = len(live)
+        elif args.diagnostics:
             stats, n_live = diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy)
             extra["split"] = stats
         else:
@@ -508,6 +567,11 @@ def main():
     parser.add_argument("--final-eval", default=None, help="larger held-out set, evaluated greedily after the last step")
     parser.add_argument("--final-limit", type=int, default=None)
     parser.add_argument("--pos-weight", type=float, default=0.1, help="weight of correct answers in wreinforce")
+    parser.add_argument("--reuse", type=int, default=1, help="updates per rollout batch (stale samples after the first)")
+    parser.add_argument("--clip-ratio", type=float, default=0.2, help="PPO clip ratio for the surrogate loss")
+    parser.add_argument("--length-norm", action="store_true", help="average each answer's loss over its tokens")
+    parser.add_argument("--norm-selected", action="store_true",
+                        help="normalize the loss by the number of answers with nonzero advantage in the update")
     parser.add_argument("--entropy-every", type=int, default=0, help="probe entropy on first-block answers every k steps")
     parser.add_argument("--passk-steps", default="", help="steps at which to measure pass@k")
     parser.add_argument("--passk-n", type=int, default=64, help="samples per problem for pass@k")

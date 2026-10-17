@@ -1,0 +1,46 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "common": [
+  "--seed",
+  "1",
+  "--steps",
+  "150",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "192",
+  "--reuse",
+  "4",
+  "--clip-ratio",
+  "0.2",
+  "--length-norm",
+  "--norm-selected",
+  "--eval-steps",
+  "0,25,50,75,100,150",
+  "--passk-steps",
+  "25,50,75,100,150",
+  "--passk-n",
+  "32",
+  "--passk-limit",
+  "128",
+  "--entropy-every",
+  "5"
+ ],
+ "gpus": [
+  [
+   [
+    "PSRv",
+    [
+     "--arms",
+     "psr"
+    ]
+   ]
+  ]
+ ]
+}
