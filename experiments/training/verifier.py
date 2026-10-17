@@ -33,7 +33,10 @@ def as_number(s):
     if not m:
         return None
     value = Fraction(m.group(1))
-    return value / Fraction(m.group(2)) if m.group(2) else value
+    if not m.group(2):
+        return value
+    denominator = Fraction(m.group(2))
+    return value / denominator if denominator != 0 else None
 
 
 def reward(response, reference):
@@ -58,6 +61,8 @@ if __name__ == "__main__":
         ("\\boxed{x=5}", "5", 1),
         ("\\boxed{5.}", "5", 1),
         ("\\boxed{\\text{34}}", "34", 1),
+        ("\\boxed{1/0}", "5", 0),
+        ("\\boxed{\\frac{3}{0}}", "5", 0),
     ]
     for text, ref, expected in cases:
         assert reward(text, ref) == expected, (text, ref, expected)
