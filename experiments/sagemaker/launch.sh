@@ -21,6 +21,9 @@ trap 'rm -rf "${STAGE}"' EXIT
 
 cp "${HERE}/entry.py" "${HERE}/requirements.txt" "${STAGE}/"
 rsync -a --exclude results --exclude __pycache__ "${EXPERIMENTS}/training" "${STAGE}/"
+if [ -n "${PLAN:-}" ]; then
+  cp "${PLAN}" "${STAGE}/plan.json"
+fi
 tar -czf "${STAGE}.tar.gz" -C "${STAGE}" .
 ${AWS} s3 cp "${STAGE}.tar.gz" "s3://${BUCKET}/code/${JOB}/sourcedir.tar.gz"
 rm -f "${STAGE}.tar.gz"
@@ -44,6 +47,7 @@ ${AWS} sagemaker create-training-job --training-job-name "${JOB}" \
   }" \
   --resource-config "InstanceType=${INSTANCE},InstanceCount=1,VolumeSizeInGB=60" \
   --output-data-config "S3OutputPath=s3://${BUCKET}/output/" \
+  --checkpoint-config "S3Uri=s3://${BUCKET}/checkpoints/${JOB}/,LocalPath=/opt/ml/checkpoints" \
   ${SPOT_FLAGS[@]+"${SPOT_FLAGS[@]}"} \
   --tags Key=project,Value=stop-rl
 

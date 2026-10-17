@@ -36,6 +36,8 @@ STOP_TOKENS = ("<|endoftext|>", "<|im_end|>")
 
 
 def build_prompt(tok, question):
+    if tok.chat_template is None:
+        return f"{SYSTEM}\n\n{question}\n\n"
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": question}]
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
@@ -77,8 +79,10 @@ class Runner:
                 outs.append((ids[mask.bool()], self.trim(row[prompt_len:])))
         return outs
 
-    def logprob_sum(self, pairs):
-        """Sum of response log-probabilities for each (prompt_ids, response_ids) pair."""
+    def logprob_sum(self, pairs, entropy=None):
+        """Sum of response log-probabilities for each (prompt_ids, response_ids) pair.
+
+        If `entropy` is a list, the summed token entropies of each response are appended to it."""
         seqs = [torch.cat([p, r]) for p, r in pairs]
         width = max(len(s) for s in seqs)
         ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
@@ -91,8 +95,17 @@ class Runner:
         sums = []
         for i, (p, r) in enumerate(pairs):
             rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
-            sums.append((rows.gather(1, r[:, None]).squeeze(1) - torch.logsumexp(rows, dim=-1)).sum())
+            lse = torch.logsumexp(rows, dim=-1)
+            sums.append((rows.gather(1, r[:, None]).squeeze(1) - lse).sum())
+            if entropy is not None:
+                with torch.no_grad():
+                    z = rows.detach()
+                    entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return torch.stack(sums)
+
+    def grad_snapshot(self):
+        return [p.grad.detach().to("cpu", copy=True) if p.grad is not None else torch.zeros(p.shape)
+                for p in self.params]
 
     def grad_sq_norm(self):
         return float(sum((p.grad.float() ** 2).sum() for p in self.params if p.grad is not None))
@@ -118,11 +131,13 @@ class Runner:
                 "groups": [[c, group] for c in counts]}
 
     @torch.no_grad()
-    def evaluate(self, eval_set, seed):
+    def evaluate(self, eval_set, seed, k=1, greedy=True):
+        """Accuracy over k answers per problem, and the number correct for each problem."""
         texts = [build_prompt(self.tok, q["question"]) for q in eval_set]
-        outs = self.generate(texts, 1, self.args.max_new, seed, greedy=True)
-        correct = [reward(self.tok.decode(r), q["answer"]) for (_, r), q in zip(outs, eval_set)]
-        return sum(correct) / len(correct)
+        outs = self.generate(texts, k, self.args.max_new, seed, greedy=greedy)
+        correct = [reward(self.tok.decode(r), eval_set[i // k]["answer"]) for i, (_, r) in enumerate(outs)]
+        per_problem = [sum(correct[i * k:(i + 1) * k]) for i in range(len(eval_set))]
+        return sum(correct) / len(correct), per_problem
 
 
 def adaptive_collect(runner, args, arm, batch, decide, seed):
@@ -188,25 +203,102 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
-def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None):
+def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None):
+    """Accumulate the gradient of -sum_k weights[k] log pi(answer_k) / norm into .grad."""
+    for s in range(0, len(idx), args.train_batch):
+        chunk = idx[s:s + args.train_batch]
+        lp = runner.logprob_sum([answers[k] for k in chunk], entropy)
+        wt = torch.tensor([weights[k] for k in chunk], device=runner.device) / norm
+        (-(wt * lp).sum()).backward()
+
+
+def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy):
+    """Backward pass with split-half gradient statistics.
+
+    Prompts are split at random into halves A and B. g_A and g_B are the arm's gradient
+    from each half; ref_B is the Dr. GRPO estimator on the first `ref_block` answers of
+    each prompt in B, an unbiased direction for the population gradient that is
+    independent of g_A. Returns statistics; .grad holds g_A + g_B, as without diagnostics."""
+    prompts = sorted(set(owner))
+    perm = prompts[:]
+    random.Random(args.seed * 1000003 + step).shuffle(perm)
+    half_a = set(perm[: len(perm) // 2])
+    first = {}
+    for k, j in enumerate(owner):
+        first.setdefault(j, [])
+        if len(first[j]) < args.ref_block:
+            first[j].append(k)
+    ref_w = {}
+    for j in prompts:
+        if j in half_a:
+            continue
+        m = sum(rewards[k] for k in first[j]) / len(first[j])
+        for k in first[j]:
+            if rewards[k] != m:
+                ref_w[k] = rewards[k] - m
+    runner.model.zero_grad(set_to_none=True)
+    backward_weighted(runner, args, answers, sorted(ref_w), ref_w, norm)
+    ref = runner.grad_snapshot()
+    runner.model.zero_grad(set_to_none=True)
+    live_a = [k for k, a in enumerate(adv) if a != 0 and owner[k] in half_a]
+    live_b = [k for k, a in enumerate(adv) if a != 0 and owner[k] not in half_a]
+    backward_weighted(runner, args, answers, live_a, adv, norm, entropy)
+    ga = runner.grad_snapshot()
+    backward_weighted(runner, args, answers, live_b, adv, norm, entropy)
+    stats = dict.fromkeys(("aa", "bb", "ab", "ar", "br", "rr"), 0.0)
+    with torch.no_grad():
+        for p, a_cpu, r_cpu in zip(runner.params, ga, ref):
+            g = p.grad if p.grad is not None else torch.zeros_like(p)
+            a = a_cpu.to(runner.device).flatten()
+            r = r_cpu.to(runner.device).flatten()
+            b = g.flatten() - a
+            stats["aa"] += float(torch.dot(a, a))
+            stats["bb"] += float(torch.dot(b, b))
+            stats["ab"] += float(torch.dot(a, b))
+            stats["ar"] += float(torch.dot(a, r))
+            stats["br"] += float(torch.dot(b, r))
+            stats["rr"] += float(torch.dot(r, r))
+    stats.update({"prompts_a": len(half_a), "prompts_b": len(prompts) - len(half_a),
+                  "answers_a": sum(1 for j in owner if j in half_a),
+                  "answers_b": sum(1 for j in owner if j not in half_a),
+                  "ref_answers": len(ref_w), "norm": norm})
+    return stats, len(live_a) + len(live_b)
+
+
+def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=None):
     runner = Runner(args)
     opt = torch.optim.AdamW(runner.params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)
     rng = random.Random(args.seed)
     order = list(range(len(problems)))
     rng.shuffle(order)
-    log, evals = [], []
+    log, evals, sampled = [], [], []
     norm = args.budget * args.max_new
     calib_groups = (calib or {}).get("groups") or [[1, 8]]
     ratio = (calib["F0"] / calib["F1"]) if calib and calib.get("F1") else 1.0 / w
     spent, prompts_done, pointer, mean_n, recent = 0, 0, 0, float(args.group), []
+    eval_steps = ({int(s) for s in args.eval_steps.split(",")} if args.eval_steps
+                  else set(range(0, args.steps + 1, args.eval_every)))
+    sample_steps = {int(s) for s in args.sample_eval_steps.split(",") if s}
     for step in range(args.steps + 1):
-        if step % args.eval_every == 0:
-            acc = runner.evaluate(eval_set, args.seed)
-            evals.append({"step": step, "accuracy": acc})
+        if step in eval_steps:
+            acc, per = runner.evaluate(eval_set, args.seed)
+            evals.append({"step": step, "accuracy": acc, "correct": per})
             print(f"[{arm}] step {step} eval accuracy {acc:.4f}", flush=True)
-            (out_dir / f"{arm}_eval.json").write_text(json.dumps(evals, indent=1))
+            (out_dir / f"{arm}_eval.json").write_text(json.dumps(evals))
+        if step in sample_steps:
+            acc, per = runner.evaluate(eval_set, args.seed + 17 * step, k=args.sample_k, greedy=False)
+            sampled.append({"step": step, "accuracy": acc, "k": args.sample_k, "correct": per})
+            print(f"[{arm}] step {step} sampled accuracy {acc:.4f} (k={args.sample_k})", flush=True)
+            (out_dir / f"{arm}_sampled_eval.json").write_text(json.dumps(sampled))
         if step == args.steps:
+            if final_set:
+                acc, per = runner.evaluate(final_set, args.seed)
+                print(f"[{arm}] final held-out accuracy {acc:.4f} over {len(final_set)} problems", flush=True)
+                (out_dir / f"{arm}_final_eval.json").write_text(
+                    json.dumps({"step": step, "accuracy": acc, "n": len(final_set), "correct": per}))
             break
+        if runner.device == "cuda":
+            torch.cuda.reset_peak_memory_stats()
         start = time.time()
         extra = {}
         if arm in ("baseline", "scaled"):
@@ -244,20 +336,27 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None):
                           "cumulative_answers": spent, "abandoned": abandoned})
         runner.model.train()
         opt.zero_grad(set_to_none=True)
-        live = [k for k, a in enumerate(adv) if a != 0]
-        for s in range(0, len(live), args.train_batch):
-            idx = live[s:s + args.train_batch]
-            lp = runner.logprob_sum([answers[k] for k in idx])
-            weights = torch.tensor([adv[k] for k in idx], device=runner.device) / norm
-            (-(weights * lp).sum()).backward()
-        grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if live else 0.0
-        if live:
+        owner = [j for j, (_, n) in enumerate(groups) for _ in range(n)]
+        entropy = []
+        if args.diagnostics:
+            stats, n_live = diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy)
+            extra["split"] = stats
+        else:
+            live = [k for k, a in enumerate(adv) if a != 0]
+            backward_weighted(runner, args, answers, live, adv, norm, entropy)
+            n_live = len(live)
+        live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
+        grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
+        if n_live:
             opt.step()
         mixed = sum(0 < k < n for k, n in groups)
         rec = {"step": step, "mean_reward": sum(rewards) / len(rewards), "mixed_groups": mixed,
                "groups": len(groups), "grad_norm": grad_norm, "answers": len(answers),
                "tokens": sum(len(r) for _, r in answers),
                "mean_length": sum(len(r) for _, r in answers) / len(answers),
+               "entropy": sum(entropy) / live_tokens if live_tokens else None,
+               "group_counts": groups,
+               "peak_gb": torch.cuda.max_memory_allocated() / 1e9 if runner.device == "cuda" else None,
                "seconds": time.time() - start, **extra}
         log.append(rec)
         print(f"[{arm}] step {step} reward {rec['mean_reward']:.3f} mixed {mixed}/{len(groups)} answers {len(answers)} "
@@ -283,6 +382,13 @@ def main():
     parser.add_argument("--train-batch", type=int, default=4)
     parser.add_argument("--gen-batch", type=int, default=64)
     parser.add_argument("--eval-every", type=int, default=50)
+    parser.add_argument("--eval-steps", default=None, help="comma-separated greedy evaluation steps (overrides --eval-every)")
+    parser.add_argument("--sample-eval-steps", default="", help="steps at which to measure sampled accuracy")
+    parser.add_argument("--sample-k", type=int, default=4, help="answers per problem for sampled accuracy")
+    parser.add_argument("--final-eval", default=None, help="larger held-out set, evaluated greedily after the last step")
+    parser.add_argument("--final-limit", type=int, default=None)
+    parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
+    parser.add_argument("--ref-block", type=int, default=4)
     parser.add_argument("--eval-limit", type=int, default=None)
     parser.add_argument("--calib-prompts", type=int, default=16)
     parser.add_argument("--budget", type=int, default=None, help="answers per step; default prompts x group")
@@ -294,7 +400,9 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     parser.add_argument("--out", default=str(HERE / "results"))
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    if unknown:
+        print("ignoring unknown arguments:", unknown, flush=True)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -302,6 +410,10 @@ def main():
         args.budget = args.prompts_per_step * args.group
     problems = json.loads(Path(args.train).read_text())
     eval_set = json.loads(Path(args.eval).read_text())[: args.eval_limit]
+    final_set = None
+    if args.final_eval:
+        path = Path(args.final_eval) if Path(args.final_eval).exists() else HERE / "data" / args.final_eval
+        final_set = json.loads(path.read_text())[: args.final_limit]
     random.Random(args.seed).shuffle(problems)
 
     calib = None
@@ -318,7 +430,7 @@ def main():
         w = args.w
     (out_dir / "config.json").write_text(json.dumps({**vars(args), "w_used": w}, indent=1))
     for arm in args.arms.split(","):
-        train_arm(args, arm, w, problems[: -args.calib_prompts], eval_set, out_dir, calib)
+        train_arm(args, arm, w, problems[: -args.calib_prompts], eval_set, out_dir, calib, final_set)
     print("done", flush=True)
 
 

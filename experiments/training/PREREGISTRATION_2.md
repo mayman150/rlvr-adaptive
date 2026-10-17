@@ -50,3 +50,10 @@ exploration, Adam's preconditioning, and the change of difficulty during trainin
 outside the theory, and the table is re-solved to track the last of these. Training
 reward is not directly comparable across arms, because they spend their answers on
 different prompts.
+
+## Amendment (October 16, 2026, before any optimal-arm run started)
+
+The two queued jobs never obtained an instance. They were stopped and the optimal arm is
+run as O128 (and O64) in Pre-registration 3, with the same arm definition and added
+measurements; the baseline for the primary comparison becomes the re-run L128 under the
+same measurements, and the pilot baselines remain a secondary reference.
