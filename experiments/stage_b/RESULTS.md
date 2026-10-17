@@ -24,3 +24,17 @@ size and needs many more answers per prompt or a tail-robust estimator.
 remain open. The advantage fix tested in training does not depend on that shape: in the
 high-noise regime the optimal failure-to-success advantage ratio on mixed groups is about
 F1 / F0 whatever the shape, and F1 / F0 is the number measured reliably.
+
+## Shape of |grad p|^2 against difficulty (24 prompts, 96 answers each, MLP block)
+
+Reproduce: `python analyze_shape.py results_shape/summary_all.json` (prompts 0 to 9 in
+`results_shape/`, 10 to 23 in `results_shape_part2/`; the first run was stopped by Claude
+Code for low memory and resumed with smaller generation batches).
+
+Using the unbiased pair statistic with delete-one-answer jackknife errors, prompts with
+success rate at most 0.15 or at least 0.85 give a pooled 0.73 +/- 0.60 and prompts between
+0.3 and 0.7 give 15.5 +/- 5.4. The ratio of 0.05 rejects a flat shape (predicted 1) and
+disfavors p(1-p) (0.36); the weighted fit prefers p^2 (1-p)^2 (chi-square per prompt 0.35,
+against 0.54, 0.77, and 0.90 for zero signal). The median-of-means estimates are too noisy at
+12 answers per group to be informative and are not used. Conclusion: the signal fades for
+very easy and very hard prompts, the regime in which the optimal lookup-table rule is robust.

@@ -25,10 +25,12 @@ times larger gradients, so their advantages should be scaled down by that ratio.
    depend on four numbers per prompt.
 3. **Consequences.** Exact efficiency for every rule: DAPO filtering equals the fixed
    group it filters; sample-until-correct is worst; probe-then-fill is best in use; the
-   optimal rule beats it by 1.15 to 4 times depending on how signal varies with
-   difficulty.
+   optimal rule beats it by 1.6 to 2.2 times at the measured signal shape and gradient
+   ratio.
 4. **Measurement.** In Qwen2.5-Math-1.5B, wrong answers have 2.5 to 2.8 times larger
-   squared gradients (last layer and full model), while being only 9% longer.
+   squared gradients (last layer and full model), while being only 9% longer, and the
+   gradient signal fades for very easy and very hard prompts, which makes the optimal
+   rule robust.
 5. **Prediction and test.** Scale failure advantages by F1/F0: predicted 1.12 to 1.56
    times efficiency in 11 of 12 settings. Pre-registered two-seed training test.
 
@@ -60,7 +62,7 @@ times larger gradients, so their advantages should be scaled down by that ratio.
 | Two-moment theorem and proof | Done, exactly verified |
 | Lattice engine, optimal rule, catalog, sensitivity, robustness | Done |
 | F1 / F0 asymmetry (last layer and full model) | Measured |
-| Shape of the gradient signal against difficulty | Running (10 of 24 prompts) |
-| Training pilot, seed 1 | Running (baseline arm done by about 17:50, scaled arm by about 21:00) |
-| Training pilot, seed 2 | Running (expected about 23:15) |
+| Shape of the gradient signal against difficulty | Done: fades at the extremes (ratio 0.05; flat rejected), optimal rule robust |
+| Training pilot, seed 1 | Baseline 47.5%; scaled arm running (tied at step 50, training reward slightly higher in every window) |
+| Training pilot, seed 2 | Baseline 46.7%; scaled arm running |
 | Bibliography author names | Several placeholders to fill before submission |
