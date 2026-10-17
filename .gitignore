@@ -4,3 +4,4 @@ __pycache__/
 data/raw/
 data/raw_eval/
 experiments/training/results/*/training/*.bin
+.DS_Store
