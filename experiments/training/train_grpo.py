@@ -229,10 +229,10 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
-FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce")
+FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift")
 
 
-def fixed_advantage(arm, r, m, w, pos_weight):
+def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0):
     """Advantage of one answer with reward r in a fixed group with mean reward m.
 
     psr rewards only correct answers, nsr penalizes only wrong ones, and wreinforce
@@ -244,6 +244,8 @@ def fixed_advantage(arm, r, m, w, pos_weight):
         return float(r) - 1.0
     if arm == "wreinforce":
         return pos_weight if r else -1.0
+    if arm == "shift":
+        return float(r) - shift
     a = r - m
     return a * w if (arm == "scaled" and r == 0) else a
 
@@ -473,7 +475,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 g = rewards[j * G:(j + 1) * G]
                 m = sum(g) / len(g)
                 for r in g:
-                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight))
+                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift))
             groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
         else:
@@ -567,6 +569,8 @@ def main():
     parser.add_argument("--final-eval", default=None, help="larger held-out set, evaluated greedily after the last step")
     parser.add_argument("--final-limit", type=int, default=None)
     parser.add_argument("--pos-weight", type=float, default=0.1, help="weight of correct answers in wreinforce")
+    parser.add_argument("--shift", type=float, default=0.0,
+                        help="constant baseline b for the shift arm: advantage r - b (0 is psr, 1 is nsr)")
     parser.add_argument("--reuse", type=int, default=1, help="updates per rollout batch (stale samples after the first)")
     parser.add_argument("--clip-ratio", type=float, default=0.2, help="PPO clip ratio for the surrogate loss")
     parser.add_argument("--length-norm", action="store_true", help="average each answer's loss over its tokens")
