@@ -38,8 +38,8 @@ measured on Qwen; only the difficulty prior and F0 / F1 are measured on OLMo.
   300; per step: first-block training accuracy (an unbiased estimate on fresh questions for
   every arm), boxed-answer rate, truncation rate, entropy probe every 5 steps; split-half
   noise diagnostics in PSR and NSR; bf16 checkpoints at steps 50, 100, ..., 300.
-- Evaluation jobs (which fail if any expected checkpoint is missing): on the first **256 of
-  a fixed set of held-out MATH test problems** (none in MATH-500 or training;
+- Evaluation jobs (which fail if any expected checkpoint is missing): on a fixed, seeded, subject-stratified set of **256 held-out MATH test problems**
+  (none in MATH-500 or training; `data/eval_frontier_256.json`, drawn proportionally from
   `data/eval_frontier_1024.json`; 256 rather than 1,024 because the smoke test measured
   about 2 answers per second at 1,024 tokens, and a bootstrap on earlier data gives a 90%
   half-width near 1 point at this size), 32 samples per problem at temperature 1 for
@@ -61,7 +61,9 @@ measured on Qwen; only the difficulty prior and F0 / F1 are measured on OLMo.
 3. **One curve (primary).** For a run R against a reference P of the same seed: at each of
    R's checkpoints after step 0 whose pass@1 lies inside P's pass@1 range, interpolate P's
    pass@16 linearly at R's pass@1 along P's trajectory (base model, then steps 50 to 300);
-   take the mean difference over those checkpoints. The qualifying checkpoints are fixed
+   take the mean difference over those checkpoints. Every expected evaluation (steps 0 and
+   50 to 300 for both runs and both seeds) must be present, otherwise the verdict is
+   **incomplete evaluation**. The qualifying checkpoints are fixed
    from the full data. If fewer than two qualify in either seed, the comparison's verdict is
    **insufficient overlap** (no seed is dropped). The pooled estimate is the mean over the
    two seeds. Uncertainty: bootstrap the 256 problems with replacement (the same draw for
@@ -80,7 +82,7 @@ measured on Qwen; only the difficulty prior and F0 / F1 are measured on OLMo.
    interval over problems. **Faster** if the estimate is at least +1 point and the interval
    excludes 0; **slower** if the interval lies below 0; otherwise inconclusive. If either
    seed's total generated answers is not within 2% of 38,400, the verdict is **invalid
-   answer budget**. Tokens and GPU time are reported.
+   answer budget**; if either seed's complete training log is missing, it is **missing data**. Tokens and GPU time are reported.
 
-Formatting: boxed-answer and truncation rates are reported per arm; a comparison where those
-rates differ by more than 10 points is flagged, since format learning can look like accuracy.
+Formatting: boxed-answer and truncation rates are reported per arm; a comparison where either
+rate differs by more than 10 points is flagged, since format learning can look like accuracy.

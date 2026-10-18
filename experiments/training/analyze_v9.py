@@ -24,6 +24,7 @@ sys.path.insert(0, str(HERE))
 from analyze_v2 import window_stats  # noqa: E402
 
 ARM_FILE = {"DR": "baseline", "PSR": "psr", "NSR": "nsr", "PK4": "passk", "O128": "optimal"}
+EXPECTED_STEPS = {0, 50, 100, 150, 200, 250, 300}
 N_SAMPLES, K_DIV = 32, 16
 
 
@@ -98,6 +99,9 @@ def one_curve(r_arm, p_arm, seeds, draws, rng, version="v9e"):
     data = [(eval_points(r_arm, s, version), eval_points(p_arm, s, version)) for s in seeds]
     if not all(r and p for r, p in data):
         return {"verdict": "missing data", "per_seed": []}
+    missing = [sorted(EXPECTED_STEPS - set(r) ) + sorted(EXPECTED_STEPS - set(p)) for r, p in data]
+    if any(missing):
+        return {"verdict": "incomplete evaluation", "per_seed": missing}
     steps = [qualifying_steps(r, p) for r, p in data]
     if any(len(st) < 2 for st in steps):
         return {"verdict": "insufficient overlap", "per_seed": [(math.nan, math.nan, len(st)) for st in steps]}
@@ -182,7 +186,7 @@ def main():
               f"95% [{res['ci95'][0]:+.2f}, {res['ci95'][1]:+.2f}] -> {res['verdict']}   ({ps})")
 
     print("4. Optimal rule minus Dr. GRPO, greedy on 3,382 problems at step 300 (paired, pooled)")
-    diffs, budget_ok = [], True
+    diffs, budget_ok, logs = [], True, 0
     for s in seeds:
         g = {}
         for arm in ("O128", "DR"):
@@ -195,12 +199,15 @@ def main():
             print(f"   seed {s}: {d.mean():+.2f} ({d.std(ddof=1) / math.sqrt(len(d)):.2f})")
             diffs.append(d)
         t, _ = train_log("O128", s, args.train_version)
-        if t:
+        if t and len(t) >= 300:
+            logs += 1
             total = sum(x["answers"] for x in t)
             budget_ok &= abs(total / 38400 - 1) <= 0.02
             print(f"   seed {s}: optimal rule generated {total} answers (target 38,400, within 2%: "
                   f"{abs(total / 38400 - 1) <= 0.02}), {sum(x['tokens'] for x in t):,} tokens")
-    if len(diffs) == len(seeds):
+    if len(diffs) == len(seeds) and logs < len(seeds):
+        print("   verdict: missing data (optimal-rule training logs incomplete; the answer budget cannot be checked)")
+    elif len(diffs) == len(seeds):
         d = np.mean(diffs, axis=0)
         est, se = d.mean(), d.std(ddof=1) / math.sqrt(len(d))
         lo, hi = est - 1.96 * se, est + 1.96 * se
@@ -208,7 +215,7 @@ def main():
                    "faster" if est >= 1 and lo > 0 else "slower" if hi < 0 else "inconclusive")
         print(f"   pooled: {est:+.2f} [{lo:+.2f}, {hi:+.2f}] -> {verdict}")
 
-    print("Format check for the curve comparisons (boxed-answer rate, steps 250 to 299; flag if > 10 points apart)")
+    print("Format check for the curve comparisons (steps 250 to 299; flag if boxed or truncation rates are > 10 points apart)")
     for r_arm, p_arm in (("NSR", "PSR"), ("PK4", "DR")):
         for s in seeds:
             tr, _ = train_log(r_arm, s, args.train_version)
@@ -216,7 +223,11 @@ def main():
             if tr and tp and "boxed_rate" in tr[0]:
                 br = 100 * np.mean([x["boxed_rate"] for x in tr[250:300]])
                 bp = 100 * np.mean([x["boxed_rate"] for x in tp[250:300]])
-                print(f"   {r_arm} vs {p_arm} seed {s}: {br:.0f}% vs {bp:.0f}%" + ("  FLAG" if abs(br - bp) > 10 else ""))
+                tr_ = 100 * np.mean([x["truncated_rate"] for x in tr[250:300]])
+                tp_ = 100 * np.mean([x["truncated_rate"] for x in tp[250:300]])
+                flag = abs(br - bp) > 10 or abs(tr_ - tp_) > 10
+                print(f"   {r_arm} vs {p_arm} seed {s}: boxed {br:.0f}% vs {bp:.0f}%, truncated {tr_:.0f}% vs {tp_:.0f}%"
+                      + ("  FLAG" if flag else ""))
     print("Formatting (mean over steps 250 to 299): boxed-answer rate / truncation rate")
     for arm in ARM_FILE:
         for s in seeds:

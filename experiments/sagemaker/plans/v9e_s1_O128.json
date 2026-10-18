@@ -6,7 +6,7 @@
   "include_base": false,
   "args": [
    "--problems",
-   "eval_frontier_1024.json",
+   "eval_frontier_256.json",
    "--n",
    "32",
    "--greedy-problems",
@@ -20,9 +20,7 @@
    "--sampled-steps",
    "300",
    "--expect-steps",
-   "300",
-   "--limit",
-   "256"
+   "300"
   ]
  },
  "common": [],
