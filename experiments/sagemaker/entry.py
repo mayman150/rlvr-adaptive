@@ -79,7 +79,9 @@ def run_plan(plan):
         t.join()
     LIVE.mkdir(parents=True, exist_ok=True)
     (LIVE / "status.json").write_text(json.dumps(status, indent=1))
-    shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True)
+    # Checkpoints stay in the live S3 sync only; copying them here would double the disk use
+    # and the model.tar.gz upload.
+    shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True, ignore=shutil.ignore_patterns("ckpt_step*"))
     print("status:", status, flush=True)
     if any(code != 0 for code in status.values()):
         sys.exit(1)

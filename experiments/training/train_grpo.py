@@ -258,7 +258,7 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
-FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift", "passk")
+FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift", "passk", "psrnoise")
 
 
 def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
@@ -267,7 +267,7 @@ def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
     psr rewards only correct answers, nsr penalizes only wrong ones, and wreinforce
     weights correct answers by pos_weight (Zhu et al. 2025). On-policy, psr and nsr have
     exactly the same expected update, n grad p per prompt."""
-    if arm == "psr":
+    if arm in ("psr", "psrnoise"):
         return float(r)
     if arm == "nsr":
         return float(r) - 1.0
@@ -284,6 +284,22 @@ def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
         return weight - baseline
     a = r - m
     return a * w if (arm == "scaled" and r == 0) else a
+
+
+def add_sign_noise(adv, groups, calib, args, step):
+    """PSR plus c * sigma_i on every answer, sigma_i independent random signs.
+
+    The added term has mean zero whatever c is, so the expected update stays n grad p. c is
+    set each step so that the theorem's predicted second moment, sum over answers of
+    E[A^2] F_r, equals NSR's on this step's reward counts: PSR gives c_q F1 per question,
+    NSR (G - c_q) F0, and the sign term adds c^2 (c_q F1 + (G - c_q) F0)."""
+    assert calib and calib.get("F0") and calib.get("F1"), "psrnoise needs the calibration F0 and F1"
+    F0, F1 = calib["F0"], calib["F1"]
+    extra = sum((n - c) * F0 - c * F1 for c, n in groups)
+    base = sum(c * F1 + (n - c) * F0 for c, n in groups)
+    scale = args.noise_scale * math.sqrt(max(extra, 0.0) / base) if base > 0 else 0.0
+    rng = random.Random(args.seed * 7919 + step)
+    return [a + scale * (1.0 if rng.random() < 0.5 else -1.0) for a in adv], scale
 
 
 def pass_at_k(n, c, k):
@@ -363,7 +379,63 @@ def old_logprobs(runner, args, answers):
     return out
 
 
-def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy):
+def adam_scale(opt, p):
+    """1 / (sqrt(v_hat) + eps) from Adam's state before this step's update (None before the first)."""
+    st = opt.state.get(p, {}) if opt is not None else {}
+    if st.get("exp_avg_sq") is None:
+        return None
+    group = opt.param_groups[0]
+    v_hat = st["exp_avg_sq"].flatten() / (1 - group["betas"][1] ** float(st["step"]))
+    return 1.0 / (v_hat.sqrt() + group["eps"])
+
+
+@torch.no_grad()
+def store_update(runner, opt):
+    """Adam's update direction m_hat / (sqrt(v_hat) + eps) after this step (the parameter change
+    is -lr times it; no weight decay), kept in bf16 on the device for the next step's diagnostics."""
+    runner.last_update = None  # free the previous buffer first (peak memory)
+    group, out = opt.param_groups[0], []
+    for p in runner.params:
+        st = opt.state[p]
+        t = float(st["step"])
+        m_hat = st["exp_avg"].flatten() / (1 - group["betas"][0] ** t)
+        v_hat = st["exp_avg_sq"].flatten() / (1 - group["betas"][1] ** t)
+        out.append((m_hat / (v_hat.sqrt() + group["eps"])).to(torch.bfloat16))
+    runner.last_update = out
+
+
+def shadow_stats(runner, args, answers, adv, owner, half_a, norm, opt):
+    """Split-half statistics of another estimator on the same answers at the same policy;
+    leaves .grad empty."""
+    runner.model.zero_grad(set_to_none=True)
+    live_a = [k for k, a in enumerate(adv) if a != 0 and owner[k] in half_a]
+    live_b = [k for k, a in enumerate(adv) if a != 0 and owner[k] not in half_a]
+    backward_weighted(runner, args, answers, live_a, adv, norm)
+    ga = runner.grad_snapshot()
+    backward_weighted(runner, args, answers, live_b, adv, norm)
+    keys = ("aa", "bb", "ab", "aa_pre", "bb_pre", "ab_pre")
+    st = dict.fromkeys(keys, 0.0)
+    pre = all(adam_scale(opt, p) is not None for p in runner.params[:1])
+    with torch.no_grad():
+        for p, a_cpu in zip(runner.params, ga):
+            g = p.grad if p.grad is not None else torch.zeros_like(p)
+            a = a_cpu.to(runner.device).flatten()
+            b = g.flatten() - a
+            st["aa"] += float(torch.dot(a, a))
+            st["bb"] += float(torch.dot(b, b))
+            st["ab"] += float(torch.dot(a, b))
+            d = adam_scale(opt, p) if pre else None
+            if d is not None:
+                ad, bd = a * d, b * d
+                st["aa_pre"] += float(torch.dot(ad, ad))
+                st["bb_pre"] += float(torch.dot(bd, bd))
+                st["ab_pre"] += float(torch.dot(ad, bd))
+    del ga
+    runner.model.zero_grad(set_to_none=True)
+    return st if pre else {k: st[k] for k in ("aa", "bb", "ab")}
+
+
+def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy, opt=None):
     """Backward pass with split-half gradient statistics.
 
     Prompts are split at random into halves A and B. g_A and g_B are the arm's gradient
@@ -412,6 +484,16 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
         runner.model.zero_grad(set_to_none=True)
         backward_weighted(runner, args, answers, sorted(ref2_w), ref2_w, norm)
         ref2 = runner.grad_snapshot()
+    shadow = None
+    if args.shadow_arm and step < args.shadow_until:
+        # The shadow estimator (e.g. NSR) on the same answers and halves at this policy.
+        means = {}
+        for k, j in enumerate(owner):
+            means.setdefault(j, []).append(rewards[k])
+        sh_adv = [fixed_advantage(args.shadow_arm, rewards[k], sum(means[j]) / len(means[j]), 1.0,
+                                  args.pos_weight, args.shift, len(means[j]), args.train_k)
+                  for k, j in enumerate(owner)]
+        shadow = shadow_stats(runner, args, answers, sh_adv, owner, half_a, norm, opt)
     runner.model.zero_grad(set_to_none=True)
     live_a = [k for k, a in enumerate(adv) if a != 0 and owner[k] in half_a]
     live_b = [k for k, a in enumerate(adv) if a != 0 and owner[k] not in half_a]
@@ -421,6 +503,16 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
     stats = dict.fromkeys(("aa", "bb", "ab", "ar", "br", "rr"), 0.0)
     if ref2 is not None:
         stats.update(dict.fromkeys(("r1r2", "r2r2", "ar2"), 0.0))
+    # The gradient divided by Adam's per-coordinate scale from before this step (D_{t-1} g_t;
+    # not Adam's update, which also averages past gradients): the same statistics.
+    precond = opt is not None and adam_scale(opt, runner.params[0]) is not None
+    if precond:
+        stats.update(dict.fromkeys(("aa_pre", "bb_pre", "ab_pre"), 0.0))
+    # Lagged alignment of the previous step's actual Adam update direction with the population
+    # gradient: <u_{t-1}, ref_t>, ref_t from this step's questions (fresh given the history).
+    last = getattr(runner, "last_update", None)
+    if last is not None:
+        stats.update(dict.fromkeys(("u_ref", "uu"), 0.0))
     with torch.no_grad():
         for i, (p, a_cpu, r_cpu) in enumerate(zip(runner.params, ga, ref)):
             g = p.grad if p.grad is not None else torch.zeros_like(p)
@@ -433,6 +525,16 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
             stats["ar"] += float(torch.dot(a, r))
             stats["br"] += float(torch.dot(b, r))
             stats["rr"] += float(torch.dot(r, r))
+            if last is not None:
+                u = last[i].float()
+                stats["u_ref"] += float(torch.dot(u, r))
+                stats["uu"] += float(torch.dot(u, u))
+            if precond:
+                d = adam_scale(opt, p)
+                ad, bd = a * d, b * d
+                stats["aa_pre"] += float(torch.dot(ad, ad))
+                stats["bb_pre"] += float(torch.dot(bd, bd))
+                stats["ab_pre"] += float(torch.dot(ad, bd))
             if ref2 is not None:
                 r2 = ref2[i].to(runner.device).flatten()
                 stats["r1r2"] += float(torch.dot(r, r2))
@@ -442,10 +544,12 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
                   "answers_a": sum(1 for j in owner if j in half_a),
                   "answers_b": sum(1 for j in owner if j not in half_a),
                   "ref_answers": len(ref_w), "norm": norm})
+    if shadow is not None:
+        stats["shadow"] = shadow
     return stats, len(live_a) + len(live_b)
 
 
-def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=None):
+def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=None, calib_problems=None):
     runner = Runner(args)
     opt = torch.optim.AdamW(runner.params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)
     rng = random.Random(args.seed)
@@ -461,11 +565,21 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     sample_steps = {int(s) for s in args.sample_eval_steps.split(",") if s}
     passk_steps = {int(s) for s in args.passk_steps.split(",") if s}
     save_steps = {int(s) for s in args.save_steps.split(",") if s}
+    remeasure_steps = {int(s) for s in args.remeasure_steps.split(",") if s}
+    assert not remeasure_steps or calib_problems, "re-measuring needs the calibration questions"
+    remeasured = []
     surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
     passk = []
     for step in range(args.steps + 1):
+        if step in remeasure_steps:
+            # Same questions and sampling seed as the calibration before training (paired).
+            m = runner.measure_ratio(calib_problems, len(calib_problems), args.group, args.seed + 7)
+            remeasured.append({"step": step, **m})
+            print(f"[{arm}] step {step} re-measured F1 {m['F1']:.4g}, F0 {m['F0']:.4g} "
+                  f"({m['n_correct']} correct, {m['n_wrong']} wrong)", flush=True)
+            (out_dir / f"{arm}_remeasure.json").write_text(json.dumps(remeasured))
         if step in eval_steps:
             acc, per = runner.evaluate(eval_set, args.seed)
             evals.append({"step": step, "accuracy": acc, "correct": per})
@@ -537,6 +651,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
             groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
+            if arm == "psrnoise":
+                adv, extra["noise_c"] = add_sign_noise(adv, groups, calib, args, step)
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)
@@ -568,7 +684,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 backward_surrogate(runner, args, answers, live, adv, old_lp, step_norm)
             n_live = len(live)
         elif args.diagnostics:
-            stats, n_live = diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy)
+            stats, n_live = diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy, opt)
             extra["split"] = stats
         else:
             live = [k for k, a in enumerate(adv) if a != 0]
@@ -585,6 +701,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
         if n_live:
             opt.step()
+            if args.diagnostics:
+                store_update(runner, opt)
+        elif args.diagnostics:
+            runner.last_update = None
         opt.zero_grad(set_to_none=True)
         mixed = sum(0 < k < n for k, n in groups)
         texts_out = [runner.tok.decode(r) for _, r in answers]
@@ -648,6 +768,13 @@ def main():
     parser.add_argument("--save-model", default=None, help="directory for the final model ({arm} is replaced)")
     parser.add_argument("--save-steps", default="", help="steps at which to save a bf16 checkpoint under the output directory")
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
+    parser.add_argument("--noise-scale", type=float, default=1.0,
+                        help="psrnoise: multiple of the sign-noise size that matches NSR's predicted second moment")
+    parser.add_argument("--shadow-arm", default="", help="with --diagnostics: split statistics of this fixed-group "
+                        "estimator on the same answers (e.g. nsr), for steps below --shadow-until")
+    parser.add_argument("--shadow-until", type=int, default=50)
+    parser.add_argument("--remeasure-steps", default="",
+                        help="steps at which to re-measure F0 and F1 on the calibration questions")
     parser.add_argument("--ref-block", type=int, default=4)
     parser.add_argument("--within-ref", action="store_true",
                         help="second independent reference within prompts (measures per-prompt signal)")
@@ -697,7 +824,8 @@ def main():
         w = args.w
     (out_dir / "config.json").write_text(json.dumps({**vars(args), "w_used": w}, indent=1))
     for arm in args.arms.split(","):
-        train_arm(args, arm, w, problems[: -args.calib_prompts], eval_set, out_dir, calib, final_set)
+        train_arm(args, arm, w, problems[: -args.calib_prompts], eval_set, out_dir, calib, final_set,
+                  problems[-args.calib_prompts:])
     print("done", flush=True)
 
 

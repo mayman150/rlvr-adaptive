@@ -1,4 +1,30 @@
-# The story of the paper (living document, updated October 17, 2026)
+# The story of the paper (living document, updated October 18, 2026)
+
+## October 18: external review and the revised claim
+
+Codex, asked to review as an ICML reviewer: **reject as it stands (4/10), credible path**;
+about 6/10 if OLMo shows one curve with intervals, 5/10 if curves robustly differ.
+Accepted corrections:
+- Equal means for PSR and NSR are classical baseline invariance (Williams 1992; Greensmith,
+  Bartlett, Baxter 2004). Unbiased pass@k objectives exist (PKPO, Walder and Karkhanis 2025).
+  Ours: the second-moment accounting with F0 != F1 and adaptive group sizes, the measured
+  asymmetry, and matched-accuracy tests of the NSR explanation. No "nobody measured" claims.
+- Qwen "one curve" was absence of detected separation (128 problems, two seeds), not
+  equivalence. The NSR paper used 4B to 8B models and k up to 256; we do not overturn it.
+- Noise predicts speed; that it explains NSR needs an intervention.
+- Disclosure: in Pre-registration 6 (verl-like), gradient clipping at 1 was active on 26 to
+  28% of NSR steps and 7 to 8% of PSR steps; never in other on-policy runs (max norm 0.48).
+
+Plan: Pre-registration 9 (OLMo, equivalence with intervals; running) and Pre-registration
+10 (PSR plus random-sign noise matched to NSR's predicted noise: same mean, same noise, no
+systematic push on wrong answers; NSR at 2x learning rate; seeds 5 and 6 for a four-seed
+Qwen equivalence test; F0/F1 re-measured; noise after Adam preconditioning).
+
+Claim to submit if both hold: *positive and negative reinforcement share their expected
+update; NSR's extra term is zero-mean noise concentrated on wrong answers, which carry
+larger gradients; the size of that noise, predicted from four numbers per question, sets how
+fast a run moves along an accuracy-versus-diversity curve that reward shaping does not move.*
+Fallback: TMLR, as a scoped diagnostic paper.
 
 ## Final results (October 18): one curve
 

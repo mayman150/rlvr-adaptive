@@ -82,15 +82,17 @@ def qualifying_steps(r_pts, p_pts):
     return [s for s, x in zip(rs, rx) if s != 0 and px.min() <= x <= px.max()]
 
 
-def matched_difference(r_pts, p_pts, weights, steps=None):
+def matched_difference(r_pts, p_pts, weights, steps=None, return_points=False):
     """Mean over R's qualifying checkpoints of R's pass@16 minus P's pass@16 interpolated at R's pass@1
     (P's points ordered by pass@1; np.interp holds the end values if a resampled point falls outside)."""
-    _, px, py = curve(p_pts, weights)
-    order = np.argsort(px)
+    ps, px, py = curve(p_pts, weights)
+    order = np.lexsort((ps, px))  # by pass@1, ties by step (reporting addendum)
     px, py = px[order], py[order]
     rs, rx, ry = curve(r_pts, weights)
     keep = set(steps) if steps is not None else {s for s, x in zip(rs, rx) if s != 0 and px[0] <= x <= px[-1]}
     diffs = [y - np.interp(x, px, py) for s, x, y in zip(rs, rx, ry) if s in keep]
+    if return_points:
+        return diffs
     return (float(np.mean(diffs)), float(np.sqrt(np.mean(np.square(diffs)))), len(diffs)) if len(diffs) >= 2 else (math.nan, math.nan, len(diffs))
 
 
@@ -109,19 +111,29 @@ def one_curve(r_arm, p_arm, seeds, draws, rng, version="v9e"):
     ones = np.ones(n_prob)
     for (r, p), st in zip(data, steps):
         per_seed.append(matched_difference(r, p, ones, st))
+    boot_pts = []
     for _ in range(draws):
         w = np.bincount(rng.integers(0, n_prob, n_prob), minlength=n_prob).astype(float)
-        boot.append(np.mean([matched_difference(r, p, w, st)[0] for (r, p), st in zip(data, steps)]))
+        pts = [matched_difference(r, p, w, st, return_points=True) for (r, p), st in zip(data, steps)]
+        boot.append(np.mean([np.mean(d) for d in pts]))
+        boot_pts.append(np.concatenate(pts))
     est = float(np.mean([m for m, _, _ in per_seed]))
     lo90, hi90 = np.percentile(boot, [5, 95])
     lo95, hi95 = np.percentile(boot, [2.5, 97.5])
+    # Reporting addendum: simultaneous 90% band over all qualifying checkpoints.
+    flat = np.concatenate([matched_difference(r, p, ones, st, return_points=True) for (r, p), st in zip(data, steps)])
+    bp = np.array(boot_pts)
+    se = bp.std(axis=0, ddof=1)
+    q = np.percentile(np.max(np.abs(bp - flat) / np.where(se > 0, se, np.inf), axis=1), 90)
+    band = [(round(float(d), 2), round(float(d - q * e), 2), round(float(d + q * e), 2)) for d, e in zip(flat, se)]
     if lo90 >= -2 and hi90 <= 2:
-        verdict = "one curve"
+        verdict = "average matched-accuracy equivalence (registered as 'one curve')"
     elif (lo95 > 0 or hi95 < 0) and abs(est) >= 2:
         verdict = "different"
     else:
         verdict = "inconclusive"
-    return {"estimate": est, "ci90": (lo90, hi90), "ci95": (lo95, hi95), "per_seed": per_seed, "verdict": verdict}
+    return {"estimate": est, "ci90": (lo90, hi90), "ci95": (lo95, hi95), "per_seed": per_seed, "verdict": verdict,
+            "band": list(zip([(i, s) for i, st in enumerate(steps) for s in st], band))}
 
 
 def main():
@@ -175,7 +187,7 @@ def main():
         print(f"   seed {s}: noise NSR/PSR {ratio:.2f} [{lo:.2f}, {hi:.2f}] -> {'pass' if lo > 1 else 'fail'}; "
               f"steps to midpoint PSR {reach(tp)} NSR {reach(tn)} -> {'pass' if reach(tn) > reach(tp) else 'fail'}")
 
-    print("3. One curve (pass@16 at matched pass@1; pooled over seeds; bootstrap over problems)")
+    print("3. Average matched-accuracy equivalence (registered as one curve; pass@16 at matched pass@1; pooled over seeds; bootstrap over problems)")
     for r_arm, p_arm in (("NSR", "PSR"), ("PK4", "DR")):
         res = one_curve(r_arm, p_arm, seeds, args.draws, rng, args.eval_version)
         if "estimate" not in res:
@@ -184,6 +196,8 @@ def main():
         ps = ", ".join(f"seed: {m:+.2f} (RMS {r:.2f}, {n} points)" for m, r, n in res["per_seed"])
         print(f"   {r_arm} vs {p_arm}: {res['estimate']:+.2f}, 90% [{res['ci90'][0]:+.2f}, {res['ci90'][1]:+.2f}], "
               f"95% [{res['ci95'][0]:+.2f}, {res['ci95'][1]:+.2f}] -> {res['verdict']}   ({ps})")
+        print("      simultaneous 90% band: " + "; ".join(f"seed {seeds[i]} step {st}: {d:+.1f} [{lo:+.1f}, {hi:+.1f}]"
+                                                    for (i, st), (d, lo, hi) in res["band"]))
 
     print("4. Optimal rule minus Dr. GRPO, greedy on 3,382 problems at step 300 (paired, pooled)")
     diffs, budget_ok, logs = [], True, 0

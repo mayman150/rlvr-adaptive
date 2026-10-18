@@ -86,3 +86,12 @@ measured on Qwen; only the difficulty prior and F0 / F1 are measured on OLMo.
 
 Formatting: boxed-answer and truncation rates are reported per arm; a comparison where either
 rate differs by more than 10 points is flagged, since format learning can look like accuracy.
+
+## Reporting addendum (October 18, before any evaluation result)
+
+After a review of Pre-registration 10's design pointed out that a signed average over
+checkpoints can hide crossings, two reporting changes apply here too; the decision rules are
+unchanged. The verdict "one curve" is reported as **average matched-accuracy equivalence**,
+and a simultaneous 90% band over all qualifying checkpoints (bootstrap of the maximum
+standardized deviation) is reported for each comparison. Reference points with equal pass@1
+are ordered by step.

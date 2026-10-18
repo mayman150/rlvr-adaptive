@@ -1,0 +1,53 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [
+  "--seed",
+  "5",
+  "--steps",
+  "6",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "192",
+  "--calib-prompts",
+  "64",
+  "--eval-steps",
+  "0,6",
+  "--passk-n",
+  "32",
+  "--passk-limit",
+  "16",
+  "--passk-steps",
+  "6",
+  "--entropy-every",
+  "5",
+  "--diagnostics",
+  "--remeasure-steps",
+  "3,6",
+  "--save-steps",
+  "3"
+ ],
+ "gpus": [
+  [
+   [
+    "PSRN",
+    [
+     "--arms",
+     "psrnoise",
+     "--shadow-arm",
+     "nsr",
+     "--shadow-until",
+     "6"
+    ]
+   ]
+  ]
+ ]
+}
