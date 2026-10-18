@@ -73,7 +73,7 @@ W-REINFORCE (Zhu et al.'s pick) & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 6$\t
 \textbf{Three pieces of evidence.}
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
 \item \textbf{The noise formula holds in the real model.} Measured gradient noise matches the theorem's prediction within 0 to 30\% for every rule, in both seeds.
-\item \textbf{Noise alone predicts learning speed (dose-response).} Five rules $A=r-b$ share the same average update exactly; only the noise changes. Learning speed follows the predicted noise in order (seed 3; seed 4 waiting for GPUs):
+\item \textbf{Noise alone predicts learning speed (dose-response).} Five rules $A=r-b$ share the same average update exactly; only the noise changes. Learning speed follows the predicted noise in both seeds (rank correlation 0.9 to 0.97):
 
 \begin{center}\small
 \begin{tabular}{@{}lccccc@{}}
@@ -81,14 +81,16 @@ W-REINFORCE (Zhu et al.'s pick) & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 6$\t
 Baseline $b$ & 0.25 & 0 (PSR) & 0.5 & 0.75 & 1 (NSR)\\
 \midrule
 Predicted noise vs PSR & 0.81$\times$ & 1$\times$ & 1.25$\times$ & 2.5$\times$ & about 6$\times$\\
-Steps to reach 45\% training accuracy & 37 & 44 & 44 & 53 & 56\\
+Steps to 45\% training accuracy, seed 3 & 37 & 44 & 44 & 53 & 56\\
+Steps to 45\% training accuracy, seed 4 & 38 & 33 & 41 & 45 & 56\\
 \bottomrule
 \end{tabular}
 \end{center}
-\item \textbf{No extra diversity at equal accuracy.} Comparing pass@32 at the same pass@1, penalizing wrong answers is never above rewarding right ones beyond noise: $-2.1$ and $-0.2$ points in clean training, $+0.3$ and $-1.3$ points even with the NSR paper's own implementation (reused samples with clipping, per-token averaging), where at the end of training NSR's pass@32 is actually 7.0 and 1.6 points \emph{lower} than PSR's. The intermediate baselines give $+0.0$, $+0.8$, $-0.8$.
+\item \textbf{No extra diversity at equal accuracy.} Comparing pass@32 at the same pass@1, penalizing wrong answers is never above rewarding right ones beyond noise: $-2.1$ and $-0.2$ points in clean training, $+0.3$ and $-1.3$ points even with the NSR paper's own implementation (reused samples with clipping, per-token averaging), where at the end of training NSR's pass@32 is actually 7.0 and 1.6 points \emph{lower} than PSR's. The intermediate baselines stay within about $\pm2$ points as well.
+\item \textbf{Not even changing the objective moves the curve.} An update aimed exactly at pass@4 (verified to have the pass@4 gradient as its average) is only $+1.6$ and $+0.2$ points of pass@32 above Dr.\ GRPO at equal pass@1, and it is the same when reasoning is graded: CoT-Pass@32 is 72.7 against 72.3 (Claude Haiku 5.5 judging every correct answer's reasoning three times).
 \end{enumerate}
 
-\textbf{The takeaway.} Penalizing wrong answers is not a different kind of learning; it is a noisier, slower version of rewarding right ones. Its ``preserved diversity'' is what any slower run looks like. W-REINFORCE, recommended by the NSR paper, was the worst rule on pass@64 in both seeds. The theory also explains why standard practice is close to right: Dr.\ GRPO's per-question baseline is 1.25 times less noisy than the best possible constant baseline.
+\textbf{The takeaway.} Every rule we tried traces \emph{one} accuracy-versus-diversity curve; the rules differ only in how fast they travel along it, and the speed is set by noise. Penalizing wrong answers is not a different kind of learning; it is a noisier, slower version of rewarding right ones, and its ``preserved diversity'' is what any slower run looks like. W-REINFORCE, recommended by the NSR paper, was the worst rule on pass@64 in both seeds. The theory also explains why standard practice is close to right: Dr.\ GRPO's per-question baseline is 1.25 times less noisy than the best possible constant baseline.
 
 \section*{4. Why this is a good paper}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
@@ -100,11 +102,11 @@ Steps to reach 45\% training accuracy & 37 & 44 & 44 & 53 & 56\\
 \end{itemize}
 
 \section*{5. What is missing before ICML (about 2 weeks)}
+All eight pre-registered experiments are finished. What remains is generality:
 \begin{itemize}[leftmargin=*,itemsep=1pt]
 \item \textbf{A second model family.} Qwen2.5-Math responds even to random rewards, so small effects on it are suspect.
 \item \textbf{Longer training and larger $k$,} so pass@k has room to diverge (it moved only from 80 to 83 here).
-\item \textbf{CoT-Pass@k:} count only answers whose reasoning is also correct, so diversity is measured in reasoning rather than lucky answers. The judge (Claude Haiku 5.5) is built and tested.
-\item \textbf{Seed 4 of the dose-response} (waiting for GPUs) and re-measuring gradient sizes during training (the absolute noise calibration drifts as the model sharpens; the ordering does not).
+\item \textbf{Re-measuring gradient sizes during training:} the noise formula matches within 30\% in 12 of 16 runs; in the other four the gradients likely shrank after the one-time calibration. The ordering is unaffected.
 \item \textbf{One focused write-up} around this single story, with the answer-collection results as a short second section.
 \end{itemize}
 

@@ -25,12 +25,12 @@ from train_grpo import fixed_advantage  # noqa: E402
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 ARM_FILE = {"DR": "baseline", "PSR": "psr", "NSR": "nsr", "WR": "wreinforce", "PSRv": "psr", "NSRv": "nsr",
             "B25": "shift", "B50": "shift", "B75": "shift", "PSRlow": "psr", "L128": "baseline", "L32": "baseline",
-            "O128": "optimal", "S128": "scaled", "L256": "baseline", "L64": "baseline", "O64": "optimal"}
+            "O128": "optimal", "S128": "scaled", "L256": "baseline", "L64": "baseline", "O64": "optimal", "PK4": "passk"}
 COL = {"DR": "#1f4e79", "PSR": "#2e75b6", "NSR": "#c00000", "WR": "#ed7d31", "PSRv": "#2e75b6", "NSRv": "#c00000",
-       "B25": "#5b9bd5", "B50": "#a9a9a9", "B75": "#f4b183", "PSRlow": "#70ad47"}
+       "B25": "#5b9bd5", "B50": "#a9a9a9", "B75": "#f4b183", "PSRlow": "#70ad47", "PK4": "#7030a0"}
 LABEL = {"DR": "Dr. GRPO", "PSR": "reward right only (PSR)", "NSR": "penalize wrong only (NSR)",
          "WR": "W-REINFORCE (0.1 / -1)", "PSRv": "PSR, verl-like", "NSRv": "NSR, verl-like",
-         "B25": "r - 0.25", "B50": "r - 0.5", "B75": "r - 0.75", "PSRlow": "PSR, lr / 2.5"}
+         "B25": "r - 0.25", "B50": "r - 0.5", "B75": "r - 0.75", "PSRlow": "PSR, lr / 2.5", "PK4": "pass@4 objective"}
 
 
 def load(version):
@@ -161,11 +161,12 @@ def main():
     save(fig, "noise_validation")
 
     # 4. accuracy-diversity frontier (pass@1 vs pass@32 on 128 problems)
-    v5, v6 = load("v5"), load("v6")
-    fig, ax = plt.subplots(1, 2, figsize=(7.4, 3.0))
+    v5, v6, v8 = load("v5"), load("v6"), load("v8")
+    fig, ax = plt.subplots(1, 3, figsize=(10.5, 3.1))
     numbers["frontier"] = {}
-    for col, (title, src, names) in enumerate((("On-policy (seeds 3, 4)", {**v5, **{k: v for k, v in v7.items() if k[0] == "PSRlow"}}, ("PSR", "NSR", "PSRlow")),
-                                               ("verl-like implementation (seeds 1, 2)", v6, ("PSRv", "NSRv")))):
+    for col, (title, src, names) in enumerate((("Noise: PSR vs NSR (seeds 3, 4)", {**v5, **{k: v for k, v in v7.items() if k[0] == "PSRlow"}}, ("PSR", "NSR", "PSRlow")),
+                                               ("NSR paper's implementation (seeds 1, 2)", v6, ("PSRv", "NSRv")),
+                                               ("Objective: pass@4 vs Dr. GRPO (seeds 3, 4)", v8, ("DR", "PK4")))):
         for (name, seed), r in sorted(src.items()):
             if name not in names or not r["passk"]:
                 continue

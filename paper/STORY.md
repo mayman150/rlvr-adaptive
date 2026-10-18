@@ -1,5 +1,16 @@
 # The story of the paper (living document, updated October 17, 2026)
 
+## Final results (October 18): one curve
+
+All eight pre-registered experiments are finished. Every rule we tried (PSR, NSR, five
+baselines in between, the NSR paper's verl-like implementation, and an exact pass@4 objective)
+traces the same accuracy-versus-diversity curve (pass@32 at a given pass@1), also when
+reasoning is graded (CoT-Pass@k, Claude Haiku 5.5 judge). Rules differ only in speed along
+the curve, and speed follows the theorem's predicted noise (dose-response, both seeds,
+rank correlation 0.9 to 0.97). The optimal answer-collection rule moves faster along it at
+equal cost (+1.1, +3.3 points). WORTH-k is dropped: changing the objective did not move the
+curve at this scale. Remaining gap: a second model family, longer training, larger k.
+
 ## Current direction (October 17): positive and negative samples, same mean, different noise
 
 **Why we changed.** A literature review (three agents, key claims verified by hand) found

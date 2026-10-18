@@ -35,7 +35,7 @@
 \item \textbf{Our noise formula holds in the real model.} The measured gradient noise matches the theorem within 0 to 30\% for every rule in both seeds.
 \end{enumerate}
 
-\textbf{Where we are.} The theory and the noise measurements are solid. The key remaining question is whether NSR has more diversity than PSR \emph{at the same accuracy}. Early data say no, but the data are still within noise. Three pre-registered tests that answer it are running: the same question with two new seeds, the NSR paper's own implementation choices, and a dose-response test across five baselines.
+\textbf{Where we are.} All eight pre-registered experiments are finished. Every way we tried of changing the update (penalizing wrong answers, five baselines in between, the NSR paper's implementation, and even aiming the update at pass@4 instead of pass@1) moves training along \emph{the same accuracy-versus-diversity curve}; none moves the curve itself, also when reasoning is graded (CoT-Pass@k). What differs is only the speed along the curve, and the speed follows the noise our theorem predicts. The open question is generality: one 1.5B model, 150 steps.
 
 \tableofcontents
 \newpage
@@ -224,13 +224,13 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \end{itemize}
 \verdict{the pre-registered separation (at least 3 points of pass@64 or 20\% more entropy in favor of NSR) is not met in either seed: NSR minus PSR pass@64 is $-0.2$ and $-1.7$, and NSR's entropy is 1.11 times PSR's in both seeds.}
 
-\subsection{Equal accuracy, equal diversity? (Pre-registration 5) \status{running}}
+\subsection{Equal accuracy, equal diversity? (Pre-registration 5)}
 \textbf{Why.} If NSR is just a slower PSR, its higher entropy reflects less progress. The decisive test compares diversity at the \emph{same} pass@1: for each NSR checkpoint, PSR's pass@32 at the same pass@1 is interpolated along PSR's trajectory.
-\textbf{So far} (pass@32 on 128 problems, noise about $\pm2$ to 3 points per point): seed 3, NSR is 2.8, 3.2, 0.7 and 2.1 points \emph{below} PSR's frontier (mean $-2.2$); seed 4, 3.2, 1.0 and 0.7 points above (mean $+1.6$). The seeds disagree and the average is near zero, consistent with ``same frontier, slower'' and not with ``negative samples add diversity'' (Figure~\ref{fig:frontier}, left).
+\textbf{Result} (pass@32 on 128 problems, noise about $\pm2$ to 3 points per point): NSR is on average 2.1 points \emph{below} PSR's frontier in seed 3 and 0.2 points below in seed 4. \verdict{no extra diversity at equal accuracy (Figure~\ref{fig:frontier}, left).}
 
 \begin{figure}[H]
 \centering\includegraphics[width=0.95\linewidth]{frontier.pdf}
-\caption{Accuracy against diversity during training (pass@1 against pass@32, 128 problems). Left: on-policy. Right: the NSR paper's implementation choices. Points are evaluations at steps 25, 50, 75, 100, 150 (step 0 in PSR runs).}
+\caption{Accuracy against diversity during training (pass@1 against pass@32, 128 problems), at steps 0 to 150. Left: changing the noise (PSR, NSR, and PSR with a lower learning rate). Middle: the NSR paper's implementation choices. Right: changing the objective (pass@4 against Dr.\ GRPO). All runs trace the same curve.}
 \label{fig:frontier}
 \end{figure}
 
@@ -238,9 +238,50 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \textbf{Why.} Zhu et al.\ used verl, which differs from our setting in three ways the theorem does not cover: each rollout batch is reused for 4 updates with PPO clipping (stale samples), each answer's loss is averaged over its tokens, and PSR and NSR average over only the answers they train on. We reproduce all three at matched answers and updates; with fresh samples our clipped loss equals the plain loss exactly (difference 0.0).
 \textbf{Result.} NSR learns even more slowly in this setting (training accuracy 31.0 and 31.4 vs 43.0 and 45.4 over steps 25 to 49). At step 150, NSR's pass@32 is 7.0 and 1.6 points \emph{below} PSR's, and its entropy is 1.11 and 1.18 times PSR's. At matched pass@1 the differences are $+0.3$ and $-1.3$ points (Figure~\ref{fig:frontier}, right). \verdict{not recreated: the NSR paper's implementation choices do not produce its diversity advantage at this scale.}
 
-\subsection{Dose-response across baselines (Pre-registration 7) \status{running}}
-\textbf{Why.} The strongest test of ``only noise differs'': advantages $A=r-b$ for $b=0,0.25,0.5,0.75,1$ share the mean exactly, while the theory predicts noise of $1\times$, $0.93\times$, $1.7\times$, $3.4\times$ and $6\times$ PSR's. If outcomes follow this ordering, noise is the cause. A PSR run with the learning rate divided by 2.5 tests the ``slower clock'' reading: it should look like NSR.
-\textbf{So far.} Runs are at step 25 to 50, too early to judge; the first training accuracies are in the predicted order (for example $b=0.75$ below $b=0.25$). Verified: $b=0$ reproduces PSR and $b=1$ reproduces NSR exactly.
+\subsection{Dose-response across baselines (Pre-registration 7)}
+\textbf{Why.} The strongest test of ``only noise differs'': advantages $A=r-b$ for $b=0,0.25,0.5,0.75,1$ share the mean exactly, while the theory predicts different noise. If outcomes follow the predicted noise, noise is the cause. A PSR run with the learning rate divided by 2.5 tests the ``slower clock'' reading. Verified: $b=0$ reproduces PSR and $b=1$ reproduces NSR exactly.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+& $b=0.25$ & $b=0$ (PSR) & $b=0.5$ & $b=0.75$ & $b=1$ (NSR) & PSR, lr $/2.5$\\
+\midrule
+Predicted noise vs PSR & 0.81$\times$ & 1$\times$ & 1.25$\times$ & 2.5$\times$ & about 6$\times$ & 1$\times$\\
+Steps to 45\% training accuracy, seed 3 & 37 & 44 & 44 & 53 & 56 & 84\\
+Steps to 45\% training accuracy, seed 4 & 38 & 33 & 41 & 45 & 56 & 76\\
+pass@32 vs PSR at equal pass@1, seed 3 & $+0.0$ & 0 & $+0.8$ & $-0.8$ & $-2.1$ & \\
+pass@32 vs PSR at equal pass@1, seed 4 & $+0.2$ & 0 & $+2.1$ & $+0.6$ & $-0.2$ & \\
+\bottomrule
+\end{tabular}
+\caption{Same average update, graded noise.}
+\end{table}
+
+\textbf{Results.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item \textbf{Noise predicts speed:} the learning-speed order follows the predicted noise in both seeds (rank correlation about 0.9 to 0.97; pre-registered threshold 0.8). \verdict{passed.}
+\item \textbf{Noise formula:} measured within 30\% of the theorem for all seed-4 runs (0.85 to 1.26), but only 0.51 to 0.73 for the seed-3 runs, so 12 of 16 runs pass overall. The likely cause is that gradient sizes are measured once before training and shrink as the model sharpens; the ordering is unaffected.
+\item \textbf{Mechanism:} every run stays within about $\pm2$ points of PSR's curve at equal accuracy; ``exploration'' (noisy rules above the curve) is rejected. The strict ``slower clock'' rule asked for every difference below 2 points and two values are 2.07 and 2.14, so it is formally inconclusive. PSR with a 2.5 times lower learning rate learns \emph{more} slowly than NSR, so NSR is equivalent to a smaller slowdown, and at equal accuracy it is indistinguishable from NSR ($+0.6$, $-0.8$).
+\end{itemize}
+
+\subsection{Changing the objective: pass@4 (Pre-registration 8)}
+\textbf{Why.} If noise only changes speed, perhaps changing \emph{what the update aims at} moves the curve. We use an update aimed exactly at pass@4: per-answer weights from the unbiased pass@k estimator with a leave-one-out baseline, verified exactly over all 256 reward patterns to have average $2\cdot4(1-p)^3\nabla p$, the pass@4 gradient. It pushes hard questions and ignores ones the model already solves.
+\textbf{Result.} At equal pass@1, pass@4 training is $+1.6$ (seed 3) and $+0.2$ (seed 4) points of pass@32 above Dr.\ GRPO, below the pre-registered $+2$. At step 150 it simply has lower pass@1 (41 to 42 vs 46). \verdict{curve fixed.}
+
+\textbf{Reasoning check (CoT-Pass@k).} Claude Haiku 5.5 graded every correct answer's reasoning three times (majority vote):
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Step 150, seed 3 / seed 4 & pass@1 & CoT-Pass@1 & pass@32 & CoT-Pass@32\\
+\midrule
+Dr.\ GRPO & 46.2 / 46.2 & 43.4 / 43.3 & 82.0 / 78.9 & 74.2 / 70.3\\
+pass@4 objective & 41.2 / 42.3 & 38.6 / 39.3 & 78.9 / 81.2 & 72.7 / 72.7\\
+Untrained model & 15.1 & 13.5 & 71.9 & 66.4\\
+\bottomrule
+\end{tabular}
+\end{table}
+Reasoning-checked diversity is the same (CoT-Pass@32 72.7 vs 72.3 on average). About 93\% of trained models' correct answers have valid reasoning, up from 90\% before training, for both objectives. Judge cost: about \$9.
 
 \section{Discussion}
 
@@ -249,14 +290,15 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \item In clean on-policy training, how you score right and wrong answers matters mainly through \emph{noise}, and the noise is predictable from four numbers per question.
 \item Wrong answers dominate the noise, because their gradients are 2.5 to 3 times larger.
 \item Penalizing wrong answers alone does not preserve diversity in our setting; it learns more slowly and reaches the same pass@64.
+\item \textbf{All the rules we tried trace one accuracy-versus-diversity curve:} noise, the NSR paper's implementation, and even a pass@4 objective change only the speed along it, also when reasoning is graded.
 \item Smarter answer collection helps at equal cost: our optimal rule gains 1.1 and 3.3 points in two seeds, less than one-step theory predicts. Adam's response to noise is the likely reason the gain is smaller.
 \end{enumerate}
 
 \textbf{How confident should we be?}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-\item \textbf{Strong:} the theorem (exact); the gradient asymmetry (measured two ways, all runs); the noise formula (within 30\% in 8 of 8 main runs); NSR's slower learning (both seeds).
-\item \textbf{Moderate:} equal pass@64 (two seeds; NSR is 0.2 and 1.7 points below PSR).
-\item \textbf{Open:} equal diversity at equal accuracy (two seeds disagree, within noise); whether the NSR paper's implementation recreates its effect.
+\item \textbf{Strong:} the theorem (exact); the gradient asymmetry (all runs); noise predicts learning speed (dose-response, two seeds); NSR's slower learning; no extra diversity from NSR in any setting, including the NSR paper's implementation.
+\item \textbf{Moderate:} the noise formula's absolute calibration (12 of 16 runs within 30\%); the single curve, including the pass@4 objective (two seeds each, 128-problem evaluation).
+\item \textbf{Open:} whether the single curve holds for larger models, longer training, and larger $k$.
 \end{itemize}
 
 \textbf{Threats to validity.}
@@ -264,16 +306,18 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \item \textbf{One model family.} Qwen2.5-Math gains 21 points on MATH-500 even from random rewards (Spurious Rewards, 2025), so small effects on it are suspect; a second family is needed.
 \item \textbf{Short training.} 150 steps move pass@64 only from 79.9 to about 82 to 83, which leaves little room for differences.
 \item \textbf{Evaluation noise.} pass@32 on 128 problems carries about $\pm2$ to 3 points; the final runs will use all 364 problems.
-\item \textbf{Answers counted, not reasoning.} A right final answer can come from wrong reasoning; CoT-Pass@k (Section~\ref{sec:next}) addresses this.
+\item \textbf{Judge reliability.} CoT-Pass@k depends on an LLM judge; it accepted correct and rejected flawed hand-written solutions, but was not validated against human grading at scale.
 \item \textbf{Theory scope.} One-step, SGD-based progress; the Adam statement is an approximation.
 \end{itemize}
 
 \textbf{Engineering issues fixed along the way.} GPU out-of-memory during evaluation (gradients kept alive; fixed by freeing them after each update, training unchanged), crashes on long held-out prompts (batch size now capped by prompt length; the final-check number and saved models were lost for Pre-registration 4), Hugging Face rate limits on shared AWS addresses (model now loaded from our S3 copy), and a grader crash on a sampled \verb|\boxed{1/0}| (fixed and tested). Each fix was verified locally before relaunch.
 
 \section{Next steps}\label{sec:next}
-\textbf{1. Finish the explanation.} Collect the three running tests and apply their pre-registered verdicts. Then one high-precision run set (Dr.\ GRPO, PSR, NSR, two new seeds) with pass@32 on all 364 problems, saved answer texts and saved models. Grade the reasoning of every correct answer with an LLM judge (Claude Haiku 5.5 on Bedrock, three judgments each; tested: it accepts correct solutions and rejects a right answer reached by wrong reasoning) and report \textbf{CoT-Pass@k} (Wen et al., 2025): pass@k counting only answers whose reasoning is also correct.
+\textbf{1. Generality (the main gap).} Repeat the key comparisons (Dr.\ GRPO, PSR, NSR, pass@4, the optimal rule) on a second model family, for 300 steps, with pass@32 on all 364 problems and CoT-Pass@k.
 
-\textbf{2. Then a method.} The explanation suggests that diversity comes from the objective (which questions the update aims at), not from noise. A candidate method, WORTH-k: for a chosen target (pass@1, pass@8, pass@32), use the theory to build the update that aims exactly at it with the least noise per generated answer, accounting for the 2.5 to 3 times gradient asymmetry and for adaptive sampling. Its predicted advantage over existing pass@k methods will be computed with the exact theory before any GPU run.
+\textbf{2. One story.} The evidence supports a single claim: \emph{in on-policy RLVR, reward-shaping choices change how fast a model moves along one accuracy-versus-diversity curve, not the curve; the speed is set by noise, which our theorem predicts from four numbers per question.} The optimal answer-collection rule is the practical consequence: it moves faster along the curve at equal cost.
+
+\textbf{3. Dropped.} The planned WORTH-k method (a noise-minimized pass@k objective) assumed that changing the objective moves the curve; Pre-registration 8 found it does not at this scale.
 
 \appendix
 \section{Pre-registrations and verdicts}
@@ -287,14 +331,15 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 2 & Optimal rule and probe-then-fill at matched answers? & Probe $+2.0$, $+0.8$; optimal replaced by 3\\
 3 & Budget ladder, in-training noise, optimal rule at 128 & Optimal $+1.1\pm0.4$, $+3.3\pm0.5$; rule not met\\
 4 & PSR vs NSR vs Dr.\ GRPO vs W-REINFORCE & Separation not reproduced (both seeds)\\
-5 & Equal diversity at equal pass@1 (seeds 3, 4) & Running; so far $-2.2$ and $+1.6$\\
+5 & Equal diversity at equal pass@1 (seeds 3, 4) & No extra diversity ($-2.1$, $-0.2$)\\
 6 & NSR paper's implementation choices & Not recreated ($-7.0$, $-1.6$ pass@32)\\
-7 & Baseline dose-response and slower-clock control & Running\\
+7 & Baseline dose-response and slower-clock control & Speed follows noise (passed); mechanism formally inconclusive\\
+8 & pass@4 objective vs Dr.\ GRPO & Curve fixed ($+1.6$, $+0.2$); CoT-Pass@32 equal\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Compute}
-About 118 GPU-instance hours on finished SageMaker jobs (single L40S GPUs, a mix of spot and on-demand), roughly \$480 by our price estimates; the 16 running jobs will add a few hundred dollars. All code, pre-registrations, results, and figures are in the repository \texttt{github.com/mayman150/rlvr-adaptive}.
+About 118 GPU-instance hours on SageMaker jobs finished before October 17 afternoon, roughly \$480 by our price estimates, plus about 30 runs since (a few hundred dollars more), and about \$9 of Claude Haiku 5.5 judging. All code, pre-registrations, results, and figures are in the repository \texttt{github.com/mayman150/rlvr-adaptive}.
 
 \end{document}
