@@ -235,10 +235,10 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
-FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift")
+FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift", "passk")
 
 
-def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0):
+def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
     """Advantage of one answer with reward r in a fixed group with mean reward m.
 
     psr rewards only correct answers, nsr penalizes only wrong ones, and wreinforce
@@ -252,6 +252,13 @@ def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0):
         return pos_weight if r else -1.0
     if arm == "shift":
         return float(r) - shift
+    if arm == "passk":
+        # Unbiased pass@k weight with a leave-one-out baseline (independent of this answer):
+        # expected update 2 k (1-p)^(k-1) grad p for n = 2k, in general (n/k) k (1-p)^(k-1) grad p.
+        c_other = round(m * n) - int(r)
+        weight = 1.0 if r else 1.0 - math.comb(n - 1 - c_other, k - 1) / math.comb(n - 1, k - 1)
+        baseline = 1.0 - math.comb(n - 1 - c_other, k) / math.comb(n - 1, k)
+        return weight - baseline
     a = r - m
     return a * w if (arm == "scaled" and r == 0) else a
 
@@ -489,7 +496,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 g = rewards[j * G:(j + 1) * G]
                 m = sum(g) / len(g)
                 for r in g:
-                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift))
+                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
             groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
         else:
@@ -583,6 +590,7 @@ def main():
     parser.add_argument("--final-eval", default=None, help="larger held-out set, evaluated greedily after the last step")
     parser.add_argument("--final-limit", type=int, default=None)
     parser.add_argument("--pos-weight", type=float, default=0.1, help="weight of correct answers in wreinforce")
+    parser.add_argument("--train-k", type=int, default=4, help="k of the pass@k objective for the passk arm (k < group)")
     parser.add_argument("--shift", type=float, default=0.0,
                         help="constant baseline b for the shift arm: advantage r - b (0 is psr, 1 is nsr)")
     parser.add_argument("--reuse", type=int, default=1, help="updates per rollout batch (stale samples after the first)")
