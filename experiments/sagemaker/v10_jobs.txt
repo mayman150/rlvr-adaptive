@@ -1,0 +1,5 @@
+us-west-2:worth-v10-ALL-s5-20261018-223507
+us-east-1:worth-v10-ALL-s6-20261018-223514
+us-east-2:worth-v10-ALL-s7-20261018-223521
+us-east-1:worth-v10-PSR2-s5-20261018-225130
+us-east-1:worth-v10-PSR2-s6-20261018-225134
