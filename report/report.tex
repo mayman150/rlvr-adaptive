@@ -234,9 +234,9 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \label{fig:frontier}
 \end{figure}
 
-\subsection{The NSR paper's implementation choices (Pre-registration 6) \status{running}}
+\subsection{The NSR paper's implementation choices (Pre-registration 6)}
 \textbf{Why.} Zhu et al.\ used verl, which differs from our setting in three ways the theorem does not cover: each rollout batch is reused for 4 updates with PPO clipping (stale samples), each answer's loss is averaged over its tokens, and PSR and NSR average over only the answers they train on. We reproduce all three at matched answers and updates; with fresh samples our clipped loss equals the plain loss exactly (difference 0.0).
-\textbf{So far.} NSR learns even more slowly in this setting (training accuracy 31.0 and 31.4 vs 43.0 and 45.4 over steps 25 to 49), and its checkpoints sit below PSR's pass@1 range, so the matched comparison needs later points (Figure~\ref{fig:frontier}, right).
+\textbf{Result.} NSR learns even more slowly in this setting (training accuracy 31.0 and 31.4 vs 43.0 and 45.4 over steps 25 to 49). At step 150, NSR's pass@32 is 7.0 and 1.6 points \emph{below} PSR's, and its entropy is 1.11 and 1.18 times PSR's. At matched pass@1 the differences are $+0.3$ and $-1.3$ points (Figure~\ref{fig:frontier}, right). \verdict{not recreated: the NSR paper's implementation choices do not produce its diversity advantage at this scale.}
 
 \subsection{Dose-response across baselines (Pre-registration 7) \status{running}}
 \textbf{Why.} The strongest test of ``only noise differs'': advantages $A=r-b$ for $b=0,0.25,0.5,0.75,1$ share the mean exactly, while the theory predicts noise of $1\times$, $0.93\times$, $1.7\times$, $3.4\times$ and $6\times$ PSR's. If outcomes follow this ordering, noise is the cause. A PSR run with the learning rate divided by 2.5 tests the ``slower clock'' reading: it should look like NSR.
@@ -288,7 +288,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 3 & Budget ladder, in-training noise, optimal rule at 128 & Optimal $+1.1\pm0.4$, $+3.3\pm0.5$; rule not met\\
 4 & PSR vs NSR vs Dr.\ GRPO vs W-REINFORCE & Separation not reproduced (both seeds)\\
 5 & Equal diversity at equal pass@1 (seeds 3, 4) & Running; so far $-2.2$ and $+1.6$\\
-6 & NSR paper's implementation choices & Running\\
+6 & NSR paper's implementation choices & Not recreated ($-7.0$, $-1.6$ pass@32)\\
 7 & Baseline dose-response and slower-clock control & Running\\
 \bottomrule
 \end{tabularx}
