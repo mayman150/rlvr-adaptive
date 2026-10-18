@@ -39,8 +39,8 @@ measured on Qwen; only the difficulty prior and F0 / F1 are measured on OLMo.
   every arm), boxed-answer rate, truncation rate, entropy probe every 5 steps; split-half
   noise diagnostics in PSR and NSR; bf16 checkpoints at steps 50, 100, ..., 300.
 - Evaluation jobs (which fail if any expected checkpoint is missing): on a fixed, seeded, subject-stratified set of **256 held-out MATH test problems**
-  (none in MATH-500 or training; `data/eval_frontier_256.json`, drawn proportionally from
-  `data/eval_frontier_1024.json`; 256 rather than 1,024 because the smoke test measured
+  (none in MATH-500 or training; `data/eval_frontier_256.json`, drawn proportionally by subject from
+  `data/eval_frontier_1024.json` with Python's random.Random(256); 256 rather than 1,024 because the smoke test measured
   about 2 answers per second at 1,024 tokens, and a bootstrap on earlier data gives a 90%
   half-width near 1 point at this size), 32 samples per problem at temperature 1 for
   the base model and every checkpoint; answer texts saved. Greedy accuracy on all 3,382

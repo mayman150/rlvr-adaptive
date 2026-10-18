@@ -225,7 +225,7 @@ def main():
                 bp = 100 * np.mean([x["boxed_rate"] for x in tp[250:300]])
                 tr_ = 100 * np.mean([x["truncated_rate"] for x in tr[250:300]])
                 tp_ = 100 * np.mean([x["truncated_rate"] for x in tp[250:300]])
-                flag = abs(br - bp) > 10 or abs(tr_ - tp_) > 10
+                flag = round(abs(br - bp), 6) > 10 or round(abs(tr_ - tp_), 6) > 10
                 print(f"   {r_arm} vs {p_arm} seed {s}: boxed {br:.0f}% vs {bp:.0f}%, truncated {tr_:.0f}% vs {tp_:.0f}%"
                       + ("  FLAG" if flag else ""))
     print("Formatting (mean over steps 250 to 299): boxed-answer rate / truncation rate")
