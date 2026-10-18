@@ -195,7 +195,7 @@ So we moved the main question to positive versus negative reinforcement, where o
 & seed 1 / seed 2 & seed 1 / seed 2 & seed 1 / seed 2 & seed 1 / seed 2\\
 \midrule
 Dr.\ GRPO & 50.6 / 48.0 & 43.3 / 43.2 & 83.2 / 81.9 & 0.227 / 0.224\\
-PSR (reward right only) & 51.3 / 48.2 & 42.4 / \status{running} & 83.2 / \status{running} & 0.227 / 0.226\\
+PSR (reward right only) & 51.3 / 48.2 & 42.4 / 42.0 & 83.2 / 83.8 & 0.227 / 0.226\\
 NSR (penalize wrong only) & 33.6 / 36.4 & 37.7 / 39.1 & 83.0 / 82.1 & 0.251 / 0.251\\
 W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \bottomrule
@@ -222,7 +222,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \item \textbf{Diversity:} pass@64 is the same for PSR, NSR and Dr.\ GRPO in seed 1 (83.2, 83.0, 83.2); W-REINFORCE is lower (80.5, 81.3). NSR's entropy is 11\% higher than PSR's.
 \item \textbf{Equal-mean check:} the projection of each rule's mean update on the population gradient is too noisy to test (90\% intervals include both 1 and 0).
 \end{itemize}
-\verdict{the pre-registered separation (at least 3 points of pass@64 or 20\% more entropy in favor of NSR) is not met in seed 1; seed 2 awaits PSR's pass@64.}
+\verdict{the pre-registered separation (at least 3 points of pass@64 or 20\% more entropy in favor of NSR) is not met in either seed: NSR minus PSR pass@64 is $-0.2$ and $-1.7$, and NSR's entropy is 1.11 times PSR's in both seeds.}
 
 \subsection{Equal accuracy, equal diversity? (Pre-registration 5) \status{running}}
 \textbf{Why.} If NSR is just a slower PSR, its higher entropy reflects less progress. The decisive test compares diversity at the \emph{same} pass@1: for each NSR checkpoint, PSR's pass@32 at the same pass@1 is interpolated along PSR's trajectory.
@@ -255,7 +255,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 \textbf{How confident should we be?}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
 \item \textbf{Strong:} the theorem (exact); the gradient asymmetry (measured two ways, all runs); the noise formula (within 30\% in 8 of 8 main runs); NSR's slower learning (both seeds).
-\item \textbf{Moderate:} equal pass@64 (one complete seed, the second nearly done).
+\item \textbf{Moderate:} equal pass@64 (two seeds; NSR is 0.2 and 1.7 points below PSR).
 \item \textbf{Open:} equal diversity at equal accuracy (two seeds disagree, within noise); whether the NSR paper's implementation recreates its effect.
 \end{itemize}
 
@@ -286,7 +286,7 @@ W-REINFORCE & 38.6 / 38.0 & 38.5 / 39.8 & 80.5 / 81.3 & 0.243 / 0.256\\
 1 & Scaled failure advantages beat Dr.\ GRPO? & No evidence ($-2.2$, $-2.7$)\\
 2 & Optimal rule and probe-then-fill at matched answers? & Probe $+2.0$, $+0.8$; optimal replaced by 3\\
 3 & Budget ladder, in-training noise, optimal rule at 128 & Optimal $+1.1\pm0.4$, $+3.3\pm0.5$; rule not met\\
-4 & PSR vs NSR vs Dr.\ GRPO vs W-REINFORCE & Separation not met (s1); s2 nearly done\\
+4 & PSR vs NSR vs Dr.\ GRPO vs W-REINFORCE & Separation not reproduced (both seeds)\\
 5 & Equal diversity at equal pass@1 (seeds 3, 4) & Running; so far $-2.2$ and $+1.6$\\
 6 & NSR paper's implementation choices & Running\\
 7 & Baseline dose-response and slower-clock control & Running\\
