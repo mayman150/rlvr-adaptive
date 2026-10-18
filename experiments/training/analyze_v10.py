@@ -208,10 +208,20 @@ def main():
     print("runs:", {f"{a}-s{s}": r["job"] for (a, s), r in runs.items() if r})
 
     print("\n1. Manipulation check: PSR+N / same-policy NSR shadow, per-question second moment, steps 0 to 49")
-    seeds = [s for s in FRESH if have("PSRN", s)]
+    manip_state = "incomplete"
+    def complete_shadow(s):
+        r = runs[("PSRN", s)]
+        if r is None:
+            return False
+        d = {x["step"]: x for x in r["train"]}
+        return all(t in d and d[t].get("split") and "shadow" in d[t]["split"] for t in range(50))
+    seeds = [s for s in FRESH if complete_shadow(s)]
     manip_ok = len(seeds) == len(FRESH)
+    if not manip_ok:
+        print(f"   incomplete: steps 0 to 49 with paired raw and shadow statistics only for seeds {seeds}")
+        manip_state = "incomplete"
     if seeds:
-        w = {s: [x for x in runs[("PSRN", s)]["train"] if x["step"] < 50] for s in seeds}
+        w = {s: sorted((x for x in runs[("PSRN", s)]["train"] if x["step"] < 50), key=lambda x: x["step"]) for s in seeds}
 
         def ratio(idx=None):
             num = den = 0.0
@@ -223,8 +233,10 @@ def main():
         est = ratio()
         bs = [ratio({s: block_indices(rng, len(w[s])) for s in seeds}) for _ in range(args.draws)]
         lo, hi = np.percentile(bs, [5, 95])
-        manip_ok &= 1 / 1.3 <= lo and hi <= 1.3
-        print(f"   pooled {est:.2f}, 90% [{lo:.2f}, {hi:.2f}] -> {'pass' if manip_ok else 'fail'}")
+        if manip_ok:
+            manip_ok = 1 / 1.3 <= lo and hi <= 1.3
+            manip_state = "pass" if manip_ok else "fail"
+        print(f"   pooled {est:.2f}, 90% [{lo:.2f}, {hi:.2f}] -> {manip_state}")
         for s in seeds:
             m, sig = split_m2(w[s])
             msh, sigsh = split_m2(w[s], shadow=True)
@@ -262,7 +274,9 @@ def main():
             verdict = "PSR+N slower than NSR"
         else:
             verdict = "inconclusive"
-        if not manip_ok:
+        if manip_state == "incomplete":
+            verdict = f"incomplete manipulation check (the rule alone gives: {verdict})"
+        elif not manip_ok:
             verdict = f"manipulation failed (the rule alone gives: {verdict})"
         per = [pooled_phi(A, "PSRN", [s]) for s in seeds]
         cls = {(-1 if x < -MARGIN else 1 if x > MARGIN else 0) for x in per}
@@ -325,7 +339,7 @@ def main():
                 states.append("incomplete" if min(n1, n0) == 0 or not math.isfinite(lo) else
                               "above" if lo > 1.2 else "below" if hi < 1.2 else "unclear")
                 out.append(f"step {m['step']}: {v:.2f} [{lo:.2f}, {hi:.2f}]" + (f" (only {n1} correct, {n0} wrong)" if min(n1, n0) < 20 else ""))
-            if len(r["remeasure"]) != 3:
+            if sorted(m["step"] for m in r["remeasure"]) != [50, 100, 150]:
                 states.append("incomplete")
             print(f"   {a} s{s}: " + ", ".join(out))
     verdict = ("incomplete" if "incomplete" in states or not persist else "asymmetry persists" if all(x == "above" for x in states)
@@ -345,8 +359,9 @@ def main():
                     continue
                 meas = split_m2(steps)[0]
                 ends = [F.get(lo), F.get(hi + 1)]
-                again = (meas / predicted_interp(r, steps, ends[0], ends[1], lo, hi + 1)
-                         if all(ends) and all(e.get("F1") for e in ends) else math.nan)
+                valid = all(e and e.get("n_correct", 0) > 0 and e.get("n_wrong", 0) > 0
+                            and all(math.isfinite(e.get(k, math.nan)) and e.get(k, 0) > 0 for k in ("F0", "F1")) for e in ends)
+                again = meas / predicted_interp(r, steps, ends[0], ends[1], lo, hi + 1) if valid else math.nan
                 ent = [x["probe"]["entropy"] for x in r["train"]
                        if lo <= x["step"] <= hi and x.get("probe") and x["probe"].get("entropy") is not None]
                 prog = [x["split"]["u_ref"] for x in steps if "u_ref" in x["split"]]

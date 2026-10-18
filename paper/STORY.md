@@ -17,8 +17,10 @@ Accepted corrections:
 
 Plan: Pre-registration 9 (OLMo, equivalence with intervals; running) and Pre-registration
 10 (PSR plus random-sign noise matched to NSR's predicted noise: same mean, same noise, no
-systematic push on wrong answers; NSR at 2x learning rate; seeds 5 and 6 for a four-seed
-Qwen equivalence test; F0/F1 re-measured; noise after Adam preconditioning).
+systematic push on wrong answers; if as slow as NSR, noise size suffices to produce the lag,
+if clearly faster, size alone does not account for it, without identifying the cause; NSR
+and PSR at 2x learning rate; fresh seeds 5 to 7 for a fresh-only Qwen equivalence test, seeds
+3 and 4 as a disclosed secondary; same-policy NSR shadow; F0/F1 re-measured; Adam statistics).
 
 Claim to submit if both hold: *positive and negative reinforcement share their expected
 update; NSR's extra term is zero-mean noise concentrated on wrong answers, which carry

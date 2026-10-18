@@ -111,7 +111,7 @@ We asked an independent model (Codex) to review the project as an ICML reviewer:
 \textbf{Running and planned.}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
 \item \textbf{Second model family} (running): OLMo-2-1B-SFT, 300 steps, five rules, two seeds, a bootstrap equivalence test on 256 held-out problems.
-\item \textbf{The causal test} (designed, under review): PSR plus random-sign noise sized to match NSR's noise. Same average update, same noise, but nothing pushes wrong answers down. If it is as slow as NSR, noise is the explanation. Plus NSR at twice the learning rate and two more PSR/NSR seeds for a four-seed equivalence test.
+\item \textbf{The causal test} (designed, reviewed): PSR plus random-sign noise sized to match NSR's noise. Same average update, same noise, but nothing pushes wrong answers down. If it is as slow as NSR, the size of the noise is enough to produce NSR's lag; if it is clearly faster, something beyond noise size matters (without telling us what). Plus both rules at twice the learning rate and three fresh seeds for an equivalence test.
 \item Venue: ICML if both hold; otherwise TMLR as a carefully scoped diagnostic paper.
 \end{itemize}
 

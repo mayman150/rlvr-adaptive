@@ -324,7 +324,7 @@ Reasoning-checked diversity is the same (CoT-Pass@32 72.7 vs 72.3 on average). A
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
 \item \textbf{Wording} (done in this report and the brief): baseline invariance credited, no ``nobody measured'' claims, absence of separation stated as such, scale relative to the NSR paper stated.
 \item \textbf{Second model family with intervals} (Pre-registration 9, running): OLMo-2-1B-SFT, 300 steps, 1{,}024-token answers, Dr.\ GRPO, PSR, NSR, pass@4 and the optimal rule, two seeds, pass@16 at matched pass@1 on 256 stratified held-out problems with a bootstrap equivalence test (90\% interval inside $\pm2$ points).
-\item \textbf{Noise-only intervention} (Pre-registration 10, under review): PSR plus random-sign noise sized each step to NSR's predicted second moment. The expected update is unchanged and the noise matches NSR's, but nothing pushes wrong answers down systematically. If it learns as slowly as NSR, the size of the noise explains NSR; if it learns like PSR, NSR's specific push matters. Plus NSR at twice the learning rate, two more PSR/NSR seeds (a four-seed equivalence test on Qwen), $F_0/F_1$ re-measured during training, and noise after Adam's preconditioning.
+\item \textbf{Noise-only intervention} (Pre-registration 10, reviewed three times by Codex): PSR plus random-sign noise sized each step to NSR's predicted second moment. The expected update is unchanged and the noise matches NSR's, but nothing pushes wrong answers down systematically. If it learns as slowly as NSR, trace-matched noise reproduces NSR's lag (noise size suffices to produce it, though noise geometry and Adam's response remain possible routes); if it learns clearly faster, noise size alone does not account for the lag, without identifying what does. Plus NSR and PSR at twice the learning rate, three fresh seeds (5 to 7) for a fresh-only equivalence test of NSR against PSR on Qwen (seeds 3 and 4 added as a disclosed secondary analysis), a same-policy NSR shadow as the manipulation check, $F_0/F_1$ re-measured during training, and Adam statistics.
 \item \textbf{Later, if the above holds:} a larger evaluation at a few overlapping accuracy levels from saved checkpoints, longer PSR/NSR runs, and one larger backbone if it fits on one L40S.
 \end{enumerate}
 
@@ -347,7 +347,7 @@ Reasoning-checked diversity is the same (CoT-Pass@32 72.7 vs 72.3 on average). A
 7 & Baseline dose-response and slower-clock control & Speed follows noise (passed); mechanism formally inconclusive\\
 8 & pass@4 objective vs Dr.\ GRPO & Curve fixed ($+1.6$, $+0.2$); CoT-Pass@32 equal\\
 9 & Second model family (OLMo-2-1B), intervals & Running\\
-10 & Noise-only intervention, learning-rate control & Under review\\
+10 & Noise-only intervention, learning-rate arms, three fresh seeds & Smoke test, then launch\\
 \bottomrule
 \end{tabularx}
 \end{table}
