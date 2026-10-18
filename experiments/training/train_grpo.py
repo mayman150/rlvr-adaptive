@@ -89,11 +89,20 @@ class Runner:
                 b = max(1, budget // enc.input_ids.shape[1])
                 enc = self.tok(items[s:s + b], return_tensors="pt", padding=True)
             enc = enc.to(self.device)
-            s += b
             kwargs = dict(do_sample=False) if greedy else dict(do_sample=True, temperature=1.0, top_p=1.0, top_k=0)
-            with self.autocast:
-                gen = self.model.generate(**enc, max_new_tokens=max_new, eos_token_id=self.stop_ids,
-                                          pad_token_id=self.pad_id, **kwargs)
+            try:
+                with self.autocast:
+                    gen = self.model.generate(**enc, max_new_tokens=max_new, eos_token_id=self.stop_ids,
+                                              pad_token_id=self.pad_id, **kwargs)
+            except torch.OutOfMemoryError:
+                if b == 1:
+                    raise
+                del enc
+                torch.cuda.empty_cache()
+                budget = max(1, budget // 2)
+                print(f"generation out of memory at batch {b}; retrying with a smaller batch", flush=True)
+                continue
+            s += b
             prompt_len = enc.input_ids.shape[1]
             for row, ids, mask in zip(gen, enc.input_ids, enc.attention_mask):
                 outs.append((ids[mask.bool()], self.trim(row[prompt_len:])))
@@ -153,6 +162,7 @@ class Runner:
         texts = [build_prompt(self.tok, q["question"]) for q in problems[:n_prompts]]
         answers = self.generate(texts, group, self.args.max_new, seed)
         norms = {0: [], 1: []}
+        owners = {0: [], 1: []}
         counts = [0] * n_prompts
         for k, (p, r) in enumerate(answers):
             q = problems[k // group]
@@ -160,12 +170,14 @@ class Runner:
             self.model.zero_grad(set_to_none=True)
             self.logprob_sum([(p, r)])[0].backward()
             norms[rew].append(self.grad_sq_norm())
+            owners[rew].append(k // group)
             counts[k // group] += rew
         self.model.zero_grad(set_to_none=True)
         F1 = sum(norms[1]) / max(len(norms[1]), 1)
         F0 = sum(norms[0]) / max(len(norms[0]), 1)
         return {"F1": F1, "F0": F0, "n_correct": len(norms[1]), "n_wrong": len(norms[0]),
                 "norms_correct": norms[1], "norms_wrong": norms[0],
+                "questions_correct": owners[1], "questions_wrong": owners[0],
                 "groups": [[c, group] for c in counts]}
 
     @torch.no_grad()
@@ -658,7 +670,8 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     if args.budget is None:
         args.budget = args.prompts_per_step * args.group
-    problems = json.loads(Path(args.train).read_text())
+    train_path = Path(args.train) if Path(args.train).exists() else HERE / "data" / args.train
+    problems = json.loads(train_path.read_text())
     eval_set = json.loads(Path(args.eval).read_text())[: args.eval_limit]
     final_set = None
     if args.final_eval:

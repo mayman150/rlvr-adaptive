@@ -1,0 +1,28 @@
+{
+ "model": "allenai/OLMo-2-0425-1B-SFT",
+ "model_dir": "OLMo-2-0425-1B-SFT",
+ "architecture": "Olmo2ForCausalLM",
+ "eval": {
+  "include_base": true,
+  "args": [
+   "--problems",
+   "eval_frontier_1024.json",
+   "--limit",
+   "128",
+   "--n",
+   "32",
+   "--greedy-problems",
+   "eval_math_test_numeric.json",
+   "--greedy-steps",
+   "6",
+   "--gen-batch",
+   "128",
+   "--max-new",
+   "1024",
+   "--expect-steps",
+   "0,3,6"
+  ]
+ },
+ "common": [],
+ "gpus": []
+}

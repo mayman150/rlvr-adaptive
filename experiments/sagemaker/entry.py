@@ -61,6 +61,7 @@ def run_plan(plan):
         run_one("eval", cmd, 0, status)
         LIVE.mkdir(parents=True, exist_ok=True)
         (LIVE / "status.json").write_text(json.dumps(status, indent=1))
+        shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True)
         if any(code != 0 for code in status.values()):
             sys.exit(1)
         return

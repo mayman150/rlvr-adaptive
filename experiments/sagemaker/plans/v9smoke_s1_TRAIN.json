@@ -1,0 +1,43 @@
+{
+ "model": "allenai/OLMo-2-0425-1B-SFT",
+ "model_dir": "OLMo-2-0425-1B-SFT",
+ "architecture": "Olmo2ForCausalLM",
+ "common": [
+  "--seed",
+  "1",
+  "--steps",
+  "6",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "64",
+  "--calib-prompts",
+  "64",
+  "--eval-steps",
+  "0,6",
+  "--entropy-every",
+  "5",
+  "--save-steps",
+  "3,6",
+  "--train",
+  "train_all_subjects.json"
+ ],
+ "gpus": [
+  [
+   [
+    "PSR",
+    [
+     "--arms",
+     "psr",
+     "--diagnostics"
+    ]
+   ]
+  ]
+ ]
+}

@@ -14,11 +14,15 @@
    "--greedy-steps",
    "300",
    "--gen-batch",
-   "256",
+   "128",
    "--max-new",
-   "512",
+   "1024",
    "--sampled-steps",
-   "300"
+   "300",
+   "--expect-steps",
+   "300",
+   "--limit",
+   "256"
   ]
  },
  "common": [],

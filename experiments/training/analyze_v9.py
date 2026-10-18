@@ -73,33 +73,42 @@ def curve(points, weights):
     return np.array(steps), np.array(xs), np.array(ys)
 
 
-def matched_difference(r_pts, p_pts, weights):
-    """Mean over R's checkpoints (after step 0) of R's pass@16 minus P's interpolated at R's pass@1."""
+def qualifying_steps(r_pts, p_pts):
+    """R's checkpoints after step 0 whose pass@1 (full data) lies inside P's pass@1 range; fixed for the bootstrap."""
+    ones = np.ones(len(next(iter(p_pts.values()))))
+    _, px, _ = curve(p_pts, ones)
+    rs, rx, _ = curve(r_pts, ones)
+    return [s for s, x in zip(rs, rx) if s != 0 and px.min() <= x <= px.max()]
+
+
+def matched_difference(r_pts, p_pts, weights, steps=None):
+    """Mean over R's qualifying checkpoints of R's pass@16 minus P's pass@16 interpolated at R's pass@1
+    (P's points ordered by pass@1; np.interp holds the end values if a resampled point falls outside)."""
     _, px, py = curve(p_pts, weights)
     order = np.argsort(px)
     px, py = px[order], py[order]
     rs, rx, ry = curve(r_pts, weights)
-    diffs = [y - np.interp(x, px, py) for s, x, y in zip(rs, rx, ry) if s != 0 and px[0] <= x <= px[-1]]
+    keep = set(steps) if steps is not None else {s for s, x in zip(rs, rx) if s != 0 and px[0] <= x <= px[-1]}
+    diffs = [y - np.interp(x, px, py) for s, x, y in zip(rs, rx, ry) if s in keep]
     return (float(np.mean(diffs)), float(np.sqrt(np.mean(np.square(diffs)))), len(diffs)) if len(diffs) >= 2 else (math.nan, math.nan, len(diffs))
 
 
 def one_curve(r_arm, p_arm, seeds, draws, rng, version="v9e"):
     per_seed, boot = [], []
     data = [(eval_points(r_arm, s, version), eval_points(p_arm, s, version)) for s in seeds]
-    data = [(r, p) for r, p in data if r and p]
-    if not data:
-        return None
+    if not all(r and p for r, p in data):
+        return {"verdict": "missing data", "per_seed": []}
+    steps = [qualifying_steps(r, p) for r, p in data]
+    if any(len(st) < 2 for st in steps):
+        return {"verdict": "insufficient overlap", "per_seed": [(math.nan, math.nan, len(st)) for st in steps]}
     n_prob = len(next(iter(data[0][1].values())))
     ones = np.ones(n_prob)
-    for r, p in data:
-        per_seed.append(matched_difference(r, p, ones))
+    for (r, p), st in zip(data, steps):
+        per_seed.append(matched_difference(r, p, ones, st))
     for _ in range(draws):
         w = np.bincount(rng.integers(0, n_prob, n_prob), minlength=n_prob).astype(float)
-        vals = [matched_difference(r, p, w)[0] for r, p in data]
-        vals = [v for v in vals if math.isfinite(v)]
-        if vals:
-            boot.append(np.mean(vals))
-    est = np.nanmean([m for m, _, _ in per_seed])
+        boot.append(np.mean([matched_difference(r, p, w, st)[0] for (r, p), st in zip(data, steps)]))
+    est = float(np.mean([m for m, _, _ in per_seed]))
     lo90, hi90 = np.percentile(boot, [5, 95])
     lo95, hi95 = np.percentile(boot, [2.5, 97.5])
     if lo90 >= -2 and hi90 <= 2:
@@ -127,9 +136,17 @@ def main():
             print(f"   seed {s}: no calibration")
             continue
         n1, n0 = np.array(cal["norms_correct"]), np.array(cal["norms_wrong"])
-        bs = [rng.choice(n0, len(n0)).mean() / rng.choice(n1, len(n1)).mean() for _ in range(args.draws)]
+        q1, q0 = np.array(cal["questions_correct"]), np.array(cal["questions_wrong"])
+        qs = np.unique(np.concatenate([q1, q0]))
+        bs = []
+        for _ in range(args.draws):
+            draw = rng.choice(qs, len(qs))
+            m = {q: c for q, c in zip(*np.unique(draw, return_counts=True))}
+            w1, w0 = np.array([m.get(q, 0) for q in q1]), np.array([m.get(q, 0) for q in q0])
+            if w1.sum() and w0.sum():
+                bs.append((w0 @ n0 / w0.sum()) / (w1 @ n1 / w1.sum()))
         lo, hi = np.percentile(bs, [2.5, 97.5])
-        print(f"   seed {s}: {n0.mean() / n1.mean():.2f} [{lo:.2f}, {hi:.2f}] from {len(n1)} correct, {len(n0)} wrong -> "
+        print(f"   seed {s}: {n0.mean() / n1.mean():.2f} [{lo:.2f}, {hi:.2f}] (bootstrap over {len(qs)} questions) from {len(n1)} correct, {len(n0)} wrong -> "
               f"{'pass' if lo > 1.2 else 'fail'}")
 
     print("2. Noise and speed")
@@ -144,28 +161,28 @@ def main():
         bs = [window_stats([sn[i] for i in rng.integers(0, len(sn), len(sn))])["m2"] /
               window_stats([sp[i] for i in rng.integers(0, len(sp), len(sp))])["m2"] for _ in range(500)]
         lo, hi = np.percentile(bs, [2.5, 97.5])
-        start = np.mean([x["first_block_reward"] for x in tp[:10]])
-        target = start + 0.5 * (np.mean([x["first_block_reward"] for x in tp[250:300]]) - start)
+        psr_late = np.mean([x["first_block_reward"] for x in tp[250:300]])
 
         def reach(t):
             fb = [x["first_block_reward"] for x in t]
-            sm = [np.mean(fb[max(0, i - 9):i + 1]) for i in range(len(fb))]
-            return next((i for i, v in enumerate(sm) if v >= target), 300)
+            start = np.mean(fb[:10])
+            target = start + 0.5 * (psr_late - start)
+            return next((i for i in range(9, len(fb)) if np.mean(fb[i - 9:i + 1]) >= target), 300)
         print(f"   seed {s}: noise NSR/PSR {ratio:.2f} [{lo:.2f}, {hi:.2f}] -> {'pass' if lo > 1 else 'fail'}; "
               f"steps to midpoint PSR {reach(tp)} NSR {reach(tn)} -> {'pass' if reach(tn) > reach(tp) else 'fail'}")
 
     print("3. One curve (pass@16 at matched pass@1; pooled over seeds; bootstrap over problems)")
     for r_arm, p_arm in (("NSR", "PSR"), ("PK4", "DR")):
         res = one_curve(r_arm, p_arm, seeds, args.draws, rng, args.eval_version)
-        if not res:
-            print(f"   {r_arm} vs {p_arm}: no data")
+        if "estimate" not in res:
+            print(f"   {r_arm} vs {p_arm}: {res['verdict']} {res['per_seed']}")
             continue
         ps = ", ".join(f"seed: {m:+.2f} (RMS {r:.2f}, {n} points)" for m, r, n in res["per_seed"])
         print(f"   {r_arm} vs {p_arm}: {res['estimate']:+.2f}, 90% [{res['ci90'][0]:+.2f}, {res['ci90'][1]:+.2f}], "
               f"95% [{res['ci95'][0]:+.2f}, {res['ci95'][1]:+.2f}] -> {res['verdict']}   ({ps})")
 
     print("4. Optimal rule minus Dr. GRPO, greedy on 3,382 problems at step 300 (paired, pooled)")
-    diffs = []
+    diffs, budget_ok = [], True
     for s in seeds:
         g = {}
         for arm in ("O128", "DR"):
@@ -179,15 +196,27 @@ def main():
             diffs.append(d)
         t, _ = train_log("O128", s, args.train_version)
         if t:
-            print(f"   seed {s}: optimal rule generated {sum(x['answers'] for x in t)} answers (target 38,400), "
-                  f"{sum(x['tokens'] for x in t):,} tokens")
-    if diffs:
-        d = np.concatenate(diffs)
+            total = sum(x["answers"] for x in t)
+            budget_ok &= abs(total / 38400 - 1) <= 0.02
+            print(f"   seed {s}: optimal rule generated {total} answers (target 38,400, within 2%: "
+                  f"{abs(total / 38400 - 1) <= 0.02}), {sum(x['tokens'] for x in t):,} tokens")
+    if len(diffs) == len(seeds):
+        d = np.mean(diffs, axis=0)
         est, se = d.mean(), d.std(ddof=1) / math.sqrt(len(d))
         lo, hi = est - 1.96 * se, est + 1.96 * se
-        verdict = "faster" if est >= 1 and lo > 0 else "slower" if hi < 0 else "inconclusive"
+        verdict = ("invalid answer budget" if not budget_ok else
+                   "faster" if est >= 1 and lo > 0 else "slower" if hi < 0 else "inconclusive")
         print(f"   pooled: {est:+.2f} [{lo:+.2f}, {hi:+.2f}] -> {verdict}")
 
+    print("Format check for the curve comparisons (boxed-answer rate, steps 250 to 299; flag if > 10 points apart)")
+    for r_arm, p_arm in (("NSR", "PSR"), ("PK4", "DR")):
+        for s in seeds:
+            tr, _ = train_log(r_arm, s, args.train_version)
+            tp, _ = train_log(p_arm, s, args.train_version)
+            if tr and tp and "boxed_rate" in tr[0]:
+                br = 100 * np.mean([x["boxed_rate"] for x in tr[250:300]])
+                bp = 100 * np.mean([x["boxed_rate"] for x in tp[250:300]])
+                print(f"   {r_arm} vs {p_arm} seed {s}: {br:.0f}% vs {bp:.0f}%" + ("  FLAG" if abs(br - bp) > 10 else ""))
     print("Formatting (mean over steps 250 to 299): boxed-answer rate / truncation rate")
     for arm in ARM_FILE:
         for s in seeds:

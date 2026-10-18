@@ -43,7 +43,16 @@ def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, 
             enc = tok(items[s:s + b], return_tensors="pt", padding=True)
         enc = enc.to(model.device)
         kw = dict(do_sample=False) if greedy else dict(do_sample=True, temperature=1.0, top_p=1.0, top_k=0)
-        gen = model.generate(**enc, max_new_tokens=max_new, eos_token_id=stop, pad_token_id=pad, **kw)
+        try:
+            gen = model.generate(**enc, max_new_tokens=max_new, eos_token_id=stop, pad_token_id=pad, **kw)
+        except torch.OutOfMemoryError:
+            if b == 1:
+                raise
+            del enc
+            torch.cuda.empty_cache()
+            budget = max(1, budget // 2)
+            print(f"generation out of memory at batch {b}; retrying with a smaller batch", flush=True)
+            continue
         for row in gen[:, enc.input_ids.shape[1]:]:
             ids = row.tolist()
             cut = next((i + 1 for i, t in enumerate(ids) if t in stop), len(ids))
@@ -102,6 +111,7 @@ def main():
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--out", required=True)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--expect-steps", default="", help="fail unless checkpoints (or the base, as 0) exist for these steps")
     args = ap.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -115,6 +125,10 @@ def main():
     for d in sorted(Path(args.ckpts).glob("ckpt_step*"), key=lambda d: int(re.findall(r"\d+", d.name)[-1])):
         step = int(re.findall(r"\d+", d.name)[-1])
         jobs.append((d, f"step{step}", step))
+    expected = {int(s) for s in args.expect_steps.split(",") if s}
+    found = {step for _, _, step in jobs}
+    if expected - found:
+        raise SystemExit(f"missing checkpoints for steps {sorted(expected - found)} under {args.ckpts}")
     for path, tag, step in jobs:
         if (out_dir / f"{tag}_eval.json").exists():
             print(f"{tag}: already done", flush=True)
