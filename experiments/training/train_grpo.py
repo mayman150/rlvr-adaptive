@@ -44,13 +44,23 @@ def build_prompt(tok, question):
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
+def stop_token_ids(tok):
+    """End-of-answer token ids: the model's eos plus Qwen-style chat terminators when the vocabulary has them."""
+    ids = [tok.eos_token_id] if tok.eos_token_id is not None else []
+    for t in STOP_TOKENS:
+        i = tok.convert_tokens_to_ids(t)
+        if isinstance(i, int) and i != tok.unk_token_id and i not in ids:
+            ids.append(i)
+    return ids
+
+
 class Runner:
     def __init__(self, args):
         self.args = args
         self.device = args.device
         self.tok = AutoTokenizer.from_pretrained(args.model)
         self.tok.padding_side = "left"
-        self.stop_ids = [self.tok.convert_tokens_to_ids(t) for t in STOP_TOKENS]
+        self.stop_ids = stop_token_ids(self.tok)
         self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else self.stop_ids[0]
         self.model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32).to(self.device)
         self.model.gradient_checkpointing_enable()
