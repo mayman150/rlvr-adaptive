@@ -1,0 +1,9 @@
+us-east-1:worth-v8-PK4-s3-20261018-034027
+us-east-1:worth-v8-DR-s3-20261018-034031
+us-east-2:worth-v8-PK4-s4-20261018-034903
+us-east-2:worth-v8-DR-s4-20261018-034907
+us-east-1:worth-v5-PSR-s4-20261018-034043
+us-east-2:worth-v7-B25-s4-20261018-034047
+us-west-2:worth-v7-B50-s4-20261018-034052
+us-west-2:worth-v7-B75-s4-20261018-034055
+us-west-2:worth-v7-PSRlow-s4-20261018-034058

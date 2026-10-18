@@ -17,6 +17,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TRAIN = HERE / "training" / "train_grpo.py"
+EVAL = HERE / "training" / "eval_ckpt.py"
+CKPT_CHANNEL = Path("/opt/ml/input/data/ckpts")
 LIVE = Path("/opt/ml/checkpoints")
 MODEL_CHANNEL = Path("/opt/ml/input/data/model")
 FINAL = Path("/opt/ml/model")
@@ -42,10 +44,26 @@ def run_one(name, cmd, gpu, status):
 
 def run_plan(plan):
     local = local_model_args()
-    if not local:
+    if local:
+        expected = plan.get("architecture")
+        found = json.loads((MODEL_CHANNEL / "config.json").read_text()).get("architectures", ["?"])[0]
+        if expected and found != expected:
+            raise SystemExit(f"model channel holds {found}, plan expects {expected}")
+        print(f"model channel: {found}", flush=True)
+    else:
         from huggingface_hub import snapshot_download
         snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
+        local = ["--model", plan.get("model", "Qwen/Qwen2.5-Math-1.5B")]
     status = {}
+    if "eval" in plan:
+        base = ["--base", local[1]] if plan["eval"].get("include_base") else []
+        cmd = [sys.executable, str(EVAL), "--ckpts", str(CKPT_CHANNEL), *base, "--out", str(LIVE / "eval"), *plan["eval"]["args"]]
+        run_one("eval", cmd, 0, status)
+        LIVE.mkdir(parents=True, exist_ok=True)
+        (LIVE / "status.json").write_text(json.dumps(status, indent=1))
+        if any(code != 0 for code in status.values()):
+            sys.exit(1)
+        return
 
     def lane(gpu, runs):
         for name, extra in runs:

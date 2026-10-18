@@ -30,7 +30,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from verifier import reward  # noqa: E402
+from verifier import last_boxed, reward  # noqa: E402
 import policy_table  # noqa: E402
 
 SYSTEM = "Please reason step by step, and put your final answer within \\boxed{}."
@@ -165,6 +165,7 @@ class Runner:
         F1 = sum(norms[1]) / max(len(norms[1]), 1)
         F0 = sum(norms[0]) / max(len(norms[0]), 1)
         return {"F1": F1, "F0": F0, "n_correct": len(norms[1]), "n_wrong": len(norms[0]),
+                "norms_correct": norms[1], "norms_wrong": norms[0],
                 "groups": [[c, group] for c in counts]}
 
     @torch.no_grad()
@@ -308,6 +309,15 @@ def probe_entropy(runner, args, answers, rewards, owner):
     return res
 
 
+def save_bf16(runner, path):
+    bf16 = {k: v.detach().to(torch.bfloat16) for k, v in runner.model.state_dict().items()}
+    runner.model.save_pretrained(path, state_dict=bf16, safe_serialization=True)
+    runner.tok.save_pretrained(path)
+    del bf16
+    if runner.device == "cuda":
+        torch.cuda.empty_cache()
+
+
 def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None):
     """Accumulate the gradient of -sum_k weights[k] log pi(answer_k) / norm into .grad."""
     for s in range(0, len(idx), args.train_batch):
@@ -438,6 +448,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                   else set(range(0, args.steps + 1, args.eval_every)))
     sample_steps = {int(s) for s in args.sample_eval_steps.split(",") if s}
     passk_steps = {int(s) for s in args.passk_steps.split(",") if s}
+    save_steps = {int(s) for s in args.save_steps.split(",") if s}
     surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
@@ -468,7 +479,12 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             passk.append({"step": step, "n": args.passk_n, "counts": per, "pass_at_k": curve})
             print(f"[{arm}] step {step} pass@k " + " ".join(f"{k}:{v:.3f}" for k, v in curve.items()), flush=True)
             (out_dir / f"{arm}_passk.json").write_text(json.dumps(passk))
+        if step in save_steps and step != args.steps:
+            save_bf16(runner, out_dir / f"ckpt_step{step}")
+            print(f"[{arm}] saved checkpoint at step {step}", flush=True)
         if step == args.steps:
+            if args.save_steps and step in save_steps:
+                save_bf16(runner, out_dir / f"ckpt_step{step}")
             if args.save_model:
                 path = Path(args.save_model.replace("{arm}", arm))
                 bf16 = {k: v.detach().to(torch.bfloat16) for k, v in runner.model.state_dict().items()}
@@ -559,7 +575,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             opt.step()
         opt.zero_grad(set_to_none=True)
         mixed = sum(0 < k < n for k, n in groups)
+        texts_out = [runner.tok.decode(r) for _, r in answers]
+        boxed_rate = sum(last_boxed(t) is not None for t in texts_out) / len(texts_out)
+        truncated_rate = sum(1 for _, r in answers if len(r) >= args.max_new and int(r[-1]) not in runner.stop_ids) / len(answers)
         rec = {"step": step, "mean_reward": sum(rewards) / len(rewards),
+               "boxed_rate": boxed_rate, "truncated_rate": truncated_rate,
                "first_block_reward": sum(first_block) / len(first_block), "mixed_groups": mixed,
                "groups": len(groups), "grad_norm": grad_norm, "answers": len(answers),
                "tokens": sum(len(r) for _, r in answers),
@@ -614,6 +634,7 @@ def main():
     parser.add_argument("--passk-limit", type=int, default=None, help="evaluate pass@k on the first problems only")
     parser.add_argument("--save-passk-texts", action="store_true", help="save every pass@k answer text (for CoT judging)")
     parser.add_argument("--save-model", default=None, help="directory for the final model ({arm} is replaced)")
+    parser.add_argument("--save-steps", default="", help="steps at which to save a bf16 checkpoint under the output directory")
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
     parser.add_argument("--ref-block", type=int, default=4)
     parser.add_argument("--within-ref", action="store_true",
@@ -650,6 +671,10 @@ def main():
         runner = Runner(args)
         calib = runner.measure_ratio(problems[-args.calib_prompts:], args.calib_prompts, args.group, args.seed + 7)
         del runner
+        if calib["n_correct"] < 20 or calib["n_wrong"] < 20:
+            print(f"WARNING: calibration has only {calib['n_correct']} correct and {calib['n_wrong']} wrong answers; "
+                  f"F1 / F0 is imprecise (raise --calib-prompts)", flush=True)
+            calib["low_count"] = True
         w = min(1.0, max(0.1, calib["F1"] / calib["F0"])) if calib["F0"] > 0 and calib["F1"] > 0 else 1.0
         calib["w"] = w
         print(f"calibration: F1 {calib['F1']:.4g}, F0 {calib['F0']:.4g} over {calib['n_correct']} correct and "

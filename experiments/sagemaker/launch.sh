@@ -23,7 +23,17 @@ cp "${HERE}/entry.py" "${HERE}/requirements.txt" "${STAGE}/"
 rsync -a --exclude results --exclude __pycache__ "${EXPERIMENTS}/training" "${STAGE}/"
 if [ -n "${PLAN:-}" ]; then
   cp "${PLAN}" "${STAGE}/plan.json"
+  PLAN_MODEL_DIR=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('model_dir', ''))" "${PLAN}")
+  if [ -n "${PLAN_MODEL_DIR}" ]; then MODEL_DIR=${PLAN_MODEL_DIR}; fi
 fi
+echo "model copy: models/${MODEL_DIR:-Qwen2.5-Math-1.5B}"
+CHANNELS="[{\"ChannelName\": \"model\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"s3://${BUCKET}/models/${MODEL_DIR:-Qwen2.5-Math-1.5B}/\", \"S3DataDistributionType\": \"FullyReplicated\"}}}"
+VOLUME=60
+if [ -n "${CKPT_S3:-}" ]; then
+  CHANNELS="${CHANNELS}, {\"ChannelName\": \"ckpts\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"${CKPT_S3}\", \"S3DataDistributionType\": \"FullyReplicated\"}}}"
+  VOLUME=120
+fi
+CHANNELS="${CHANNELS}]"
 tar -czf "${STAGE}.tar.gz" -C "${STAGE}" .
 ${AWS} s3 cp "${STAGE}.tar.gz" "s3://${BUCKET}/code/${JOB}/sourcedir.tar.gz"
 rm -f "${STAGE}.tar.gz"
@@ -45,8 +55,8 @@ ${AWS} sagemaker create-training-job --training-job-name "${JOB}" \
     \"seed\": \"${SEED:-1}\",
     \"arms\": \"${ARMS:-baseline,scaled}\"
   }" \
-  --resource-config "InstanceType=${INSTANCE},InstanceCount=1,VolumeSizeInGB=60" \
-  --input-data-config "[{\"ChannelName\": \"model\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"s3://${BUCKET}/models/${MODEL_DIR:-Qwen2.5-Math-1.5B}/\", \"S3DataDistributionType\": \"FullyReplicated\"}}}]" \
+  --resource-config "InstanceType=${INSTANCE},InstanceCount=1,VolumeSizeInGB=${VOLUME}" \
+  --input-data-config "${CHANNELS}" \
   --output-data-config "S3OutputPath=s3://${BUCKET}/output/" \
   --checkpoint-config "S3Uri=s3://${BUCKET}/checkpoints/${JOB}/,LocalPath=/opt/ml/checkpoints" \
   ${SPOT_FLAGS[@]+"${SPOT_FLAGS[@]}"} \

@@ -1,5 +1,7 @@
 {
  "model": "allenai/OLMo-2-0425-1B-SFT",
+ "model_dir": "OLMo-2-0425-1B-SFT",
+ "architecture": "Olmo2ForCausalLM",
  "common": [
   "--seed",
   "1",
@@ -14,22 +16,15 @@
   "--lr",
   "1e-6",
   "--gen-batch",
-  "192",
+  "64",
+  "--calib-prompts",
+  "64",
   "--eval-steps",
   "0,50,100,150,200,250,300",
-  "--passk-steps",
-  "0,100,200,300",
-  "--passk-n",
-  "32",
-  "--passk-limit",
-  "256",
   "--entropy-every",
   "5",
-  "--save-passk-texts",
-  "--final-eval",
-  "eval_math_test_numeric.json",
-  "--save-model",
-  "/opt/ml/model/final_{arm}"
+  "--save-steps",
+  "50,100,150,200,250,300"
  ],
  "gpus": [
   [

@@ -1,0 +1,4 @@
+us-east-2:worth-v6-PSRv-s1-20261017-173628
+us-east-2:worth-v6-NSRv-s1-20261017-173632
+us-west-2:worth-v6-PSRv-s2-20261017-173636
+us-east-2:worth-v6-NSRv-s2-20261017-173639

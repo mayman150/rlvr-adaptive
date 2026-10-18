@@ -1,0 +1,8 @@
+us-east-2:worth-v7-B25-s3-20261017-190549
+us-west-2:worth-v7-B50-s3-20261017-190553
+us-east-1:worth-v7-B75-s3-20261017-190556
+us-east-1:worth-v7-PSRlow-s3-20261017-203119
+us-east-2:worth-v7-B25-s4-20261017-190604
+us-east-2:worth-v7-B50-s4-20261017-190607
+us-west-2:worth-v7-B75-s4-20261017-190611
+us-west-2:worth-v7-PSRlow-s4-20261017-190614
