@@ -1,0 +1,4 @@
+us-east-2:worth-v9e-PK4a-s1-20261019-033851
+us-east-2:worth-v9e-PK4b-s1-20261019-033856
+us-east-1:worth-v9e-DRa-s1-20261019-033934
+us-east-1:worth-v9e-DRb-s1-20261019-033946

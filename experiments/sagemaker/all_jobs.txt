@@ -8,3 +8,7 @@ us-east-1:worth-v9-PSR-s2-20261018-200430
 us-west-2:worth-v9-NSR-s2-20261018-195016
 us-east-1:worth-v9-PK4-s2-20261018-200721
 us-east-2:worth-v9-O128-s2-20261018-195023
+us-east-2:worth-v9e-PK4a-s1-20261019-033851
+us-east-2:worth-v9e-PK4b-s1-20261019-033856
+us-east-1:worth-v9e-DRa-s1-20261019-033934
+us-east-1:worth-v9e-DRb-s1-20261019-033946

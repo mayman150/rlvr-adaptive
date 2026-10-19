@@ -46,14 +46,14 @@ def eval_points(arm, seed, version="v9e"):
     """{step: per-problem correct counts out of 32} for a run, plus the base model at step 0."""
     pts = {}
     for name in (arm, "DR"):
-        job = latest(f"worth-{version}-{name}-s{seed}-*")
-        if not job:
-            continue
-        for f in (job / "eval").glob("step*_eval.json"):
-            d = json.loads(f.read_text())
-            step = int(re.findall(r"\d+", f.name)[0])
-            if "counts" in d and (name == arm or step == 0):
-                pts.setdefault(step, np.array(d["counts"]))
+        # An evaluation can be split over jobs by checkpoint (<ARM>a, <ARM>b); later jobs win on overlap.
+        jobs = sorted(j for suffix in ("", "a", "b") for j in RES.glob(f"worth-{version}-{name}{suffix}-s{seed}-*"))
+        for job in sorted(jobs, key=lambda j: j.name[-15:]):
+            for f in (job / "eval").glob("step*_eval.json"):
+                d = json.loads(f.read_text())
+                step = int(re.findall(r"\d+", f.name)[0])
+                if "counts" in d and (name == arm or step == 0):
+                    pts[step] = np.array(d["counts"])
     return dict(sorted(pts.items()))
 
 
@@ -204,10 +204,11 @@ def main():
     for s in seeds:
         g = {}
         for arm in ("O128", "DR"):
-            job = latest(f"worth-{args.eval_version}-{arm}-s{s}-*")
-            f = job / "eval" / "step300_eval.json" if job else None
-            if f and f.exists() and "greedy" in json.loads(f.read_text()):
-                g[arm] = np.array(json.loads(f.read_text())["greedy"]["correct"])
+            for suffix in ("", "a", "b"):
+                job = latest(f"worth-{args.eval_version}-{arm}{suffix}-s{s}-*")
+                f = job / "eval" / "step300_eval.json" if job else None
+                if f and f.exists() and "greedy" in json.loads(f.read_text()):
+                    g[arm] = np.array(json.loads(f.read_text())["greedy"]["correct"])
         if len(g) == 2:
             d = 100 * (g["O128"] - g["DR"])
             print(f"   seed {s}: {d.mean():+.2f} ({d.std(ddof=1) / math.sqrt(len(d)):.2f})")
