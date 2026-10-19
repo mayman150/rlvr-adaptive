@@ -55,6 +55,28 @@ def run_plan(plan):
         snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
         local = ["--model", plan.get("model", "Qwen/Qwen2.5-Math-1.5B")]
     status = {}
+    if "eval_lanes" in plan:
+        # One lane per GPU; a lane is a list of evaluations run in sequence. Each evaluation reads the
+        # checkpoints of one run from a subfolder of the ckpts channel (a training job's S3 prefix)
+        # and writes to /opt/ml/checkpoints/<name>/eval.
+        def eval_lane(gpu, specs):
+            for spec in specs:
+                base = ["--base", local[1]] if spec.get("include_base") else []
+                ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
+                cmd = [sys.executable, str(EVAL), "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"),
+                       *spec["args"]]
+                run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
+        threads = [threading.Thread(target=eval_lane, args=(g, specs)) for g, specs in enumerate(plan["eval_lanes"])]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        LIVE.mkdir(parents=True, exist_ok=True)
+        (LIVE / "status.json").write_text(json.dumps(status, indent=1))
+        shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True, ignore=shutil.ignore_patterns("ckpt_step*"))
+        if any(code != 0 for code in status.values()):
+            sys.exit(1)
+        return
     if "eval" in plan:
         base = ["--base", local[1]] if plan["eval"].get("include_base") else []
         cmd = [sys.executable, str(EVAL), "--ckpts", str(CKPT_CHANNEL), *base, "--out", str(LIVE / "eval"), *plan["eval"]["args"]]
