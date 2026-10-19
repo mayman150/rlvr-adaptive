@@ -21,7 +21,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from train_grpo import build_prompt, pass_at_k, stop_token_ids  # noqa: E402
-from verifier import reward  # noqa: E402
+from verifier import last_boxed, reward  # noqa: E402
 
 
 def load_problems(path, limit):
@@ -30,7 +30,8 @@ def load_problems(path, limit):
 
 
 @torch.no_grad()
-def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, prefill_tokens, temperature=1.0):
+def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, prefill_tokens, temperature=1.0, meta=None):
+    """Decoded answers; if `meta` is a list, (token length, ended with a stop token) is appended per answer."""
     items = [t for t in texts for _ in range(n_each)]
     outs, s, budget = [], 0, gen_batch * prefill_tokens
     torch.manual_seed(seed)
@@ -55,8 +56,10 @@ def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, 
             continue
         for row in gen[:, enc.input_ids.shape[1]:]:
             ids = row.tolist()
-            cut = next((i + 1 for i, t in enumerate(ids) if t in stop), len(ids))
-            outs.append(tok.decode(ids[:cut], skip_special_tokens=True))
+            cut = next((i + 1 for i, t in enumerate(ids) if t in stop), None)
+            if meta is not None:
+                meta.append((cut if cut is not None else len([t for t in ids if t != pad]), cut is not None))
+            outs.append(tok.decode(ids[:cut or len(ids)], skip_special_tokens=True))
         s += b
     return outs
 
@@ -64,7 +67,9 @@ def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, 
 @torch.no_grad()
 def prefix_entropy(model, tok, sequences, temperature, device, batch=8):
     """Mean per-token entropy of softmax(logits / temperature) over the response tokens of fixed
-    (frozen) prompt-response sequences, so that models are compared on the same prefixes."""
+    (frozen) prompt-response sequences, so that models are compared on the same prefixes. Token-weighted,
+    on retokenized text (the saved texts lack the stop token), responses cut at 512 tokens; it therefore
+    differs from the training-time entropy probe, which uses each model's own samples."""
     total, count = 0.0, 0
     for s in range(0, len(sequences), batch):
         chunk = sequences[s:s + batch]
@@ -102,10 +107,13 @@ def evaluate(model_path, tag, args, problems, greedy_problems, out_dir, sampled=
         res["prefix_entropy"] = prefix_entropy(model, tok, prefixes, temperature, args.device)
     if sampled:
         texts = [build_prompt(tok, q["question"]) for q in problems]
+        meta = []
         outs = generate(model, tok, stop, texts, args.n, args.max_new, args.seed, False, args.gen_batch, args.prefill_tokens,
-                        temperature)
+                        temperature, meta)
         res["mean_length_chars"] = sum(len(o) for o in outs) / len(outs)
-        res["boxed_rate"] = sum("\\boxed" in o for o in outs) / len(outs)
+        res["mean_length_tokens"] = sum(m[0] for m in meta) / len(meta)
+        res["truncated_rate"] = sum(not m[1] for m in meta) / len(meta)
+        res["boxed_rate"] = sum(last_boxed(o) is not None for o in outs) / len(outs)  # parseable final box
         correct = [reward(o, problems[i // args.n]["answer"]) for i, o in enumerate(outs)]
         counts = [sum(correct[i * args.n:(i + 1) * args.n]) for i in range(len(problems))]
         ks = [k for k in (1, 2, 4, 8, 16, 32, 64) if k <= args.n]
