@@ -13,3 +13,7 @@ us-west-2:worth-v11-BASEa-s0-20261019-084708
 us-west-2:worth-v11-BASEb-s0-20261019-084711
 us-west-2:worth-v11-PSRb-s5-20261019-084715
 us-west-2:worth-v11-PSRc-s5-20261019-084718
+us-east-1:worth-v11-PSRa-s6-20261019-165203
+us-east-1:worth-v11-PSRc-s6-20261019-165208
+us-east-2:worth-v11-PSRb-s7-20261019-165213
+us-east-2:worth-v11-PSRc-s7-20261019-165217

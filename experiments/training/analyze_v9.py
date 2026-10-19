@@ -26,6 +26,7 @@ from analyze_v2 import window_stats  # noqa: E402
 ARM_FILE = {"DR": "baseline", "PSR": "psr", "NSR": "nsr", "PK4": "passk", "O128": "optimal"}
 EXPECTED_STEPS = {0, 50, 100, 150, 200, 250, 300}
 N_SAMPLES, K_DIV = 32, 16
+MASK = None  # set by --exclude-labels: 0 for problems whose reference the label audit rejected
 
 
 def latest(pattern):
@@ -108,12 +109,12 @@ def one_curve(r_arm, p_arm, seeds, draws, rng, version="v9e"):
     if any(len(st) < 2 for st in steps):
         return {"verdict": "insufficient overlap", "per_seed": [(math.nan, math.nan, len(st)) for st in steps]}
     n_prob = len(next(iter(data[0][1].values())))
-    ones = np.ones(n_prob)
+    ones = np.ones(n_prob) if MASK is None else MASK.astype(float)
     for (r, p), st in zip(data, steps):
         per_seed.append(matched_difference(r, p, ones, st))
     boot_pts = []
     for _ in range(draws):
-        w = np.bincount(rng.integers(0, n_prob, n_prob), minlength=n_prob).astype(float)
+        w = np.bincount(rng.integers(0, n_prob, n_prob), minlength=n_prob).astype(float) * ones
         pts = [matched_difference(r, p, w, st, return_points=True) for (r, p), st in zip(data, steps)]
         boot.append(np.mean([np.mean(d) for d in pts]))
         boot_pts.append(np.concatenate(pts))
@@ -141,7 +142,15 @@ def main():
     ap.add_argument("--draws", type=int, default=2000)
     ap.add_argument("--train-version", default="v9")
     ap.add_argument("--eval-version", default="v9e")
+    ap.add_argument("--exclude-labels", action="store_true", help="sensitivity analysis without audit-rejected references")
     args = ap.parse_args()
+    if args.exclude_labels:
+        global MASK
+        probs = json.loads((HERE / "data" / "eval_frontier_256.json").read_text())
+        corr = json.loads((HERE / "data" / "label_corrections.json").read_text())
+        bad = lambda q: q["question"] in corr["fix"] or any(q["question"].startswith(x) for x in corr["exclude_prefixes"])
+        MASK = np.array([0 if bad(q) else 1 for q in probs])
+        print(f"sensitivity analysis: {int((MASK == 0).sum())} audit-rejected problem(s) excluded")
     rng = np.random.default_rng(0)
     seeds = (1, 2)
 
