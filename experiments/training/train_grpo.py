@@ -132,6 +132,25 @@ class Runner:
                     entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return torch.stack(sums)
 
+    def logprob_and_entropy(self, pairs):
+        """Response log-probability sums and differentiable token-entropy sums for each pair."""
+        seqs = [torch.cat([p, r]) for p, r in pairs]
+        width = max(len(s) for s in seqs)
+        ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
+        mask = torch.zeros_like(ids)
+        for i, ((p, r), s) in enumerate(zip(pairs, seqs)):
+            ids[i, : len(s)] = s
+            mask[i, : len(s)] = 1
+        with self.autocast:
+            logits = self.model(input_ids=ids, attention_mask=mask).logits
+        sums, ents = [], []
+        for i, (p, r) in enumerate(pairs):
+            rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
+            logp = torch.log_softmax(rows, dim=-1)
+            sums.append(logp.gather(1, r[:, None]).squeeze(1).sum())
+            ents.append(-(logp.exp() * logp).sum())
+        return torch.stack(sums), torch.stack(ents)
+
     def logprob_tokens(self, pairs):
         """Per-token response log-probabilities for each (prompt_ids, response_ids) pair."""
         seqs = [torch.cat([p, r]) for p, r in pairs]
@@ -346,13 +365,139 @@ def save_bf16(runner, path):
         torch.cuda.empty_cache()
 
 
-def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None):
-    """Accumulate the gradient of -sum_k weights[k] log pi(answer_k) / norm into .grad."""
+def backward_weighted(runner, args, answers, idx, weights, norm, entropy=None, ent_coef=0.0, ent_stats=None):
+    """Accumulate the gradient of -sum_k weights[k] log pi(answer_k) / norm into .grad.
+
+    With ent_coef > 0 the loss also has -ent_coef * sum of token entropies / norm over the given
+    answers (an entropy bonus in the same forward pass); ent_stats collects [entropy sum, tokens]."""
     for s in range(0, len(idx), args.train_batch):
         chunk = idx[s:s + args.train_batch]
-        lp = runner.logprob_sum([answers[k] for k in chunk], entropy)
+        if ent_coef > 0 or ent_stats is not None:
+            lp, ent = runner.logprob_and_entropy([answers[k] for k in chunk])
+            if ent_stats is not None:
+                ent_stats[0] += float(ent.detach().sum())
+                ent_stats[1] += sum(len(answers[k][1]) for k in chunk)
+        else:
+            lp = runner.logprob_sum([answers[k] for k in chunk], entropy)
+            ent = None
         wt = torch.tensor([weights[k] for k in chunk], device=runner.device) / norm
-        (-(wt * lp).sum()).backward()
+        loss = -(wt * lp).sum()
+        if ent is not None:
+            loss = loss - ent_coef * ent.sum() / norm
+        loss.backward()
+
+
+def bank_tensors(runner, path, size):
+    """Frozen prompt-response sequences (token ids on the device) for the entropy floor."""
+    p = Path(path) if Path(path).exists() else HERE / "data" / path
+    items = json.loads(p.read_text())[:size]
+    out = []
+    for it in items:
+        pi = runner.tok(build_prompt(runner.tok, it["question"]), add_special_tokens=False, return_tensors="pt").input_ids[0]
+        ri = runner.tok(it["response"], add_special_tokens=False, return_tensors="pt").input_ids[0][:512]
+        out.append((pi.to(runner.device), ri.to(runner.device)))
+    return out
+
+
+def bank_entropy(runner, bank, batch=8, grad=False):
+    """Mean token entropy of the current policy on the frozen bank; with grad=True, also backward
+    into .grad (the caller zeroes .grad around it)."""
+    total, count = 0.0, sum(len(r) for _, r in bank)
+    for s in range(0, len(bank), batch):
+        chunk = bank[s:s + batch]
+        if grad:
+            _, ent = runner.logprob_and_entropy(chunk)
+            (ent.sum() / count).backward()
+            total += float(ent.detach().sum())
+        else:
+            with torch.no_grad():
+                _, ent = runner.logprob_and_entropy(chunk)
+            total += float(ent.sum())
+    return total / count
+
+
+@torch.no_grad()
+def apply_entropy_floor(runner, opt, bank, h, h_before, floor, args):
+    """After opt.step(): if the first-order prediction H + <h, u> of the bank entropy falls below the
+    floor (u = Adam's actual parameter change, -lr m_hat / (sqrt(v_hat) + eps), no weight decay),
+    move along h by the missing amount over |h|^2, then check the measured entropy and double the
+    correction up to three times. Returns statistics."""
+    group = opt.param_groups[0]
+    hu = hh = 0.0
+    for p, hp in zip(runner.params, h):
+        st = opt.state[p]
+        t = float(st["step"])
+        u = -group["lr"] * (st["exp_avg"] / (1 - group["betas"][0] ** t)) / (
+            (st["exp_avg_sq"] / (1 - group["betas"][1] ** t)).sqrt() + group["eps"])
+        hf = hp.float()
+        hu += float((hf * u).sum())
+        hh += float((hf * hf).sum())
+    slack = floor - h_before - hu
+    stats = {"floor": floor, "h_before": h_before, "predicted": h_before + hu, "c": 0.0, "tries": 0}
+    if slack <= 0 or hh <= 0:
+        return stats
+    c = slack / hh
+    applied = 0.0
+    for tries in range(4):
+        for p, hp in zip(runner.params, h):
+            p.add_(hp.to(p.dtype), alpha=c - applied)
+        applied = c
+        after = bank_entropy(runner, bank)
+        stats.update({"c": c, "tries": tries + 1, "h_after": after})
+        if after >= floor - args.floor_tol * abs(floor):
+            break
+        c *= 2
+    return stats
+
+
+def sequence_logprobs(runner, args, answers):
+    with torch.no_grad():
+        out = []
+        for s in range(0, len(answers), args.train_batch):
+            out.extend(float(x) for x in runner.logprob_sum(answers[s:s + args.train_batch]))
+    return out
+
+
+def unlikeliness_rewards(rewards, seq_lp, G, beta):
+    """He et al. (2025): within each group with mixed rewards, rank all G samples by sequence
+    probability (rank 0 = most probable) and give a correct sample 1 - beta (G - rank) / G;
+    wrong samples keep 0; all-correct and all-wrong groups are unchanged."""
+    out = list(map(float, rewards))
+    for j in range(len(rewards) // G):
+        g = rewards[j * G:(j + 1) * G]
+        if 0 < sum(g) < G:
+            order = sorted(range(G), key=lambda i: -seq_lp[j * G + i])
+            rank = {i: r for r, i in enumerate(order)}
+            for i in range(G):
+                if g[i]:
+                    out[j * G + i] = 1.0 - beta * (G - rank[i]) / G
+    return out
+
+
+def memory_backward(runner, args, archive, rng, norm):
+    """Gradient of -lambda * sum over sampled archived questions of log sum_{y in S_q} pi(y | q), / norm."""
+    keys = [k for k, v in archive.items() if v]
+    if not keys:
+        return {"questions": 0, "sequences": 0}
+    pick = rng.sample(keys, min(args.memory_questions, len(keys)))
+    seqs, owner = [], []
+    for j, k in enumerate(pick):
+        for pr in archive[k]:
+            seqs.append((pr[0].to(runner.device), pr[1].to(runner.device)))
+            owner.append(j)
+    lps = []
+    for s in range(0, len(seqs), args.train_batch):
+        lps.append(runner.logprob_sum(seqs[s:s + args.train_batch]))
+    lp = torch.cat(lps)
+    owner_t = torch.tensor(owner, device=runner.device)
+    loss = 0.0
+    values = []
+    for j in range(len(pick)):
+        lm = torch.logsumexp(lp[owner_t == j], dim=0)
+        values.append(float(lm.detach()))
+        loss = loss + lm
+    (-args.memory_lambda * loss / norm).backward()
+    return {"questions": len(pick), "sequences": len(seqs), "mean_log_mass": sum(values) / len(values)}
 
 
 def backward_surrogate(runner, args, answers, idx, adv, old_lp, norm):
@@ -566,6 +711,14 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     passk_steps = {int(s) for s in args.passk_steps.split(",") if s}
     save_steps = {int(s) for s in args.save_steps.split(",") if s}
     remeasure_steps = {int(s) for s in args.remeasure_steps.split(",") if s}
+    # Pre-registration 12 options (all off by default).
+    bank = bank_tensors(runner, args.floor_bank, args.floor_bank_size) if args.floor_rho > 0 else None
+    floor = args.floor_rho * bank_entropy(runner, bank) if bank is not None else None
+    archive, mem_rng = {}, random.Random(args.seed * 7717)
+    ent_coef, ent_target = args.entropy_coef, None
+    adaptive_entropy = args.entropy_target_frac > 0
+    if floor is not None:
+        print(f"[{arm}] entropy floor {floor:.4f} (rho {args.floor_rho} of the starting bank entropy)", flush=True)
     assert not remeasure_steps or calib_problems, "re-measuring needs the calibration questions"
     remeasured = []
     surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
@@ -651,6 +804,15 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
             groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
+            keys = [order[(step * pps + j) % len(order)] for j in range(pps)] if args.reuse == 1 else None
+            if args.unlikely_beta > 0:
+                assert arm == "baseline" and not surrogate, "the unlikeliness reward is implemented for on-policy Dr. GRPO"
+                shaped = unlikeliness_rewards(rewards, sequence_logprobs(runner, args, answers), G, args.unlikely_beta)
+                adv = []
+                for j in range(pps):
+                    g = shaped[j * G:(j + 1) * G]
+                    m = sum(g) / len(g)
+                    adv.extend(r - m for r in g)
             if arm == "psrnoise":
                 adv, extra["noise_c"] = add_sign_noise(adv, groups, calib, args, step)
         else:
@@ -675,6 +837,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                           "cumulative_answers": spent, "abandoned": abandoned})
         runner.model.train()
         opt.zero_grad(set_to_none=True)
+        h_grad = None
         owner = [j for j, (_, n) in enumerate(groups) for _ in range(n)]
         entropy = []
         if surrogate:
@@ -687,9 +850,26 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             stats, n_live = diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entropy, opt)
             extra["split"] = stats
         else:
+            h_grad = None
+            if floor is not None:
+                # Gradient of the bank entropy at the current parameters, before the reward gradient.
+                h_before = bank_entropy(runner, bank, grad=True)
+                h_grad = [(q.grad.detach().to(torch.bfloat16).clone() if q.grad is not None else torch.zeros_like(q, dtype=torch.bfloat16))
+                          for q in runner.params]
+                opt.zero_grad(set_to_none=True)
             live = [k for k, a in enumerate(adv) if a != 0]
-            backward_weighted(runner, args, answers, live, adv, norm, entropy)
-            n_live = len(live)
+            if ent_coef > 0 or adaptive_entropy:
+                stats_e = [0.0, 0]
+                backward_weighted(runner, args, answers, list(range(len(answers))), adv, norm, None, ent_coef, stats_e)
+                extra["batch_entropy"] = stats_e[0] / max(stats_e[1], 1)
+                extra["entropy_coef"] = ent_coef
+                n_live = len(answers)
+            else:
+                backward_weighted(runner, args, answers, live, adv, norm, entropy)
+                n_live = len(live)
+            if args.memory_lambda > 0 and arm in FIXED_ARMS:
+                extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm)
+                n_live = max(n_live, extra["memory"]["questions"])
         live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
         if args.entropy_every and step % args.entropy_every == 0:
             extra["probe"] = probe_entropy(runner, args, answers, rewards, owner)
@@ -703,9 +883,24 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             opt.step()
             if args.diagnostics:
                 store_update(runner, opt)
+            if floor is not None and not surrogate and not args.diagnostics and h_grad is not None:
+                extra["floor"] = apply_entropy_floor(runner, opt, bank, h_grad, h_before, floor, args)
         elif args.diagnostics:
             runner.last_update = None
         opt.zero_grad(set_to_none=True)
+        if adaptive_entropy and "batch_entropy" in extra:
+            if ent_target is None:
+                ent_target = args.entropy_target_frac * extra["batch_entropy"]
+            ent_coef = max(0.0, ent_coef + args.entropy_lr * (ent_target - extra["batch_entropy"]))
+            extra["entropy_target"] = ent_target
+        if args.memory_lambda > 0 and arm in FIXED_ARMS and keys is not None:
+            # Verified, stop-terminated, unique successes join the archive after the update.
+            for k, ((pi, ri), rew) in enumerate(zip(answers, rewards)):
+                if rew == 1 and len(ri) and int(ri[-1]) in runner.stop_ids:
+                    slot = archive.setdefault(keys[owner[k]], [])
+                    if len(slot) < args.memory_max and all(not torch.equal(ri.cpu(), b) for _, b in slot):
+                        slot.append((pi.cpu(), ri.cpu()))
+            extra["archive_questions"] = sum(1 for v in archive.values() if v)
         mixed = sum(0 < k < n for k, n in groups)
         texts_out = [runner.tok.decode(r) for _, r in answers]
         boxed_rate = sum(last_boxed(t) is not None for t in texts_out) / len(texts_out)
@@ -770,6 +965,18 @@ def main():
     parser.add_argument("--diagnostics", action="store_true", help="split-half gradient statistics every step")
     parser.add_argument("--noise-scale", type=float, default=1.0,
                         help="psrnoise: multiple of the sign-noise size that matches NSR's predicted second moment")
+    parser.add_argument("--entropy-coef", type=float, default=0.0, help="entropy bonus coefficient (start value if adaptive)")
+    parser.add_argument("--entropy-target-frac", type=float, default=0.0,
+                        help="adaptive entropy control: target = this fraction of the step-0 batch entropy (0: fixed coefficient)")
+    parser.add_argument("--entropy-lr", type=float, default=0.0, help="step size of the adaptive entropy coefficient")
+    parser.add_argument("--floor-rho", type=float, default=0.0, help="entropy floor on the frozen bank: rho x starting entropy (0: off)")
+    parser.add_argument("--floor-bank", default="frozen_prefixes_qwen.json")
+    parser.add_argument("--floor-bank-size", type=int, default=64)
+    parser.add_argument("--floor-tol", type=float, default=0.01)
+    parser.add_argument("--memory-lambda", type=float, default=0.0, help="log-mass replay of archived successes (0: off)")
+    parser.add_argument("--memory-questions", type=int, default=8)
+    parser.add_argument("--memory-max", type=int, default=4)
+    parser.add_argument("--unlikely-beta", type=float, default=0.0, help="unlikeliness reward (He et al. 2025) for Dr. GRPO")
     parser.add_argument("--shadow-arm", default="", help="with --diagnostics: split statistics of this fixed-group "
                         "estimator on the same answers (e.g. nsr), for steps below --shadow-until")
     parser.add_argument("--shadow-until", type=int, default=50)
