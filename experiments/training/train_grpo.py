@@ -480,12 +480,29 @@ def unlikeliness_rewards(rewards, seq_lp, G, beta):
     return out
 
 
-def memory_backward(runner, args, archive, rng, norm):
-    """Gradient of -lambda * sum over sampled archived questions of log sum_{y in S_q} pi(y | q), / norm."""
+def coverage_weight(p, k):
+    """d pass@k / d p times p = k (1 - p)^(k-1) p: the pass@k value of raising log p for a question
+    solved with probability p (largest near p = 1/k)."""
+    return k * (1 - p) ** (k - 1) * p
+
+
+def memory_backward(runner, args, archive, rng, norm, phat=None):
+    """Gradient of -lambda * sum over sampled archived questions of log sum_{y in S_q} pi(y | q), / norm.
+
+    Questions are drawn uniformly, or (memory_weighting = coverage) with probability proportional
+    to coverage_weight(p_hat_q, k), p_hat_q the question's smoothed success rate when it was
+    attempted, without replacement."""
     keys = [k for k, v in archive.items() if v]
     if not keys:
         return {"questions": 0, "sequences": 0}
-    pick = rng.sample(keys, min(args.memory_questions, len(keys)))
+    m = min(args.memory_questions, len(keys))
+    if args.memory_weighting == "coverage":
+        w = [coverage_weight(phat[k], args.coverage_k) for k in keys]
+        # weighted sampling without replacement (Efraimidis-Spirakis keys u^(1/w))
+        order = sorted(range(len(keys)), key=lambda i: -(rng.random() ** (1.0 / max(w[i], 1e-12))))
+        pick = [keys[i] for i in order[:m]]
+    else:
+        pick = rng.sample(keys, m)
     seqs, owner = [], []
     for j, k in enumerate(pick):
         for pr in archive[k]:
@@ -498,7 +515,10 @@ def memory_backward(runner, args, archive, rng, norm):
         (-args.memory_lambda * lm / norm).backward()
         values.append(float(lm.detach()))
         tokens += sum(len(p) + len(r) for p, r in mine)
-    return {"questions": len(pick), "sequences": len(seqs), "tokens": tokens, "mean_log_mass": sum(values) / len(values)}
+    out = {"questions": len(pick), "sequences": len(seqs), "tokens": tokens, "mean_log_mass": sum(values) / len(values)}
+    if phat is not None:
+        out["mean_p_hat"] = sum(phat[k] for k in pick) / len(pick)
+    return out
 
 
 def backward_surrogate(runner, args, answers, idx, adv, old_lp, norm):
@@ -715,7 +735,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     # Pre-registration 12 options (all off by default).
     bank = bank_tensors(runner, args.floor_bank, args.floor_bank_size) if args.floor_rho > 0 else None
     floor = args.floor_rho * bank_entropy(runner, bank) if bank is not None else None
-    archive, mem_rng = {}, random.Random(args.seed * 7717)
+    archive, phat, mem_rng = {}, {}, random.Random(args.seed * 7717)
     ent_coef, ent_target = args.entropy_coef, None
     adaptive_entropy = args.entropy_target_frac > 0
     if floor is not None:
@@ -725,7 +745,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
-    interventions = args.entropy_coef > 0 or args.entropy_target_frac > 0 or args.floor_rho > 0 or args.memory_lambda > 0 or args.unlikely_beta > 0
+    interventions = (args.entropy_coef > 0 or args.entropy_target_frac > 0 or args.floor_rho > 0 or args.memory_lambda > 0
+                     or args.unlikely_beta > 0 or args.early_floor_rho > 0)
+    assert not (args.floor_rho > 0 and args.early_floor_rho > 0), "choose one entropy floor"
     assert not (interventions and (surrogate or args.diagnostics)), "Pre-registration 12 options need the plain on-policy loss without diagnostics"
     assert not (interventions and arm != "baseline"), "Pre-registration 12 options are defined for Dr. GRPO (arm baseline)"
     passk = []
@@ -855,6 +877,12 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             extra["split"] = stats
         else:
             h_grad = None
+            if args.early_floor_rho > 0:
+                # Bank = the first K response tokens of this step's own answers (fixed within the step).
+                bank = [(pi, ri[: args.early_floor_tokens]) for pi, ri in answers if len(ri)]
+                if floor is None:
+                    floor = args.early_floor_rho * bank_entropy(runner, bank)
+                    print(f"[{arm}] early-token entropy floor {floor:.4f} (rho {args.early_floor_rho})", flush=True)
             if floor is not None:
                 # Gradient of the bank entropy at the current parameters, before the reward gradient.
                 h_before = bank_entropy(runner, bank, grad=True)
@@ -872,7 +900,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
             if args.memory_lambda > 0 and arm in FIXED_ARMS:
-                extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm)
+                extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm, phat)
                 n_live = max(n_live, extra["memory"]["questions"])
         live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
         if args.entropy_every and step % args.entropy_every == 0:
@@ -900,6 +928,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             extra["entropy_target"] = ent_target
         if args.memory_lambda > 0 and arm in FIXED_ARMS and keys is not None:
             # Verified, stop-terminated, unique successes join the archive after the update.
+            for j, (c, n) in enumerate(groups):
+                phat[keys[j]] = (c + 0.5) / (n + 1)  # smoothed success rate at its latest attempt
             for k, ((pi, ri), rew) in enumerate(zip(answers, rewards)):
                 if rew == 1 and len(ri) and int(ri[-1]) in runner.stop_ids:
                     slot = archive.setdefault(keys[owner[k]], [])
@@ -978,6 +1008,11 @@ def main():
     parser.add_argument("--floor-bank", default="frozen_prefixes_qwen.json")
     parser.add_argument("--floor-bank-size", type=int, default=64)
     parser.add_argument("--floor-tol", type=float, default=0.01)
+    parser.add_argument("--early-floor-rho", type=float, default=0.0,
+                        help="entropy floor on the first --early-floor-tokens tokens of each step's own answers: rho x the step-0 value")
+    parser.add_argument("--early-floor-tokens", type=int, default=32)
+    parser.add_argument("--memory-weighting", default="uniform", choices=("uniform", "coverage"))
+    parser.add_argument("--coverage-k", type=int, default=16)
     parser.add_argument("--memory-lambda", type=float, default=0.0, help="log-mass replay of archived successes (0: off)")
     parser.add_argument("--memory-questions", type=int, default=8)
     parser.add_argument("--memory-max", type=int, default=4)

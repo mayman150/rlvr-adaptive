@@ -134,3 +134,46 @@ step 150 (LLM judge, as Pre-registration 8) if the primary verdict is "moves the
 
 Pilot about $80-100; primary training about $160; evaluation 43 checkpoint-evaluations of
 16,384 answers, about $180-250.
+
+## Amendment 1 (October 19, before Pre-registration 11's primary verdict was computed)
+
+Committed before Pre-registration 11's primary statistic D was computed or inspected (four of its
+eleven evaluation jobs were still running). Two facts known at this time motivate it, neither
+from a Pre-registration 12 run:
+
+1. Pre-registration 11's reported-without-a-rule prefix entropy: on the 256 frozen base-model
+   answers, the base model has 1.081 and PSR at step 150 has 1.064-1.065 (seeds 5 and 7), a 1.5%
+   change, while the on-policy probe entropy falls 3-4 times during training. RL does not
+   sharpen next-token distributions on fixed contexts; it moves the model onto confident paths.
+   The 4-lane smoke test agreed: a frozen-prefix floor at rho = 1.0 never activated in 8 steps.
+   A frozen-prefix floor would therefore be inactive, so **arm F is replaced by EF**.
+2. Pre-registration 9 (OLMo): the pass@4 objective was +1.32 points of pass@16 at matched pass@1
+   (90% [+0.24, +2.26], inconclusive), a hint that up-weighting hard questions helps where
+   signal exists; our accounting says weighting cannot create signal on rarely solved
+   questions, but memory can. This motivates **arm CM** in branch M.
+
+**EF (candidate, branch S): early-token entropy floor.** The bank of the floor is the first 32
+response tokens of each of the step's own 128 answers (fixed within the step); the floor is rho
+times the bank entropy at step 0; enforcement after the Adam step exactly as F (first-order
+correction along the bank-entropy gradient, measured check, doubling up to eight times, floor
+failures counted). Pilot rho in {0.8, 0.6}.
+
+**CM (candidate, branch M): coverage-weighted memory.** As M, but the 8 replayed questions are
+drawn without replacement with probability proportional to k (1 - p_hat)^(k-1) p_hat with k = 16,
+p_hat = (c + 0.5) / (G + 1) from the question's latest group (c of G correct). This is
+d pass@16 / d log p: it concentrates replay on questions solved about one time in 16, whose
+pass@16 can still rise, rather than on questions already solved. Pilot lambda in {1, 4}.
+
+**Arms.** Branch S: B, EF, A, E. Branch M: **B, CM, M, U** (E moves to branch S only; M, uniform
+replay as in MAPO, is the ablation of CM).
+
+**Added rule (branch M).** CM against M at matched accuracy (M's T = 1 trajectory as reference,
+the same procedure): **coverage weighting matters** if the pooled difference is at least +1 point
+with a 95% interval above 0; otherwise not shown. The contribution beyond MAPO is claimed only if
+both CM's primary verdict is "moves the curve" and this rule passes.
+
+**Replication (declared now).** If the branch's candidate moves the curve on Qwen (primary rule and
+untouched-half confirmation), Pre-registration 13 repeats B against the candidate on
+OLMo-2-0425-1B-SFT (two seeds, 300 steps, Pre-registration 9's protocol and evaluation set), with
+the same decision rule; the claim of a method that moves the curve across model families rests
+on it.
