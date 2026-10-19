@@ -1,0 +1,10 @@
+{
+ "fix": {
+  "The sum of a 15-term arithmetic series with first term 7  is $-210$.  What is the common difference?": "-3"
+ },
+ "exclude_prefixes": [
+  "Find all real values of $x$ such that $$\\frac{2x^2-3x}{x^2-x} + 5x -11",
+  "Find all solutions to the equation $\\sqrt{3x+6}=x+2$."
+ ],
+ "source": "label_audit.py (Claude Haiku 5.5 solve, Claude Opus 5.5 adjudication), October 19, 2026"
+}

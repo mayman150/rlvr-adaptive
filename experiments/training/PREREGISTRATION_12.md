@@ -55,7 +55,11 @@ one 4-GPU instance and see the same questions at every step.
 validation sets is audited: Claude Haiku 5.5 solves each problem; where it disagrees with the
 reference, Claude Opus 5.5 adjudicates between the two; references it rejects are corrected (or
 the item excluded if no single correct answer exists), and the list is committed before the
-primary runs (`label_audit.py`). The same list gives a sensitivity analysis for Pre-registrations
+primary runs (`label_audit.py`). Result (October 19): 3 of 768 references rejected (a sign error,
+corrected; two multi-answer questions whose reference kept one value, excluded), so the
+evaluation set has 511 problems and the validation set 255 (`data/label_corrections.json`). The
+256-problem set of Pre-registrations 9 and 11 contains one of the excluded items; their
+pre-registered analyses are unchanged and a sensitivity analysis without it is reported. The same list gives a sensitivity analysis for Pre-registrations
 9 and 11, which share the 256-problem set.
 
 **Pilot (strength choice, before the primary runs).** Seed 11, 100 steps, each tunable arm at two
