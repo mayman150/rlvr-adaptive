@@ -1,0 +1,103 @@
+runs: {'PSR-s3': 'worth-v5-PSR-s3-20261017-164938', 'PSR-s4': 'worth-v5-PSR-s4-20261018-034043', 'PSR-s5': 'worth-v10-ALL-s5-20261018-223507', 'PSR-s6': 'worth-v10-ALL-s6-20261018-223514', 'PSR-s7': 'worth-v10-ALL-s7-20261018-223521', 'NSR-s3': 'worth-v5-NSR-s3-20261017-164942', 'NSR-s4': 'worth-v5-NSR-s4-20261017-164950', 'NSR-s5': 'worth-v10-ALL-s5-20261018-223507', 'NSR-s6': 'worth-v10-ALL-s6-20261018-223514', 'NSR-s7': 'worth-v10-ALL-s7-20261018-223521', 'PSRN-s5': 'worth-v10-ALL-s5-20261018-223507', 'PSRN-s6': 'worth-v10-ALL-s6-20261018-223514', 'PSRN-s7': 'worth-v10-ALL-s7-20261018-223521', 'NSR2-s5': 'worth-v10-ALL-s5-20261018-223507', 'NSR2-s6': 'worth-v10-ALL-s6-20261018-223514', 'NSR2-s7': 'worth-v10-ALL-s7-20261018-223521', 'PSR2-s5': 'worth-v10-PSR2-s5-20261018-225130', 'PSR2-s6': 'worth-v10-PSR2-s6-20261018-225134'}
+
+1. Manipulation check: PSR+N / same-policy NSR shadow, per-question second moment, steps 0 to 49
+   pooled 1.02, 90% [1.01, 1.05] -> pass
+   seed 5: shadow ratio 1.01; centered 1.01; after Adam scaling 0.85; against the separate NSR run 0.95; c_t mean 0.70, zero on 0% of steps; clipped 0%
+   seed 6: shadow ratio 1.00; centered 1.00; after Adam scaling 0.90; against the separate NSR run 1.04; c_t mean 0.72, zero on 1% of steps; clipped 0%
+   seed 7: shadow ratio 1.05; centered 1.06; after Adam scaling 0.92; against the separate NSR run 1.11; c_t mean 0.77, zero on 0% of steps; clipped 0%
+
+2-3. Speed: A = training accuracy, steps 25 to 49; pooled phi = sum(A - A_NSR) / sum(A_PSR - A_NSR)
+   seed 5: PSR 50.0, NSR 33.6, PSRN 35.6, NSR2 50.2, PSR2 55.6; phi(PSRN) +0.12 [-0.00, +0.21]; phi(NSR2) +1.02 [+0.92, +1.13]
+   seed 6: PSR 46.4, NSR 32.1, PSRN 29.8, NSR2 49.0, PSR2 53.1; phi(PSRN) -0.16 [-0.33, -0.06]; phi(NSR2) +1.18 [+1.06, +1.40]
+   seed 7: PSR 47.3, NSR 36.9, PSRN 32.8, NSR2 50.9; phi(PSRN) -0.40 [-0.69, -0.25]; phi(NSR2) +1.34 [+1.14, +1.53]
+   pooled gap 13.7 points; phi(PSR+N) -0.11, 90% [-0.22, -0.05], 95% [-0.23, -0.04]; seed spread (SD) 0.26; HETEROGENEOUS
+   primary verdict: trace-matched sign noise reproduces NSR's early accuracy lag
+   phi(NSR x2) +1.16, 95% [+1.07, +1.26] -> doubling the learning rate recovers at least half of NSR's lag
+   gap at 2e-6 (seeds [5, 6]): 4.7 points, 95% [2.7, 6.3], 0.31 of the 1e-6 gap -> NSR still lags at 2e-6
+
+4. Average matched-accuracy equivalence against PSR (pass@16 from 32 samples; 128 problems)
+   PSRN seeds (5, 6, 7) (primary): -0.37, 90% [-1.13, +0.46], 95% [-1.30, +0.62] -> average equivalence; some checkpoint band outside ±3
+      s5 step 25: +1.0 [-4.3, +6.3]; s5 step 50: +2.8 [-2.2, +7.7]; s5 step 75: -1.3 [-5.9, +3.4]; s5 step 100: -0.4 [-5.1, +4.3]; s5 step 150: -2.0 [-6.2, +2.1]; s6 step 25: -2.0 [-6.6, +2.5]; s6 step 50: +2.0 [-2.2, +6.3]; s6 step 75: -0.6 [-4.6, +3.3]; s6 step 100: +1.0 [-3.4, +5.5]; s6 step 150: -1.1 [-5.7, +3.5]; s7 step 25: +1.3 [-3.2, +5.9]; s7 step 50: +0.6 [-3.4, +4.6]; s7 step 75: -2.4 [-6.4, +1.7]; s7 step 100: -3.2 [-7.8, +1.4]; s7 step 150: -1.2 [-5.1, +2.6]
+   NSR seeds (5, 6, 7) (primary): -0.20, 90% [-0.97, +0.55], 95% [-1.11, +0.68] -> average equivalence; some checkpoint band outside ±3
+      s5 step 25: +1.6 [-3.9, +7.1]; s5 step 50: +0.9 [-3.8, +5.6]; s5 step 75: +2.6 [-2.0, +7.2]; s5 step 100: -1.9 [-6.2, +2.3]; s5 step 150: -0.1 [-4.1, +3.9]; s6 step 25: -0.2 [-5.2, +4.7]; s6 step 50: -0.9 [-6.5, +4.8]; s6 step 75: +1.7 [-2.4, +5.9]; s6 step 100: +1.3 [-3.2, +5.9]; s6 step 150: -2.1 [-7.6, +3.5]; s7 step 25: +0.9 [-2.5, +4.3]; s7 step 50: +0.6 [-3.1, +4.4]; s7 step 75: -2.3 [-5.9, +1.3]; s7 step 100: -3.7 [-9.0, +1.7]; s7 step 150: -1.5 [-6.0, +2.9]
+   NSR2 seeds (5, 6, 7): -0.03, 90% [-0.88, +0.88], 95% [-1.05, +1.03] -> average equivalence; some checkpoint band outside ±3
+      s5 step 25: +0.4 [-3.0, +3.8]; s5 step 50: -1.8 [-5.6, +1.9]; s5 step 75: +0.0 [-3.5, +3.6]; s6 step 25: +1.3 [-1.7, +4.4]; s6 step 50: +0.6 [-3.5, +4.6]; s6 step 75: -0.2 [-4.0, +3.5]; s7 step 25: +0.4 [-3.0, +3.8]; s7 step 50: -0.5 [-4.6, +3.6]; s7 step 75: -0.3 [-3.9, +3.3]
+   NSR seeds (3, 4, 5, 6, 7) (secondary, historical plus fresh): -0.43, 90% [-1.12, +0.21], 95% [-1.27, +0.35] -> average equivalence; some checkpoint band outside ±3
+      s3 step 25: -1.9 [-7.7, +3.9]; s3 step 50: -2.3 [-7.4, +2.8]; s3 step 75: -0.3 [-4.8, +4.1]; s3 step 100: -1.0 [-6.2, +4.2]; s3 step 150: -2.1 [-5.7, +1.6]; s4 step 25: +2.0 [-3.8, +7.8]; s4 step 50: +0.9 [-3.8, +5.7]; s4 step 75: +0.5 [-5.0, +6.1]; s4 step 100: -3.5 [-9.3, +2.3]; s4 step 150: -0.0 [-4.6, +4.5]; s5 step 25: +1.6 [-4.1, +7.2]; s5 step 50: +0.9 [-4.0, +5.8]; s5 step 75: +2.6 [-2.1, +7.3]; s5 step 100: -1.9 [-6.3, +2.4]; s5 step 150: -0.1 [-4.2, +4.0]; s6 step 25: -0.2 [-5.3, +4.8]; s6 step 50: -0.9 [-6.5, +4.8]; s6 step 75: +1.7 [-2.5, +6.0]; s6 step 100: +1.3 [-3.5, +6.2]; s6 step 150: -2.1 [-7.6, +3.5]; s7 step 25: +0.9 [-2.7, +4.6]; s7 step 50: +0.6 [-3.3, +4.5]; s7 step 75: -2.3 [-6.1, +1.5]; s7 step 100: -3.7 [-9.3, +1.9]; s7 step 150: -1.5 [-6.0, +3.0]
+   NSR seeds (3, 4) (by protocol): -0.77, 90% [-1.89, +0.32], 95% [-2.11, +0.50] -> average equivalence; some checkpoint band outside ±3
+      s3 step 25: -1.9 [-7.1, +3.3]; s3 step 50: -2.3 [-7.0, +2.3]; s3 step 75: -0.3 [-4.4, +3.7]; s3 step 100: -1.0 [-5.8, +3.7]; s3 step 150: -2.1 [-5.4, +1.3]; s4 step 25: +2.0 [-3.2, +7.1]; s4 step 50: +0.9 [-3.3, +5.2]; s4 step 75: +0.5 [-4.5, +5.6]; s4 step 100: -3.5 [-8.5, +1.6]; s4 step 150: -0.0 [-4.1, +4.1]
+   NSR x2 vs PSR x2 seed 5 (matched rate, reported): +0.67 average equivalence
+   NSR x2 vs PSR x2 seed 6 (matched rate, reported): +0.48 average equivalence
+
+5. F0 / F1 over training (same 64 calibration questions and sampling seed; 95% intervals over questions)
+   PSR s5: step 0: 2.69 [2.07, 3.44], step 50: 1.70 [1.23, 2.27], step 100: 1.42 [1.09, 1.83], step 150: 1.54 [1.23, 1.91]
+   NSR s5: step 0: 2.69 [2.07, 3.43], step 50: 2.18 [1.68, 2.81], step 100: 1.57 [1.22, 2.04], step 150: 1.40 [1.09, 1.82]
+   PSRN s5: step 0: 2.69 [2.03, 3.40], step 50: 2.21 [1.66, 2.91], step 100: 1.46 [0.96, 2.09], step 150: 1.42 [1.09, 1.84]
+   NSR2 s5: step 0: 2.69 [2.04, 3.42], step 50: 1.79 [1.30, 2.41], step 100: 1.58 [1.23, 1.96], step 150: 1.81 [1.46, 2.23]
+   PSR2 s5: step 0: 2.69 [2.06, 3.46], step 50: 1.63 [1.31, 2.06], step 100: 1.55 [1.25, 1.89], step 150: 1.49 [1.05, 2.03]
+   PSR s6: step 0: 2.78 [2.34, 3.38], step 50: 1.62 [1.29, 2.06], step 100: 1.65 [1.37, 1.97], step 150: 1.50 [1.26, 1.81]
+   NSR s6: step 0: 2.78 [2.28, 3.34], step 50: 1.78 [1.33, 2.42], step 100: 1.34 [0.99, 1.79], step 150: 1.55 [1.24, 1.97]
+   PSRN s6: step 0: 2.78 [2.28, 3.37], step 50: 2.35 [1.87, 2.89], step 100: 1.43 [1.13, 1.85], step 150: 1.59 [1.31, 1.95]
+   NSR2 s6: step 0: 2.78 [2.29, 3.32], step 50: 1.56 [1.31, 1.90], step 100: 1.57 [1.26, 1.95], step 150: 1.44 [1.12, 1.79]
+   PSR2 s6: step 0: 2.78 [2.32, 3.39], step 50: 1.44 [1.22, 1.70], step 100: 1.70 [1.38, 2.08], step 150: 1.51 [1.28, 1.79]
+   PSR s7: step 0: 3.35 [2.65, 4.19], step 50: 1.46 [1.19, 1.81], step 100: 1.47 [1.18, 1.81], step 150: 1.47 [1.21, 1.74]
+   NSR s7: step 0: 3.35 [2.66, 4.19], step 50: 2.51 [1.84, 3.47], step 100: 1.61 [1.27, 2.11], step 150: 1.59 [1.25, 1.96]
+   PSRN s7: step 0: 3.35 [2.69, 4.15], step 50: 2.36 [1.90, 2.97], step 100: 1.42 [1.18, 1.73], step 150: 1.38 [1.12, 1.68]
+   NSR2 s7: step 0: 3.35 [2.67, 4.20], step 50: 1.36 [1.10, 1.68], step 100: 1.56 [1.30, 1.88], step 150: 1.34 [1.02, 1.71]
+   verdict: inconclusive (persists: every 95% interval above 1.2; fails: some interval below 1.2)
+
+Reported without a rule
+   PSR s5 steps 0-49: measured / theorem 0.60 (F interpolated between steps 0 and 50: 0.90); lagged Adam direction alignment <u, ref> 12.6 (x lr: 1.26e-05), |u|^2 1.85e+08; entropy 0.613; clipped 0%
+   PSR s5 steps 50-99: measured / theorem 0.35 (F interpolated between steps 50 and 100: 0.94); lagged Adam direction alignment <u, ref> 0.277 (x lr: 2.77e-07), |u|^2 6.68e+07; entropy 0.244; clipped 0%
+   PSR s5 steps 100-149: measured / theorem 0.33 (F interpolated between steps 100 and 150: 0.96); lagged Adam direction alignment <u, ref> 0.533 (x lr: 5.33e-07), |u|^2 6.47e+07; entropy 0.222; clipped 0%
+   NSR s5 steps 0-49: measured / theorem 0.79 (F interpolated between steps 0 and 50: 1.05); lagged Adam direction alignment <u, ref> 9.44 (x lr: 9.44e-06), |u|^2 2.13e+08; entropy 0.926; clipped 0%
+   NSR s5 steps 50-99: measured / theorem 0.32 (F interpolated between steps 50 and 100: 0.89); lagged Adam direction alignment <u, ref> 1.57 (x lr: 1.57e-06), |u|^2 4.61e+07; entropy 0.332; clipped 0%
+   NSR s5 steps 100-149: measured / theorem 0.20 (F interpolated between steps 100 and 150: 1.00); lagged Adam direction alignment <u, ref> 0.626 (x lr: 6.26e-07), |u|^2 3.66e+07; entropy 0.230; clipped 0%
+   PSRN s5 steps 0-49: measured / theorem 0.77 (F interpolated between steps 0 and 50: 1.00); lagged Adam direction alignment <u, ref> 8.01 (x lr: 8.01e-06), |u|^2 1.56e+08; entropy 0.827; clipped 0%
+   PSRN s5 steps 50-99: measured / theorem 0.42 (F interpolated between steps 50 and 100: 0.93); lagged Adam direction alignment <u, ref> 2.14 (x lr: 2.14e-06), |u|^2 5.39e+07; entropy 0.344; clipped 0%
+   PSRN s5 steps 100-149: measured / theorem 0.31 (F interpolated between steps 100 and 150: 0.95); lagged Adam direction alignment <u, ref> 0.4 (x lr: 4e-07), |u|^2 4.74e+07; entropy 0.244; clipped 0%
+   NSR2 s5 steps 0-49: measured / theorem 0.58 (F interpolated between steps 0 and 50: 0.87); lagged Adam direction alignment <u, ref> 4.86 (x lr: 9.73e-06), |u|^2 1.74e+08; entropy 0.620; clipped 0%
+   NSR2 s5 steps 50-99: measured / theorem 0.20 (F interpolated between steps 50 and 100: 0.95); lagged Adam direction alignment <u, ref> 0.253 (x lr: 5.05e-07), |u|^2 3.8e+07; entropy 0.218; clipped 0%
+   NSR2 s5 steps 100-149: measured / theorem 0.18 (F interpolated between steps 100 and 150: 1.01); lagged Adam direction alignment <u, ref> 0.544 (x lr: 1.09e-06), |u|^2 4.17e+07; entropy 0.203; clipped 0%
+   PSR2 s5 steps 0-49: measured / theorem 0.42 (F interpolated between steps 0 and 50: 0.69); lagged Adam direction alignment <u, ref> 3.27 (x lr: 6.54e-06), |u|^2 1.59e+08; entropy 0.436; clipped 0%
+   PSR2 s5 steps 50-99: measured / theorem 0.30 (F interpolated between steps 50 and 100: 1.02); lagged Adam direction alignment <u, ref> 0.506 (x lr: 1.01e-06), |u|^2 6.67e+07; entropy 0.210; clipped 0%
+   PSR2 s5 steps 100-149: measured / theorem 0.29 (F interpolated between steps 100 and 150: 0.93); lagged Adam direction alignment <u, ref> 0.324 (x lr: 6.48e-07), |u|^2 7.26e+07; entropy 0.211; clipped 0%
+   seed 5: NSR / PSR second moment raw 5.93, after scaling by Adam's previous scale 1.32; lagged Adam direction alignment NSR / PSR 0.75
+   PSRN vs PSR s5: boxed 65% vs 66%, truncated 44% vs 41%
+   NSR2 vs PSR s5: boxed 71% vs 66%, truncated 37% vs 41%
+   NSR vs PSR s5: boxed 64% vs 66%, truncated 44% vs 41%
+   PSR s6 steps 0-49: measured / theorem 0.73 (F interpolated between steps 0 and 50: 1.07); lagged Adam direction alignment <u, ref> 8.06 (x lr: 8.06e-06), |u|^2 1.8e+08; entropy 0.723; clipped 0%
+   PSR s6 steps 50-99: measured / theorem 0.44 (F interpolated between steps 50 and 100: 1.11); lagged Adam direction alignment <u, ref> 0.977 (x lr: 9.77e-07), |u|^2 7.37e+07; entropy 0.235; clipped 0%
+   PSR s6 steps 100-149: measured / theorem 0.38 (F interpolated between steps 100 and 150: 1.12); lagged Adam direction alignment <u, ref> 0.377 (x lr: 3.77e-07), |u|^2 6.62e+07; entropy 0.227; clipped 0%
+   NSR s6 steps 0-49: measured / theorem 0.87 (F interpolated between steps 0 and 50: 1.15); lagged Adam direction alignment <u, ref> 6.98 (x lr: 6.98e-06), |u|^2 2.16e+08; entropy 1.053; clipped 0%
+   NSR s6 steps 50-99: measured / theorem 0.39 (F interpolated between steps 50 and 100: 1.04); lagged Adam direction alignment <u, ref> 2.7 (x lr: 2.7e-06), |u|^2 5.41e+07; entropy 0.398; clipped 0%
+   NSR s6 steps 100-149: measured / theorem 0.25 (F interpolated between steps 100 and 150: 1.04); lagged Adam direction alignment <u, ref> 0.827 (x lr: 8.27e-07), |u|^2 3.53e+07; entropy 0.272; clipped 0%
+   PSRN s6 steps 0-49: measured / theorem 0.89 (F interpolated between steps 0 and 50: 1.11); lagged Adam direction alignment <u, ref> 5.57 (x lr: 5.57e-06), |u|^2 1.59e+08; entropy 0.963; clipped 0%
+   PSRN s6 steps 50-99: measured / theorem 0.51 (F interpolated between steps 50 and 100: 1.02); lagged Adam direction alignment <u, ref> 2.93 (x lr: 2.93e-06), |u|^2 5.51e+07; entropy 0.413; clipped 0%
+   PSRN s6 steps 100-149: measured / theorem 0.36 (F interpolated between steps 100 and 150: 1.03); lagged Adam direction alignment <u, ref> 0.617 (x lr: 6.17e-07), |u|^2 4.38e+07; entropy 0.258; clipped 0%
+   NSR2 s6 steps 0-49: measured / theorem 0.64 (F interpolated between steps 0 and 50: 0.97); lagged Adam direction alignment <u, ref> 3.17 (x lr: 6.34e-06), |u|^2 1.83e+08; entropy 0.610; clipped 0%
+   NSR2 s6 steps 50-99: measured / theorem 0.21 (F interpolated between steps 50 and 100: 1.03); lagged Adam direction alignment <u, ref> 0.446 (x lr: 8.92e-07), |u|^2 3.64e+07; entropy 0.218; clipped 0%
+   NSR2 s6 steps 100-149: measured / theorem 0.22 (F interpolated between steps 100 and 150: 1.18); lagged Adam direction alignment <u, ref> 0.351 (x lr: 7.02e-07), |u|^2 4.21e+07; entropy 0.212; clipped 0%
+   PSR2 s6 steps 0-49: measured / theorem 0.52 (F interpolated between steps 0 and 50: 0.81); lagged Adam direction alignment <u, ref> 4.95 (x lr: 9.9e-06), |u|^2 1.68e+08; entropy 0.516; clipped 0%
+   PSR2 s6 steps 50-99: measured / theorem 0.35 (F interpolated between steps 50 and 100: 1.08); lagged Adam direction alignment <u, ref> 0.561 (x lr: 1.12e-06), |u|^2 6.78e+07; entropy 0.202; clipped 0%
+   PSR2 s6 steps 100-149: measured / theorem 0.33 (F interpolated between steps 100 and 150: 1.02); lagged Adam direction alignment <u, ref> 0.267 (x lr: 5.34e-07), |u|^2 6.7e+07; entropy 0.220; clipped 0%
+   seed 6: NSR / PSR second moment raw 6.26, after scaling by Adam's previous scale 1.04; lagged Adam direction alignment NSR / PSR 0.87
+   PSRN vs PSR s6: boxed 67% vs 71%, truncated 41% vs 38%
+   NSR2 vs PSR s6: boxed 74% vs 71%, truncated 34% vs 38%
+   NSR vs PSR s6: boxed 67% vs 71%, truncated 40% vs 38%
+   PSR s7 steps 0-49: measured / theorem 0.80 (F interpolated between steps 0 and 50: 1.15); lagged Adam direction alignment <u, ref> 9.86 (x lr: 9.86e-06), |u|^2 1.84e+08; entropy 0.642; clipped 0%
+   PSR s7 steps 50-99: measured / theorem 0.43 (F interpolated between steps 50 and 100: 0.96); lagged Adam direction alignment <u, ref> 0.677 (x lr: 6.77e-07), |u|^2 7.09e+07; entropy 0.228; clipped 0%
+   PSR s7 steps 100-149: measured / theorem 0.43 (F interpolated between steps 100 and 150: 1.04); lagged Adam direction alignment <u, ref> 0.378 (x lr: 3.78e-07), |u|^2 6.82e+07; entropy 0.247; clipped 0%
+   NSR s7 steps 0-49: measured / theorem 0.80 (F interpolated between steps 0 and 50: 0.97); lagged Adam direction alignment <u, ref> 7.22 (x lr: 7.22e-06), |u|^2 2.12e+08; entropy 0.858; clipped 0%
+   NSR s7 steps 50-99: measured / theorem 0.35 (F interpolated between steps 50 and 100: 0.80); lagged Adam direction alignment <u, ref> 2.05 (x lr: 2.05e-06), |u|^2 4.96e+07; entropy 0.350; clipped 0%
+   NSR s7 steps 100-149: measured / theorem 0.24 (F interpolated between steps 100 and 150: 1.08); lagged Adam direction alignment <u, ref> 0.724 (x lr: 7.24e-07), |u|^2 3.93e+07; entropy 0.276; clipped 0%
+   PSRN s7 steps 0-49: measured / theorem 0.86 (F interpolated between steps 0 and 50: 1.04); lagged Adam direction alignment <u, ref> 7.19 (x lr: 7.19e-06), |u|^2 1.57e+08; entropy 0.831; clipped 0%
+   PSRN s7 steps 50-99: measured / theorem 0.49 (F interpolated between steps 50 and 100: 0.95); lagged Adam direction alignment <u, ref> 2.44 (x lr: 2.44e-06), |u|^2 5.32e+07; entropy 0.403; clipped 0%
+   PSRN s7 steps 100-149: measured / theorem 0.35 (F interpolated between steps 100 and 150: 1.08); lagged Adam direction alignment <u, ref> 0.655 (x lr: 6.55e-07), |u|^2 4.63e+07; entropy 0.273; clipped 0%
+   NSR2 s7 steps 0-49: measured / theorem 0.61 (F interpolated between steps 0 and 50: 0.95); lagged Adam direction alignment <u, ref> 5.7 (x lr: 1.14e-05), |u|^2 1.77e+08; entropy 0.594; clipped 0%
+   NSR2 s7 steps 50-99: measured / theorem 0.20 (F interpolated between steps 50 and 100: 1.03); lagged Adam direction alignment <u, ref> 0.286 (x lr: 5.73e-07), |u|^2 3.43e+07; entropy 0.221; clipped 0%
+   NSR2 s7 steps 100-149: measured / theorem 0.21 (F interpolated between steps 100 and 150: 1.14); lagged Adam direction alignment <u, ref> 0.347 (x lr: 6.94e-07), |u|^2 4.47e+07; entropy 0.231; clipped 0%
+   seed 7: NSR / PSR second moment raw 6.35, after scaling by Adam's previous scale 1.04; lagged Adam direction alignment NSR / PSR 0.73
+   PSRN vs PSR s7: boxed 65% vs 68%, truncated 44% vs 40%
+   NSR2 vs PSR s7: boxed 71% vs 68%, truncated 37% vs 40%
+   NSR vs PSR s7: boxed 65% vs 68%, truncated 44% vs 40%
