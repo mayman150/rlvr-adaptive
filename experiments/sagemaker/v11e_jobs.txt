@@ -12,3 +12,4 @@ us-east-2:worth-v11e-PSRa-s7-20261019-205932
 us-west-2:worth-v11e-PSRa-s7-20261019-205937
 us-east-2:worth-v11e-PSRb-s7-20261019-205941
 us-west-2:worth-v11e-PSRb-s7-20261019-205945
+us-east-2:worth-v11e-L-s0-20261019-233041

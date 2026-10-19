@@ -18,15 +18,22 @@ KEYS = [(0, 0, 1.0)] + [(s, st, 1.0) for s in A.SEEDS for st in (50, 100, 150)] 
 
 def load_new():
     out = {}
+    folders = []
     for job in sorted(A.RES.glob("worth-v11e-*"), key=lambda j: j.name[-15:]):
         m = re.match(r"worth-v11e-(BASE|PSRa|PSRb)-s(\d+)-", job.name)
-        if not m:
-            continue
-        for f in (job / "eval").glob("step*_T*_eval.json"):
+        if m:
+            folders.append((int(m.group(2)), job / "eval"))
+        elif job.name.startswith("worth-v11e-L-"):  # multi-lane job: lanes named <PSRa|PSRb>-s<seed>
+            for lane in sorted(job.iterdir()):
+                ml = re.match(r"(PSRa|PSRb)-s(\d+)$", lane.name)
+                if ml:
+                    folders.append((int(ml.group(2)), lane / "eval"))
+    for seed, folder in folders:
+        for f in folder.glob("step*_T*_eval.json"):
             step, t = re.match(r"step(\d+)_T([\d.]+)_eval", f.name).groups()
             d = json.loads(f.read_text())
             if "counts" in d and d.get("n") == A.N and len(d["counts"]) == 256 and all(isinstance(c, int) and 0 <= c <= A.N for c in d["counts"]):
-                out[(int(m.group(2)), int(step), round(float(t), 2))] = d
+                out[(seed, int(step), round(float(t), 2))] = d
     return out
 
 
