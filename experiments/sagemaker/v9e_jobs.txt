@@ -2,3 +2,14 @@ us-east-2:worth-v9e-PK4a-s1-20261019-033851
 us-east-2:worth-v9e-PK4b-s1-20261019-033856
 us-east-1:worth-v9e-DRa-s1-20261019-033934
 us-east-1:worth-v9e-DRb-s1-20261019-033946
+us-east-1:worth-v9e-PSRa-s1-20261019-035316
+us-east-1:worth-v9e-PSRb-s1-20261019-035320
+us-west-2:worth-v9e-DRa-s2-20261019-035453
+us-west-2:worth-v9e-DRb-s2-20261019-035459
+us-west-2:worth-v9e-DRb-s2-20261019-035502
+us-east-2:worth-v9e-DRb-s2-20261019-042453
+us-east-1:worth-v9e-PSRa-s2-20261019-040649
+us-east-1:worth-v9e-PSRb-s2-20261019-040653
+us-east-2:worth-v9e-PK4a-s2-20261019-042001
+us-east-2:worth-v9e-PK4b-s2-20261019-042005
+us-east-2:worth-v9e-PSRa-s1-20261019-042901
