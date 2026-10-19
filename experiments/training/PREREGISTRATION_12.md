@@ -139,12 +139,13 @@ Pilot about $80-100; primary training about $160; evaluation 43 checkpoint-evalu
 
 Committed before Pre-registration 11's primary statistic D was computed or inspected (four of its
 eleven evaluation jobs were still running). Two facts known at this time motivate it, neither
-from a Pre-registration 12 run:
+from a Pre-registration 12 primary or pilot run (one comes partly from its smoke test):
 
 1. Pre-registration 11's reported-without-a-rule prefix entropy: on the 256 frozen base-model
    answers, the base model has 1.081 and PSR at step 150 has 1.064-1.065 (seeds 5 and 7), a 1.5%
-   change, while the on-policy probe entropy falls 3-4 times during training. RL does not
-   sharpen next-token distributions on fixed contexts; it moves the model onto confident paths.
+   change, while the on-policy probe entropy falls 3-4 times during training. Here, RL barely
+   sharpens next-token distributions on these fixed contexts; it moves the model onto confident
+   paths (an observation for this model and bank, not a general law).
    The 4-lane smoke test agreed: a frozen-prefix floor at rho = 1.0 never activated in 8 steps.
    A frozen-prefix floor would therefore be inactive, so **arm F is replaced by EF**.
 2. Pre-registration 9 (OLMo): the pass@4 objective was +1.32 points of pass@16 at matched pass@1
@@ -159,13 +160,24 @@ correction along the bank-entropy gradient, measured check, doubling up to eight
 failures counted). Pilot rho in {0.8, 0.6}.
 
 **CM (candidate, branch M): coverage-weighted memory.** As M, but the 8 replayed questions are
-drawn without replacement with probability proportional to k (1 - p_hat)^(k-1) p_hat with k = 16,
-p_hat = (c + 0.5) / (G + 1) from the question's latest group (c of G correct). This is
-d pass@16 / d log p: it concentrates replay on questions solved about one time in 16, whose
-pass@16 can still rise, rather than on questions already solved. Pilot lambda in {1, 4}.
+drawn by successive weighted sampling without replacement (exponential keys) with weight equal
+to the posterior mean of k p (1 - p)^(k-1), k = 16, under p ~ Beta(c + 1/2, G - c + 1/2) from the
+question's latest group (c of G correct). k p (1 - p)^(k-1) is d pass@16 / d log p: replay goes to
+questions whose pass@16 can still rise rather than to questions already solved. Because each
+training question is attempted about once in 150 steps, the weights are noisy, stale estimates,
+and the archive mass is only part of the success probability: CM is a motivated replay
+priority, not an exact pass@16 gradient. Pilot lambda in {1, 4}; **M uses CM's chosen lambda**,
+replay count (8) and archive cap (4), so CM against M isolates the weighting.
 
 **Arms.** Branch S: B, EF, A, E. Branch M: **B, CM, M, U** (E moves to branch S only; M, uniform
-replay as in MAPO, is the ablation of CM).
+replay in the spirit of MAPO's marginal-likelihood term, is the ablation of CM). This amendment
+supersedes every earlier mention of F (branch S candidate) and of M as branch M's candidate.
+
+**Pilot selection (revised).** The strength is chosen by the matched-accuracy validation gain:
+the arm's step-100 validation pass@16 minus B's pilot trajectory (base, steps 50, 100 on the
+validation set) at the same pass@1, among strengths whose step-100 validation pass@1 is within 3
+points of B's; ties go to the weaker strength. EF rho stays in {0.8, 0.6} (0.95 appears in the
+smoke test only as a stress test).
 
 **Added rule (branch M).** CM against M at matched accuracy (M's T = 1 trajectory as reference,
 the same procedure): **coverage weighting matters** if the pooled difference is at least +1 point
@@ -173,7 +185,11 @@ with a 95% interval above 0; otherwise not shown. The contribution beyond MAPO i
 both CM's primary verdict is "moves the curve" and this rule passes.
 
 **Replication (declared now).** If the branch's candidate moves the curve on Qwen (primary rule and
-untouched-half confirmation), Pre-registration 13 repeats B against the candidate on
-OLMo-2-0425-1B-SFT (two seeds, 300 steps, Pre-registration 9's protocol and evaluation set), with
-the same decision rule; the claim of a method that moves the curve across model families rests
-on it.
+untouched-half confirmation), Pre-registration 13 trains the candidate on OLMo-2-0425-1B-SFT
+with Pre-registration 9's protocol (seeds 1 and 2, 300 steps, checkpoints every 50 steps, the
+256-problem evaluation set without the audit-excluded item, 32 samples) and compares it with
+Pre-registration 9's Dr. GRPO runs of the same seeds (reused, protocol-matched), against their
+T = 1 trajectory and their step-300 temperature points (1.15, 1.3, evaluated for this purpose).
+Replication holds if the pooled difference is at least +2 points with a 95% interval above 0 and
+positive in both seeds; the claim of a method that moves the curve across model families rests
+on it. Its cost is outside this pre-registration's budget.

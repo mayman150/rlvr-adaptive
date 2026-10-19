@@ -437,7 +437,10 @@ def apply_entropy_floor(runner, opt, bank, h, h_before, floor, args):
     after = bank_entropy(runner, bank)
     stats = {"floor": floor, "h_before": h_before, "predicted": h_before + hu, "h_step": after, "c": 0.0, "tries": 0,
              "correction_norm": 0.0, "violated": False}
-    if after >= floor - tol or hh <= 0:
+    if after >= floor - tol:
+        return stats
+    if hh <= 0:
+        stats.update({"h_after": after, "violated": True})
         return stats
     # The step left the bank entropy below the floor: move along h, starting from the first-order
     # amount (at least the measured shortfall), doubling until the measured entropy is restored.
@@ -480,10 +483,12 @@ def unlikeliness_rewards(rewards, seq_lp, G, beta):
     return out
 
 
-def coverage_weight(p, k):
-    """d pass@k / d p times p = k (1 - p)^(k-1) p: the pass@k value of raising log p for a question
-    solved with probability p (largest near p = 1/k)."""
-    return k * (1 - p) ** (k - 1) * p
+def coverage_weight(c, n, k):
+    """Posterior mean of d pass@k / d log p = k p (1 - p)^(k-1) under p ~ Beta(c + 1/2, n - c + 1/2)
+    (c of n correct at the question's latest attempt): k B(a + 1, b + k - 1) / B(a, b)."""
+    a, b = c + 0.5, n - c + 0.5
+    lbeta = lambda x, y: math.lgamma(x) + math.lgamma(y) - math.lgamma(x + y)
+    return k * math.exp(lbeta(a + 1, b + k - 1) - lbeta(a, b))
 
 
 def memory_backward(runner, args, archive, rng, norm, phat=None):
@@ -497,9 +502,9 @@ def memory_backward(runner, args, archive, rng, norm, phat=None):
         return {"questions": 0, "sequences": 0}
     m = min(args.memory_questions, len(keys))
     if args.memory_weighting == "coverage":
-        w = [coverage_weight(phat[k], args.coverage_k) for k in keys]
-        # weighted sampling without replacement (Efraimidis-Spirakis keys u^(1/w))
-        order = sorted(range(len(keys)), key=lambda i: -(rng.random() ** (1.0 / max(w[i], 1e-12))))
+        w = [coverage_weight(*phat[k], args.coverage_k) for k in keys]
+        # successive weighted sampling without replacement: exponential keys -log(u) / w, smallest first
+        order = sorted(range(len(keys)), key=lambda i: -math.log(max(rng.random(), 1e-300)) / max(w[i], 1e-300))
         pick = [keys[i] for i in order[:m]]
     else:
         pick = rng.sample(keys, m)
@@ -517,7 +522,7 @@ def memory_backward(runner, args, archive, rng, norm, phat=None):
         tokens += sum(len(p) + len(r) for p, r in mine)
     out = {"questions": len(pick), "sequences": len(seqs), "tokens": tokens, "mean_log_mass": sum(values) / len(values)}
     if phat is not None:
-        out["mean_p_hat"] = sum(phat[k] for k in pick) / len(pick)
+        out["mean_p_hat"] = sum((phat[k][0] + 0.5) / (phat[k][1] + 1) for k in pick) / len(pick)
     return out
 
 
@@ -929,7 +934,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         if args.memory_lambda > 0 and arm in FIXED_ARMS and keys is not None:
             # Verified, stop-terminated, unique successes join the archive after the update.
             for j, (c, n) in enumerate(groups):
-                phat[keys[j]] = (c + 0.5) / (n + 1)  # smoothed success rate at its latest attempt
+                phat[keys[j]] = (c, n)  # counts at the question's latest attempt
             for k, ((pi, ri), rew) in enumerate(zip(answers, rewards)):
                 if rew == 1 and len(ri) and int(ri[-1]) in runner.stop_ids:
                     slot = archive.setdefault(keys[owner[k]], [])
