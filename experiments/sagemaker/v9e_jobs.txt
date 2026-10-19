@@ -25,3 +25,7 @@ us-east-2:worth-v9e-PK4a-s2-20261019-061143
 us-east-2:worth-v9e-PK4b-s2-20261019-061147
 us-east-2:worth-v9e-NSRa-s2-20261019-061945
 us-east-2:worth-v9e-NSRb-s2-20261019-061949
+us-east-1:worth-v9e-PSRa-s1-20261019-062841
+us-east-1:worth-v9e-PK4b-s2-20261019-062845
+us-east-1:worth-v9e-PK4b-s2-20261019-064134
+us-east-1:worth-v9e-DRb-s2-20261019-065750

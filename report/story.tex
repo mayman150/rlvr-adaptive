@@ -437,7 +437,18 @@ This answers the review's causal objection. In the baseline family, more noise a
 
 \textbf{Decision rules (pre-registered).} Speed $\phi$ places a run between NSR (0) and PSR (1) using training accuracy over steps 25 to 49, pooled over the three seeds, with a paired block bootstrap (a power check on old runs gave interval half-widths of about 0.1). Manipulation check: PSR+N's measured noise within a factor 1.3 of the shadow NSR's. Primary: $\phi$(PSR+N)'s 90\% interval inside $\pm1/3$ means ``reproduces NSR's lag'' (the margin is where the $b=0.75$ run sat); 95\% interval above $1/3$ means ``clearly faster''. Also: the first formal equivalence test for NSR against PSR on Qwen (three fresh seeds as the primary test; adding seeds 3 and 4 as a disclosed secondary), and whether doubling the learning rate recovers NSR's lag.
 
-\textbf{Status.} A 6-step smoke test on the real GPU passed (peak memory 35 of 48 GB, all statistics logged, checkpoint saved). Seeds 5, 6 and 7 and PSR at twice the rate for seed 6 are training; PSR at twice the rate for seed 5 is waiting for a GPU. About 8 hours.
+\begin{found}
+\textbf{Results (all 14 runs complete, verdicts checked independently by Codex).}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item Manipulation check passed: PSR+N's noise is 1.02 times the same-policy NSR shadow's (90\% interval [1.01, 1.05]).
+\item \textbf{Primary: passed.} $\phi$(PSR+N) $=-0.11$, 90\% interval $[-0.22,-0.05]$, inside $\pm1/3$: noise of NSR's size reproduces NSR's early lag. PSR+N is slightly slower than NSR, and seed 7 ($-0.40$) triggers the heterogeneity flag.
+\item Doubling NSR's learning rate recovers its whole lag ($\phi=+1.16$, [1.07, 1.26]); at a matched doubled rate NSR still lags by 4.7 points, 31\% of the original gap.
+\item \textbf{Same curve: passed.} At matched pass@1, PSR+N ($-0.37$, 90\% $[-1.13,+0.46]$), NSR ($-0.20$, $[-0.97,+0.55]$) and NSR at twice the rate ($-0.03$) are all equivalent to PSR within $\pm2$ points; adding seeds 3 and 4 gives $-0.43$, $[-1.12,+0.21]$. Checkpoint-by-checkpoint equivalence is unresolved with 128 problems.
+\item The asymmetry fades: $F_0/F_1$ falls from 2.7--3.4 to about 1.5 by step 50 (persistence verdict inconclusive). With the re-measured sizes, the noise formula matches training within 0.69--1.18 in every window.
+\item Adam (descriptive): NSR's raw noise is 6 times PSR's, but only 1.0--1.3 times after Adam's per-coordinate scaling; NSR's Adam steps project 13--27\% less onto the population gradient.
+\end{itemize}
+What it does not show: that noise \emph{size} is the unique mechanism (noise geometry and Adam's reaction remain possible routes). Codex's updated score: 5 of 10, about 6 with a clear OLMo replication.
+\end{found}
 
 %=====================================================================
 \section{Where we stand, and the path to a paper}
@@ -456,10 +467,10 @@ In on-policy RLVR, positive and negative reinforcement share their expected upda
 \midrule
 Two-moment accounting & Established & Exact proof, exact enumeration\\
 Wrong answers carry larger gradients & Established on Qwen & Every run; OLMo smoke test 2.3; P9 tests it formally\\
-Noise formula matches real training & Mostly & 12 of 16 runs within 30\%; P10 re-measures $F$\\
+Noise formula matches real training & Yes, with re-measured $F$ & 0.69--1.18 in every window (P10)\\
 Noise predicts speed & Supported, correlational & Dose-response, two seeds\\
-Noise \emph{causes} NSR's lag & Open & P10 (running)\\
-Rules share one curve & Not detected otherwise; equivalence untested & Point comparisons, 128 problems; P9 and P10 test with intervals\\
+Noise of NSR's size reproduces NSR's lag & Shown on Qwen & P10: $\phi=-0.11$ within $\pm1/3$; mechanism not uniquely identified\\
+Rules share one curve & Average equivalence on Qwen & P10: NSR, PSR+N, NSR$\times$2 within $\pm2$ of PSR; P9 tests OLMo\\
 Holds beyond Qwen & Open & P9 (running)\\
 Optimal rule faster at equal cost & Partial & $+1.1$, $+3.3$; threshold missed; P9 repeats it\\
 \bottomrule
@@ -527,7 +538,7 @@ R & Is it an ICML paper? & Independent check before spending more & Codex as ICM
 \midrule
 9 & Does it hold on OLMo, longer, with intervals? & Generality; Qwen is suspect for small effects & 5 rules, 2 seeds, 300 steps, 256 problems, equivalence $\pm2$ & \textbf{Running}\\
 \midrule
-10 & Is the noise the cause? & Causal test asked by the review & PSR+N, NSR$\times$2, PSR$\times$2, 3 fresh seeds; $\phi$ within $\pm1/3$ & \textbf{Running}\\
+10 & Is the noise the cause? & Causal test asked by the review & PSR+N, NSR$\times$2, PSR$\times$2, 3 fresh seeds; $\phi$ within $\pm1/3$ & $\phi=-0.11$ [$-0.22$, $-0.05$]: \textbf{passed}; curves equivalent; Codex 5/10\\
 \bottomrule
 \end{longtable}
 \normalsize

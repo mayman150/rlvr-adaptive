@@ -1,4 +1,16 @@
-# The story of the paper (living document, updated October 18, 2026)
+# The story of the paper (living document, updated October 19, 2026)
+
+## October 19: Pre-registration 10 passed (Qwen, three fresh seeds)
+
+Noise of NSR's size added to PSR (same mean, same measured noise, ratio 1.02) reproduces
+NSR's early lag: phi = -0.11, 90% [-0.22, -0.05] inside ±1/3 (seed 7 flagged). NSR at 2x
+learning rate recovers the lag; at matched 2x NSR still lags by 31% of the gap. Average
+matched-accuracy equivalence (±2, pass@16) holds for NSR (-0.20), PSR+N (-0.37) and NSR x2
+(-0.03) against PSR; five seeds -0.43 [-1.12, +0.21]. F0/F1 decays from about 3 to 1.5; with
+re-measured F the noise formula fits within 0.69-1.18. Adam: raw noise 6x, 1.0-1.3x after
+per-coordinate scaling; NSR's updates project 13-27% less on the population gradient.
+Mechanism not uniquely identified. Codex: 5/10, about 6/10 with clear OLMo replication.
+See experiments/training/RESULTS_10.md.
 
 ## October 18: external review and the revised claim
 
