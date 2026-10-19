@@ -28,7 +28,7 @@ def load():
     out = {}
     jobs = sorted((j for j in RES.glob("worth-v11-*") if not j.name.startswith("worth-v11smoke")), key=lambda j: j.name[-15:])
     for job in jobs:
-        m = re.match(r"worth-v11-(BASE|PSRa|PSRb)-s(\d+)-", job.name)
+        m = re.match(r"worth-v11-(BASE[ab]?|PSR[abc])-s(\d+)-", job.name)
         if not m:
             continue
         seed = int(m.group(2))
