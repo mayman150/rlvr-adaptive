@@ -30,7 +30,7 @@ def load_problems(path, limit):
 
 
 @torch.no_grad()
-def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, prefill_tokens):
+def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, prefill_tokens, temperature=1.0):
     items = [t for t in texts for _ in range(n_each)]
     outs, s, budget = [], 0, gen_batch * prefill_tokens
     torch.manual_seed(seed)
@@ -42,7 +42,7 @@ def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, 
             b = max(1, budget // enc.input_ids.shape[1])
             enc = tok(items[s:s + b], return_tensors="pt", padding=True)
         enc = enc.to(model.device)
-        kw = dict(do_sample=False) if greedy else dict(do_sample=True, temperature=1.0, top_p=1.0, top_k=0)
+        kw = dict(do_sample=False) if greedy else dict(do_sample=True, temperature=temperature, top_p=1.0, top_k=0)
         try:
             gen = model.generate(**enc, max_new_tokens=max_new, eos_token_id=stop, pad_token_id=pad, **kw)
         except torch.OutOfMemoryError:
@@ -61,7 +61,34 @@ def generate(model, tok, stop, texts, n_each, max_new, seed, greedy, gen_batch, 
     return outs
 
 
-def evaluate(model_path, tag, args, problems, greedy_problems, out_dir, sampled=True):
+@torch.no_grad()
+def prefix_entropy(model, tok, sequences, temperature, device, batch=8):
+    """Mean per-token entropy of softmax(logits / temperature) over the response tokens of fixed
+    (frozen) prompt-response sequences, so that models are compared on the same prefixes."""
+    total, count = 0.0, 0
+    for s in range(0, len(sequences), batch):
+        chunk = sequences[s:s + batch]
+        prompts = [build_prompt(tok, c["question"]) for c in chunk]
+        p_ids = [tok(p, add_special_tokens=False).input_ids for p in prompts]
+        r_ids = [tok(c["response"], add_special_tokens=False).input_ids[:512] for c in chunk]
+        seqs = [a + b for a, b in zip(p_ids, r_ids)]
+        width = max(len(x) for x in seqs)
+        pad = tok.pad_token_id if tok.pad_token_id is not None else 0
+        ids = torch.tensor([x + [pad] * (width - len(x)) for x in seqs], device=device)
+        mask = torch.tensor([[1] * len(x) + [0] * (width - len(x)) for x in seqs], device=device)
+        logits = model(input_ids=ids, attention_mask=mask).logits.float() / temperature
+        logp = torch.log_softmax(logits, dim=-1)
+        ent = -(logp.exp() * logp).sum(-1)  # entropy of the next-token distribution at each position
+        for i, (a, b) in enumerate(zip(p_ids, r_ids)):
+            # positions len(a)-1 .. len(a)+len(b)-2 predict the response tokens
+            e = ent[i, len(a) - 1:len(a) + len(b) - 1]
+            total += float(e.sum())
+            count += e.numel()
+        del logits, logp, ent
+    return total / max(count, 1)
+
+
+def evaluate(model_path, tag, args, problems, greedy_problems, out_dir, sampled=True, temperature=1.0, prefixes=None):
     t0 = time.time()
     tok = AutoTokenizer.from_pretrained(model_path)
     tok.padding_side = "left"
@@ -69,10 +96,16 @@ def evaluate(model_path, tag, args, problems, greedy_problems, out_dir, sampled=
         tok.pad_token = tok.eos_token
     model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch.bfloat16).to(args.device).eval()
     stop = stop_token_ids(tok)
-    res = {"tag": tag, "model": str(model_path), "n": args.n, "problems": len(problems), "pass_at_k": {}}
+    res = {"tag": tag, "model": str(model_path), "n": args.n, "problems": len(problems), "pass_at_k": {},
+           "temperature": temperature}
+    if prefixes is not None:
+        res["prefix_entropy"] = prefix_entropy(model, tok, prefixes, temperature, args.device)
     if sampled:
         texts = [build_prompt(tok, q["question"]) for q in problems]
-        outs = generate(model, tok, stop, texts, args.n, args.max_new, args.seed, False, args.gen_batch, args.prefill_tokens)
+        outs = generate(model, tok, stop, texts, args.n, args.max_new, args.seed, False, args.gen_batch, args.prefill_tokens,
+                        temperature)
+        res["mean_length_chars"] = sum(len(o) for o in outs) / len(outs)
+        res["boxed_rate"] = sum("\\boxed" in o for o in outs) / len(outs)
         correct = [reward(o, problems[i // args.n]["answer"]) for i, o in enumerate(outs)]
         counts = [sum(correct[i * args.n:(i + 1) * args.n]) for i in range(len(problems))]
         ks = [k for k in (1, 2, 4, 8, 16, 32, 64) if k <= args.n]
@@ -112,6 +145,9 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--expect-steps", default="", help="fail unless checkpoints (or the base, as 0) exist for these steps")
+    ap.add_argument("--temperatures", default="", help="sampling temperatures (tags become step<N>_T<t>); default 1.0 only")
+    ap.add_argument("--entropy-prefixes", default=None, help="frozen prompt-response sequences for prefix entropy")
+    ap.add_argument("--base-temperatures", default="", help="temperatures for the base model (default: --temperatures)")
     args = ap.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -129,14 +165,20 @@ def main():
     found = {step for _, _, step in jobs}
     if expected - found:
         raise SystemExit(f"missing checkpoints for steps {sorted(expected - found)} under {args.ckpts}")
+    temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
+    base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
+    prefixes = load_problems(args.entropy_prefixes, None) if args.entropy_prefixes else None
     for path, tag, step in jobs:
-        if (out_dir / f"{tag}_eval.json").exists():
-            print(f"{tag}: already done", flush=True)
-            continue
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
             continue
-        evaluate(path, tag, args, problems, greedy_problems if step in greedy_steps else None, out_dir, sampled)
+        for t in (base_temps if (args.base and step == 0 and path == args.base) else temps):
+            full = tag if t is None else f"{tag}_T{t:.2f}"
+            if (out_dir / f"{full}_eval.json").exists():
+                print(f"{full}: already done", flush=True)
+                continue
+            evaluate(path, full, args, problems, greedy_problems if step in greedy_steps else None, out_dir, sampled,
+                     1.0 if t is None else t, prefixes)
     print("done", flush=True)
 
 

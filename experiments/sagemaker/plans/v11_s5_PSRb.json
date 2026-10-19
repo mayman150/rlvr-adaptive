@@ -1,0 +1,28 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval": {
+  "include_base": false,
+  "args": [
+   "--problems",
+   "eval_frontier_256.json",
+   "--n",
+   "32",
+   "--max-new",
+   "512",
+   "--gen-batch",
+   "256",
+   "--entropy-prefixes",
+   "frozen_prefixes_qwen.json",
+   "--temperatures",
+   "1.15,1.3,1.45,1.6",
+   "--sampled-steps",
+   "150",
+   "--expect-steps",
+   "50,100,150"
+  ]
+ }
+}
