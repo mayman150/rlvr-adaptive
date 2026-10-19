@@ -17,3 +17,13 @@ us-east-1:worth-v11-PSRa-s6-20261019-165203
 us-east-1:worth-v11-PSRc-s6-20261019-165208
 us-east-2:worth-v11-PSRb-s7-20261019-165213
 us-east-2:worth-v11-PSRc-s7-20261019-165217
+us-west-2:worth-v11-PSRa-s6-20261019-170720
+us-west-2:worth-v11-PSRc-s6-20261019-170733
+us-west-2:worth-v11-PSRb-s7-20261019-170745
+us-east-1:worth-v11-PSRa-s6-20261019-190143
+us-east-1:worth-v11-PSRa-s6-20261019-190148
+us-east-1:worth-v11-PSRc-s6-20261019-190152
+us-west-2:worth-v11-PSRc-s6-20261019-190156
+us-east-2:worth-v11-PSRb-s7-20261019-190200
+us-east-2:worth-v11-PSRb-s7-20261019-190205
+us-west-2:worth-v11-PSRb-s7-20261019-190209

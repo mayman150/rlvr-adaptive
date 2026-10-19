@@ -1,0 +1,83 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [
+  "--seed",
+  "11",
+  "--steps",
+  "100",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "192",
+  "--calib-prompts",
+  "16",
+  "--eval",
+  "val_frontier_256.json",
+  "--passk-n",
+  "32",
+  "--passk-steps",
+  "100",
+  "--eval-steps",
+  "100",
+  "--entropy-every",
+  "5",
+  "--train",
+  "train.json"
+ ],
+ "gpus": [
+  [
+   [
+    "B",
+    [
+     "--arms",
+     "baseline",
+     "--passk-steps",
+     "0,50,100"
+    ]
+   ]
+  ],
+  [
+   [
+    "EF8",
+    [
+     "--arms",
+     "baseline",
+     "--early-floor-rho",
+     "0.8"
+    ]
+   ]
+  ],
+  [
+   [
+    "EF6",
+    [
+     "--arms",
+     "baseline",
+     "--early-floor-rho",
+     "0.6"
+    ]
+   ]
+  ],
+  [
+   [
+    "A1",
+    [
+     "--arms",
+     "baseline",
+     "--entropy-target-frac",
+     "1.0",
+     "--entropy-lr",
+     "0.01"
+    ]
+   ]
+  ]
+ ]
+}

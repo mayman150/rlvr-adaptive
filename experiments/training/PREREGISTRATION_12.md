@@ -193,3 +193,9 @@ T = 1 trajectory and their step-300 temperature points (1.15, 1.3, evaluated for
 Replication holds if the pooled difference is at least +2 points with a 95% interval above 0 and
 positive in both seeds; the claim of a method that moves the curve across model families rests
 on it. Its cost is outside this pre-registration's budget.
+
+**Amendment 2 (before any pilot run).** The second smoke test showed that early-token entropy
+varies between steps (1.1 to 3.4, different questions), so EF's reference is the mean early-token
+entropy over steps 0-4, with enforcement from step 5. Both branches' pilots run now (they do not
+depend on Pre-registration 11's verdict; only the branch's arms are used afterwards). The pilot
+also runs U and M at both lambdas for information; M's primary lambda remains CM's choice.

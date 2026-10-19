@@ -741,6 +741,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     bank = bank_tensors(runner, args.floor_bank, args.floor_bank_size) if args.floor_rho > 0 else None
     floor = args.floor_rho * bank_entropy(runner, bank) if bank is not None else None
     archive, phat, mem_rng = {}, {}, random.Random(args.seed * 7717)
+    early_ref = []
     ent_coef, ent_target = args.entropy_coef, None
     adaptive_entropy = args.entropy_target_frac > 0
     if floor is not None:
@@ -886,9 +887,15 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 # Bank = the first K response tokens of this step's own answers (fixed within the step).
                 bank = [(pi, ri[: args.early_floor_tokens]) for pi, ri in answers if len(ri)]
                 if floor is None:
-                    floor = args.early_floor_rho * bank_entropy(runner, bank)
-                    print(f"[{arm}] early-token entropy floor {floor:.4f} (rho {args.early_floor_rho})", flush=True)
-            if floor is not None:
+                    # Reference: mean early-token entropy over the first `early_floor_warmup` steps
+                    # (no enforcement during them), since one step's questions make it noisy.
+                    early_ref.append(bank_entropy(runner, bank))
+                    extra["early_entropy"] = early_ref[-1]
+                    if len(early_ref) == args.early_floor_warmup:
+                        floor = args.early_floor_rho * sum(early_ref) / len(early_ref)
+                        print(f"[{arm}] early-token entropy floor {floor:.4f} (rho {args.early_floor_rho})", flush=True)
+                    bank = None
+            if floor is not None and bank is not None:
                 # Gradient of the bank entropy at the current parameters, before the reward gradient.
                 h_before = bank_entropy(runner, bank, grad=True)
                 h_grad = [(q.grad.detach().to(torch.bfloat16).clone() if q.grad is not None else torch.zeros_like(q, dtype=torch.bfloat16))
@@ -1016,6 +1023,7 @@ def main():
     parser.add_argument("--early-floor-rho", type=float, default=0.0,
                         help="entropy floor on the first --early-floor-tokens tokens of each step's own answers: rho x the step-0 value")
     parser.add_argument("--early-floor-tokens", type=int, default=32)
+    parser.add_argument("--early-floor-warmup", type=int, default=5)
     parser.add_argument("--memory-weighting", default="uniform", choices=("uniform", "coverage"))
     parser.add_argument("--coverage-k", type=int, default=16)
     parser.add_argument("--memory-lambda", type=float, default=0.0, help="log-mass replay of archived successes (0: off)")
@@ -1051,7 +1059,8 @@ def main():
         args.budget = args.prompts_per_step * args.group
     train_path = Path(args.train) if Path(args.train).exists() else HERE / "data" / args.train
     problems = json.loads(train_path.read_text())
-    eval_set = json.loads(Path(args.eval).read_text())[: args.eval_limit]
+    eval_path = Path(args.eval) if Path(args.eval).exists() else HERE / "data" / args.eval
+    eval_set = json.loads(eval_path.read_text())[: args.eval_limit]
     final_set = None
     if args.final_eval:
         path = Path(args.final_eval) if Path(args.final_eval).exists() else HERE / "data" / args.final_eval
