@@ -3,6 +3,10 @@
 Declared October 19, 2026, **before any result of Pre-registration 11** (see this file's commit
 time; Pre-registration 11's evaluations were still running). Which branch runs is decided by
 Pre-registration 11's pre-registered verdict, so the method choice is itself fixed in advance.
+Revised once before launch after an independent review (Codex): floor enforcement and failure
+handling, bounded memory in replay, a label audit of the evaluation and validation sets, pilot
+details, executable envelope inference, Holm family, an untouched-half confirmation, cost
+reporting, and what a null result may claim.
 
 ## Why
 
@@ -31,7 +35,7 @@ All arms are Dr. GRPO (advantage r - group mean) with one change:
 | B | none (within-class reference) | S, M |
 | E | fixed entropy bonus on every token of the batch, coefficient beta_E (pilot) | S, M |
 | A | adaptive entropy control: the bonus coefficient follows beta <- max(0, beta + eta (H0 - H_t)), H_t the batch's mean token entropy, H0 its value at step 0; eta from the pilot | S |
-| F | **entropy floor (candidate method, Branch S):** mean token entropy on 64 frozen base-model answers must stay at least rho times its starting value; after each Adam step, if the first-order prediction H + <h, u> (h the entropy gradient before the step, u Adam's actual parameter change) is below the floor, the parameters move along h by the missing amount over abs(h)^2, then the measured entropy is checked and the move doubled up to three times; rho from the pilot | S |
+| F | **entropy floor (candidate method, Branch S):** mean token entropy on 64 frozen base-model answers must stay at least rho times its starting value; after each Adam step, if the first-order prediction H + <h, u> (h the entropy gradient before the step, u Adam's actual parameter change) is below the floor, the parameters move along h by the missing amount over abs(h)^2, the measured bank entropy is checked after every step, and while it is below the floor by more than 1% the move is doubled (up to eight times); a step still below after that counts as a floor failure (reported; if more than 5% of steps fail, F's verdict carries the label "floor not enforced"); rho from the pilot | S |
 | M | **log-mass memory (candidate method, Branch M):** every verified, stop-terminated, distinct correct training answer joins an archive (at most 4 per question) after the update; each step adds the gradient of lambda x the sum over 8 archived questions (uniform) of log sum over that question's archive of pi(y given question) (MAPO's marginal likelihood term), on the same scale as the reward loss; lambda from the pilot | M |
 | U | unlikeliness reward (He et al. 2025), beta_rank = 0.25 as published: in groups with mixed rewards, a correct answer's reward becomes 1 - 0.25 (G - rank) / G, rank 0 the most probable of the 8 by sequence probability | M |
 
@@ -47,13 +51,22 @@ for every arm (Pre-registration 10 found that the learning rate changes speed al
 this is a stated limitation. **Fresh seeds 8, 9, 10**; the four arms of a seed run in parallel on
 one 4-GPU instance and see the same questions at every step.
 
+**Labels.** Before any Pre-registration 12 result, every reference answer of the evaluation and
+validation sets is audited: Claude Haiku 5.5 solves each problem; where it disagrees with the
+reference, Claude Opus 5.5 adjudicates between the two; references it rejects are corrected (or
+the item excluded if no single correct answer exists), and the list is committed before the
+primary runs (`label_audit.py`). The same list gives a sensitivity analysis for Pre-registrations
+9 and 11, which share the 256-problem set.
+
 **Pilot (strength choice, before the primary runs).** Seed 11, 100 steps, each tunable arm at two
 strengths (beta_E 0.001 and 0.003; eta 0.01 and 0.03; rho 0.8 and 0.6; lambda 1 and 4) plus B;
 pass@k with 32 samples on 256 separate validation problems (`data/val_frontier_256.json`, none
 in training, MATH-500 or the evaluation set) at step 100. For each arm, the strength whose
 step-100 validation pass@1 is within 3 points of B's is chosen, the higher validation pass@16
-breaking a tie; if neither is within 3 points, the one closer to B's pass@1. Choices are
-committed before the primary runs start.
+breaking a tie; if neither is within 3 points, the one closer to B's pass@1; a remaining tie goes to the weaker
+strength; an intervention that never activates in the pilot (the floor never binds, the archive
+stays empty) gets the stronger setting. A starts at beta 0. Choices are committed before the
+primary runs start.
 
 **Evaluation.** 512 subject-stratified held-out MATH test problems (`data/eval_frontier_512.json`,
 which contains Pre-registration 11's 256), 32 samples at temperature 1, for the base model and
@@ -74,7 +87,9 @@ points is reported.
 
 - **References.** (i) B's T = 1 trajectory (base, steps 50, 100, 150); (ii) **B's envelope**: at
   each pass@1, the higher of the trajectory and of B's step-150 temperature curve (T = 1, 1.15,
-  1.3), where defined.
+  1.3), each used only inside its own pass@1 range (points ordered by pass@1, ties by step or
+  temperature); the envelope is recomputed in every bootstrap draw. Claims are against this
+  restricted envelope (three temperatures).
 - **Primary (candidate method F or M, against B's envelope):**
   - **moves the curve:** pooled difference at least +2 points, 95% interval above 0, and positive
     in all three seeds;
@@ -85,10 +100,20 @@ points is reported.
 - **Equal cost:** reported separately: X's step-150 pass@1 minus B's, paired over problems,
   pooled over seeds; "the same accuracy at equal answers" only if its 90% interval lies inside
   [-1, +1].
-- **Audit arms** (against B's trajectory, the same three-way rule), Holm-corrected across the
-  audit arms of the branch.
+- **Audit arms** (against B's trajectory, the same three-way rule). Holm's correction applies to
+  the two-sided directional tests ("moves" or "worse") over the audit arms of the branch (two
+  hypotheses in branch S, two in branch M); equivalence claims use the uncorrected 90% interval.
+- **Untouched-half confirmation.** Half of the 512 problems also served Pre-registration 11's
+  branch choice. The primary verdict is confirmed only if the candidate's pooled difference on
+  the 256 untouched problems has the same sign and its 90% interval excludes 0; otherwise it is
+  reported as "not confirmed on untouched problems".
+- **What a null may claim.** "Average agreement" for an intervention requires its equivalence
+  interval and evidence that it was active (floor corrections on at least 5% of steps; archive
+  used on at least 90% of steps after step 20; entropy bonus with a nonzero coefficient);
+  otherwise "inactive".
 
-Reported without a rule: entropy traces, the floor's activity (share of steps with a correction,
+Reported without a rule: GPU time and processed tokens per arm (including bank and replay
+passes), so "equal cost" (equal generated answers) is not read as equal compute; entropy traces, the floor's activity (share of steps with a correction,
 size), the archive's growth, reasoning validity of correct answers for the candidate and B at
 step 150 (LLM judge, as Pre-registration 8) if the primary verdict is "moves the curve".
 

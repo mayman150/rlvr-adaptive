@@ -399,7 +399,7 @@ def bank_tensors(runner, path, size):
     return out
 
 
-def bank_entropy(runner, bank, batch=8, grad=False):
+def bank_entropy(runner, bank, batch=4, grad=False):
     """Mean token entropy of the current policy on the frozen bank; with grad=True, also backward
     into .grad (the caller zeroes .grad around it)."""
     total, count = 0.0, sum(len(r) for _, r in bank)
@@ -433,20 +433,26 @@ def apply_entropy_floor(runner, opt, bank, h, h_before, floor, args):
         hu += float((hf * u).sum())
         hh += float((hf * hf).sum())
     slack = floor - h_before - hu
-    stats = {"floor": floor, "h_before": h_before, "predicted": h_before + hu, "c": 0.0, "tries": 0}
-    if slack <= 0 or hh <= 0:
+    tol = args.floor_tol * abs(floor)
+    after = bank_entropy(runner, bank)
+    stats = {"floor": floor, "h_before": h_before, "predicted": h_before + hu, "h_step": after, "c": 0.0, "tries": 0,
+             "correction_norm": 0.0, "violated": False}
+    if after >= floor - tol or hh <= 0:
         return stats
-    c = slack / hh
+    # The step left the bank entropy below the floor: move along h, starting from the first-order
+    # amount (at least the measured shortfall), doubling until the measured entropy is restored.
+    c = max(slack, floor - after) / hh
     applied = 0.0
-    for tries in range(4):
+    for tries in range(8):
         for p, hp in zip(runner.params, h):
             p.add_(hp.to(p.dtype), alpha=c - applied)
         applied = c
         after = bank_entropy(runner, bank)
-        stats.update({"c": c, "tries": tries + 1, "h_after": after})
-        if after >= floor - args.floor_tol * abs(floor):
+        stats.update({"c": c, "tries": tries + 1, "h_after": after, "correction_norm": c * hh ** 0.5})
+        if after >= floor - tol:
             break
         c *= 2
+    stats["violated"] = after < floor - tol
     return stats
 
 
@@ -485,19 +491,14 @@ def memory_backward(runner, args, archive, rng, norm):
         for pr in archive[k]:
             seqs.append((pr[0].to(runner.device), pr[1].to(runner.device)))
             owner.append(j)
-    lps = []
-    for s in range(0, len(seqs), args.train_batch):
-        lps.append(runner.logprob_sum(seqs[s:s + args.train_batch]))
-    lp = torch.cat(lps)
-    owner_t = torch.tensor(owner, device=runner.device)
-    loss = 0.0
-    values = []
+    values, tokens = [], 0
     for j in range(len(pick)):
-        lm = torch.logsumexp(lp[owner_t == j], dim=0)
+        mine = [sq for sq, o in zip(seqs, owner) if o == j]
+        lm = torch.logsumexp(runner.logprob_sum(mine), dim=0)  # one question at a time bounds memory
+        (-args.memory_lambda * lm / norm).backward()
         values.append(float(lm.detach()))
-        loss = loss + lm
-    (-args.memory_lambda * loss / norm).backward()
-    return {"questions": len(pick), "sequences": len(seqs), "mean_log_mass": sum(values) / len(values)}
+        tokens += sum(len(p) + len(r) for p, r in mine)
+    return {"questions": len(pick), "sequences": len(seqs), "tokens": tokens, "mean_log_mass": sum(values) / len(values)}
 
 
 def backward_surrogate(runner, args, answers, idx, adv, old_lp, norm):
@@ -724,6 +725,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     surrogate = args.reuse > 1 or args.length_norm or args.norm_selected
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
+    interventions = args.entropy_coef > 0 or args.entropy_target_frac > 0 or args.floor_rho > 0 or args.memory_lambda > 0 or args.unlikely_beta > 0
+    assert not (interventions and (surrogate or args.diagnostics)), "Pre-registration 12 options need the plain on-policy loss without diagnostics"
+    assert not (interventions and arm != "baseline"), "Pre-registration 12 options are defined for Dr. GRPO (arm baseline)"
     passk = []
     for step in range(args.steps + 1):
         if step in remeasure_steps:
@@ -863,7 +867,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 backward_weighted(runner, args, answers, list(range(len(answers))), adv, norm, None, ent_coef, stats_e)
                 extra["batch_entropy"] = stats_e[0] / max(stats_e[1], 1)
                 extra["entropy_coef"] = ent_coef
-                n_live = len(answers)
+                n_live = len(answers) if ent_coef > 0 else len(live)
             else:
                 backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
@@ -885,6 +889,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 store_update(runner, opt)
             if floor is not None and not surrogate and not args.diagnostics and h_grad is not None:
                 extra["floor"] = apply_entropy_floor(runner, opt, bank, h_grad, h_before, floor, args)
+                extra["floor"]["bank_tokens"] = sum(len(a) + len(b) for a, b in bank) * (2 + extra["floor"]["tries"])
         elif args.diagnostics:
             runner.last_update = None
         opt.zero_grad(set_to_none=True)
@@ -911,7 +916,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                "groups": len(groups), "grad_norm": grad_norm, "answers": len(answers),
                "tokens": sum(len(r) for _, r in answers),
                "mean_length": sum(len(r) for _, r in answers) / len(answers),
-               "entropy": sum(entropy) / live_tokens if live_tokens else None,
+               "entropy": sum(entropy) / live_tokens if (live_tokens and entropy) else None,
                "group_counts": groups,
                "peak_gb": torch.cuda.max_memory_allocated() / 1e9 if runner.device == "cuda" else None,
                "seconds": time.time() - start, **extra}

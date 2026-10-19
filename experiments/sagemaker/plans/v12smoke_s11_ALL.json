@@ -6,7 +6,7 @@
   "--seed",
   "11",
   "--steps",
-  "6",
+  "8",
   "--group",
   "8",
   "--prompts-per-step",
@@ -51,7 +51,7 @@
      "--arms",
      "baseline",
      "--floor-rho",
-     "0.8"
+     "1.0"
     ]
    ]
   ],
