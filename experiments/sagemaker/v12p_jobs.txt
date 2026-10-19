@@ -1,0 +1,6 @@
+us-east-1:worth-v12p-J1-s11-20261019-192004
+us-west-2:worth-v12p-J1-s11-20261019-192009
+us-east-2:worth-v12p-J2-s11-20261019-192012
+us-east-1:worth-v12p-J2-s11-20261019-192017
+us-west-2:worth-v12p-J3-s11-20261019-192021
+us-east-2:worth-v12p-J3-s11-20261019-192025

@@ -99,3 +99,16 @@ reported.
 ## Cost
 
 28 evaluations of 8,192 answers, about 30 GPU-hours on single L40S GPUs (about $60-80), in 7 jobs.
+
+## Result and enlargement (October 19)
+
+Primary verdict on the 256 problems: **inconclusive** (pooled D -1.54, 90% [-2.63, -0.47]; T 1.07
+and 1.15 near 0 to +2 per seed, T 1.3 about -6 to -7.5 and format-flagged). Output:
+`RESULTS_11_analysis_output.txt`. As pre-registered, the evaluation is enlarged before Pre-
+registration 12 chooses a branch: the evaluations that enter D (base at T = 1; PSR steps 50, 100,
+150 at T = 1; step 150 at T = 1.07, 1.15, 1.3; seeds 5-7) are repeated on the 256 further problems
+of `data/eval_frontier_256b.json` (the evaluation set of Pre-registration 12 minus this set, labels
+corrected), and the same rule is applied to the combined 511 problems (the audit-excluded item
+dropped). **Declared before the enlarged results exist:** if the enlarged verdict is still
+inconclusive (or average agreement, or below), Pre-registration 12 runs branch M; only
+"separable" selects branch S.

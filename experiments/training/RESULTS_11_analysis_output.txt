@@ -1,0 +1,46 @@
+Points (pass@1, pass@16, prefix entropy, parseable-box rate, mean tokens, truncation):
+   seed 0 step   0 T 0.50:  15.7  58.1  H 0.321  boxed 30%  tokens 474  truncated 76%
+   seed 0 step   0 T 0.70:  16.4  62.9  H 0.555  boxed 34%  tokens 466  truncated 74%
+   seed 0 step   0 T 0.85:  16.1  65.0  H 0.795  boxed 36%  tokens 456  truncated 71%
+   seed 0 step   0 T 1.00:  12.4  61.2  H 1.081  boxed 34%  tokens 434  truncated 65%
+   seed 5 step  50 T 1.00:  33.7  67.1  H 1.075  boxed 51%  tokens 442  truncated 55%
+   seed 5 step 100 T 1.00:  37.1  70.2  H 1.070  boxed 54%  tokens 439  truncated 53%
+   seed 5 step 150 T 1.00:  39.0  72.5  H 1.065  boxed 56%  tokens 433  truncated 51%
+   seed 5 step 150 T 1.07:  37.6  71.2  H 1.210  boxed 55%  tokens 435  truncated 52%
+   seed 5 step 150 T 1.15:  34.1  69.6  H 1.388  boxed 48%  tokens 438  truncated 55%
+   seed 5 step 150 T 1.30:  17.2  55.0  H 1.779  boxed 23%  tokens 455  truncated 71%
+   seed 5 step 150 T 1.45:   3.5  26.5  H 2.284  boxed 5%  tokens 474  truncated 85%
+   seed 5 step 150 T 1.60:   0.1   1.5  H 2.950  boxed 0%  tokens 482  truncated 90%
+   seed 6 step  50 T 1.00:  33.0  69.2  H 1.075  boxed 50%  tokens 441  truncated 56%
+   seed 6 step 100 T 1.00:  36.8  69.9  H 1.070  boxed 54%  tokens 441  truncated 54%
+   seed 6 step 150 T 1.00:  39.7  71.7  H 1.064  boxed 57%  tokens 435  truncated 51%
+   seed 6 step 150 T 1.07:  38.2  70.7  H 1.209  boxed 55%  tokens 437  truncated 53%
+   seed 6 step 150 T 1.15:  35.1  70.3  H 1.388  boxed 49%  tokens 440  truncated 56%
+   seed 6 step 150 T 1.30:  18.3  57.4  H 1.779  boxed 24%  tokens 457  truncated 72%
+   seed 6 step 150 T 1.45:   3.4  26.2  H 2.284  boxed 4%  tokens 477  truncated 86%
+   seed 6 step 150 T 1.60:   0.1   1.9  H 2.952  boxed 0%  tokens 484  truncated 90%
+   seed 7 step  50 T 1.00:  33.6  68.4  H 1.075  boxed 51%  tokens 439  truncated 55%
+   seed 7 step 100 T 1.00:  37.6  71.6  H 1.068  boxed 55%  tokens 439  truncated 53%
+   seed 7 step 150 T 1.00:  39.9  73.6  H 1.064  boxed 57%  tokens 433  truncated 50%
+   seed 7 step 150 T 1.07:  38.3  73.1  H 1.209  boxed 55%  tokens 436  truncated 52%
+   seed 7 step 150 T 1.15:  34.8  71.1  H 1.388  boxed 49%  tokens 438  truncated 55%
+   seed 7 step 150 T 1.30:  17.6  57.0  H 1.778  boxed 24%  tokens 457  truncated 72%
+   seed 7 step 150 T 1.45:   3.2  25.7  H 2.283  boxed 4%  tokens 475  truncated 86%
+   seed 7 step 150 T 1.60:   0.1   1.4  H 2.949  boxed 0%  tokens 484  truncated 90%
+
+qualifying temperatures: {5: [1.07, 1.15, 1.3], 6: [1.07, 1.15, 1.3], 7: [1.07, 1.15, 1.3]}
+pooled D -1.54, 90% [-2.63, -0.47], 95% [-2.84, -0.28]; per seed 5: -1.67, 6: -1.84, 7: -1.12
+simultaneous 90% band: s5 T1.07: +0.4 [-2.2, +3.0]; s5 T1.15: +2.1 [-1.0, +5.2]; s5 T1.3: -7.5 [-12.0, -2.9]; s6 T1.07: -0.1 [-2.0, +1.8]; s6 T1.15: +0.7 [-1.6, +3.1]; s6 T1.3: -6.1 [-10.4, -1.9]; s7 T1.07: +0.9 [-1.7, +3.5]; s7 T1.15: +1.7 [-1.1, +4.5]; s7 T1.3: -6.0 [-10.0, -2.0]
+bootstrap points outside the resampled trajectory range (end value used): 0.0%
+verdict: inconclusive
+
+Reported without a rule
+   seed 5: entropy-matched temperature T* = 1.01 (base prefix entropy 1.081); at T*: pass@1 38.8, pass@16 72.3, D(T*) +0.0
+   seed 6: entropy-matched temperature T* = 1.01 (base prefix entropy 1.081); at T*: pass@1 39.5, pass@16 71.6, D(T*) -0.0
+   seed 7: entropy-matched temperature T* = 1.01 (base prefix entropy 1.081); at T*: pass@1 39.8, pass@16 73.5, D(T*) +0.1
+   seed 5: step 150's temperature curve minus the base model's, pass@1 12.4-16.4: -16.1, -13.1, -10.2, -7.2, -9.7
+   seed 6: step 150's temperature curve minus the base model's, pass@1 12.4-16.4: -16.2, -13.2, -10.2, -7.2, -9.7
+   seed 7: step 150's temperature curve minus the base model's, pass@1 12.4-16.4: -15.5, -12.4, -9.4, -6.3, -8.7
+   FLAG seed 5 T 1.3: boxed rate 23% vs 38% on the trajectory at pass@1 17.2
+   FLAG seed 6 T 1.3: boxed rate 24% vs 39% on the trajectory at pass@1 18.3
+   FLAG seed 7 T 1.3: boxed rate 24% vs 38% on the trajectory at pass@1 17.6
