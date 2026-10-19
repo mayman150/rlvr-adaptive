@@ -1,0 +1,154 @@
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\usepackage{icml2026}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage[shortlabels]{enumitem}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\E}{\mathbb E}
+\graphicspath{{../../report/figures/}{../figures/}}
+\definecolor{pale}{HTML}{EEF4F8}
+\definecolor{edge}{HTML}{2C5F7C}
+\newcommand{\keybox}[1]{\par\smallskip\noindent\fcolorbox{edge}{pale}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{\small #1}}\par\smallskip}
+\newcommand{\pending}[1]{\textcolor{red}{[#1]}}
+
+\icmltitlerunning{Reward Shaping Is Noise Shaping}
+\makeatletter\newcommand{\setrunninghead}{\gdef\@icmltitlerunning{Reward Shaping Is Noise Shaping}}\makeatother
+
+\begin{document}
+
+\twocolumn[
+  \icmltitle{Reward Shaping Is Noise Shaping:\\ What Moves the Accuracy--Diversity Curve in RL for Reasoning}
+  \setrunninghead
+  \begin{icmlauthorlist}
+    \icmlauthor{Anonymous Authors}{anon}
+  \end{icmlauthorlist}
+  \icmlaffiliation{anon}{Anonymous Institution}
+  \icmlcorrespondingauthor{Anonymous Authors}{anon@anon}
+  \icmlkeywords{reinforcement learning with verifiable rewards, policy gradient variance, negative reinforcement, pass@k, evaluation}
+  \vskip 0.3in
+]
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Reinforcement learning with verifiable rewards (RLVR) trains language models with many variants of the same update: reward only correct answers, penalize only wrong ones, change the baseline, aim at pass@$k$. Methods are usually compared at a fixed training step, so a variant that learns more slowly looks more diverse. We give an exact account of the mean and second moment of any update that uses only correctness, including adaptive sampling, from four numbers per question, and measure them: wrong answers carry 2--3 times larger squared score norms than correct ones. Positive-only and negative-only reinforcement then share their expected update, and differ in noise by a factor of 6 to 22. In a series of pre-registered experiments on two model families, we compare variants at matched accuracy, with equivalence intervals. Negative-only reinforcement, the implementation of the paper that recommends it, intermediate baselines, and added noise all trace the same pass@1-versus-pass@16 curve (average equivalence within $\pm2$ points on Qwen2.5-Math-1.5B and on OLMo-2-1B). Injecting noise of the measured size into positive reinforcement reproduces the slower learning of negative reinforcement, and a larger learning rate removes it. We prove that pass@$k$ at matched pass@1 measures only how success is spread across questions, and that reweighting cannot create signal on rarely solved questions. Following this, we propose \pending{method}, which \pending{result}.
+\end{abstract}
+
+\section{Introduction}
+RLVR updates a policy with a sum over sampled answers, $g=\sum_i A_i\nabla\log\pi(y_i)$, where the advantage $A_i$ depends on whether each answer is correct. A large and growing literature changes the advantages: rewarding only correct answers (positive sample reinforcement, PSR) or penalizing only wrong ones (NSR) \citep{zhu2025nsr}, removing normalizations \citep{liu2025drgrpo}, filtering or adaptively sampling questions \citep{yu2025dapo,xiong2025reinforceada,sara2026}, or aiming at pass@$k$ \citep{walder2025pkpo,thrampoulidis2025shaping}. Many of these changes are motivated by \emph{diversity}: pass@$k$ at large $k$, which RL training is known to reduce \citep{yue2025limit}.
+
+\keybox{\textbf{The problem.} A variant that learns more slowly is, at any fixed step, less sharpened and so more diverse. Comparing at a fixed step, as is common, confuses a slower clock with a better accuracy--diversity trade-off. The right comparison is at matched accuracy, and changing the advantages changes two things at once: where the update points and how noisy it is.}
+
+\textbf{What we show.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{An exact account} (\cref{sec:theory}). For any rule whose stopping and advantages depend only on the rewards seen so far, the mean update is $c(p)\nabla p$ and the second moment is $F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p)$ per question, where $F_1,F_0$ are the mean squared score norms of correct and wrong answers. The mean part for fixed groups is known \citep{davis2025objective}; equal means for PSR and NSR are classical baseline invariance \citep{williams1992,greensmith2004}. The noise part, with $F_0\neq F_1$ and random group sizes, is new, and so is its measurement: $F_0/F_1$ is 2.1--3.4 at the start of training in both families (\cref{sec:asym}).
+\item \textbf{What the diversity measure measures} (\cref{prop:spread}). pass@$k$ at matched pass@1 depends only on the distribution of per-question success, so ``diversity'' here is coverage across questions; and correctness-only reweighting multiplies a vanishing signal on questions the model rarely solves.
+\item \textbf{A matched-accuracy audit} (\cref{sec:audit}). NSR, its published implementation, intermediate baselines, added noise and a pass@4 objective lie on one curve; NSR is equivalent to PSR within $\pm2$ points on two model families. Noise of NSR's size added to PSR reproduces its lag; doubling NSR's learning rate removes it.
+\item \textbf{A method that targets the tail} (\cref{sec:method}). \pending{Pre-registration 12: candidate chosen by Pre-registration 11; result.}
+\end{itemize}
+Every experiment was pre-registered with decision rules before they ran, compared at matched generated answers, and reviewed independently before launch; failed predictions are reported (\cref{app:prereg}).
+
+\section{Setup and the matched-accuracy protocol}\label{sec:setup}
+For a question $x$, the policy's success probability is $p_x$, its score is $\ell(y)=\nabla\log\pi(y\mid x)$, and $F_r=\E[\|\ell\|^2\mid R=r]$. Each step samples $G=8$ answers for 16 questions. Dr.\ GRPO uses $A_i=r_i-\bar r$ \citep{liu2025drgrpo}; PSR uses $A=r$, NSR $A=r-1$. With $n$ samples and $c$ correct, pass@$k$ is estimated by $1-\binom{n-c}{k}/\binom{n}{k}$ \citep{chen2021codex}.
+
+\begin{proposition}[Diversity at matched accuracy is spread across questions]\label{prop:spread}
+With independent samples, pass@$k=\E_x[1-(1-p_x)^k]$ and pass@1 $=\E_x p_x$. For $k>1$ the map is strictly concave, so among distributions of $p_x$ with the same mean, a mean-preserving spread lowers pass@$k$; it is maximal when all $p_x$ are equal and minimal when $p_x\in\{0,1\}$.
+\end{proposition}
+Thus a method moves the pass@1-versus-pass@$k$ curve only by changing \emph{how success is distributed over questions}, raising rarely solved questions relative to solved ones. Within-question variety of solutions does not enter.
+
+\textbf{Protocol.} We compare runs of the same seed (same questions at every step) at matched pass@1: for each checkpoint of a run $R$ inside the pass@1 range of a reference $P$, we take $R$'s pass@16 minus $P$'s pass@16 linearly interpolated at the same pass@1 along $P$'s trajectory; the run's value is the mean over its checkpoints, pooled over seeds, with 2,000 bootstrap draws over problems. \emph{Average equivalence} requires the 90\% interval inside $[-2,+2]$ points. Rules were fixed before each experiment (\cref{app:prereg}).
+
+\section{Theory: same direction, different noise}\label{sec:theory}
+\begin{theorem}[Two moments of reward-adapted rules]\label{thm:moments}
+Let a rule draw answers i.i.d.\ from $\pi$, stop at a time $N\le n_{\max}$ that depends only on the rewards, and assign advantages $A_i$ that depend only on the rewards. Then for $g=\sum_{i\le N}A_i\ell(y_i)$,
+\[\E g=c(p)\nabla p,\qquad \E\|g\|^2=F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p),\]
+with $c,D_1,D_0,X$ and $\E N$ depending only on the rule and $p$.
+\end{theorem}
+The proof conditions on the reward sequence: then $N$ and the $A_i$ are fixed, and $\E[\ell\mid R=1]=\nabla p/p$, $\E[\ell\mid R=0]=-\nabla p/(1-p)$ (\cref{app:proofs}).
+
+\begin{corollary}\label{cor:psrnsr}
+With advantage $a$ for correct and $b$ for wrong answers, $\E g=n(a-b)\nabla p$ and the second moment is $n(a^2pF_1+b^2(1-p)F_0)$ plus a signal term. PSR and NSR have the same mean $n\nabla p$; NSR $=$ PSR $-\sum_i\ell(y_i)$, a zero-mean term. With $F_0>F_1$, NSR is noisier on every question with $p<F_0/(F_0+F_1)$.
+\end{corollary}
+
+\textbf{The class boundary.} Every on-policy rule that uses only correctness, including adaptive sampling and pass@$k$ objectives, has expected update $\sum_x c(p_x)\nabla p_x$: it can reweight questions and change noise, nothing else. The per-question signal fades at the extremes (we measure $\|\nabla p\|^2\propto p^2(1-p)^2$, \cref{app:shape}), and a group of 8 on a question with $p\ll1/8$ is usually all wrong, so reweighting toward hard questions multiplies a small realized signal. Information that is not in the current samples (stored successes) or a reward that depends on more than correctness lies outside the class. Whether the class shares one curve is an empirical question, which \cref{sec:audit} answers.
+
+\section{A matched-accuracy audit}\label{sec:audit}
+\textbf{Models.} Qwen2.5-Math-1.5B \citep{yang2024qwen25math} (150 steps, 3,920 MATH training problems, answers up to 512 tokens) and OLMo-2-0425-1B-SFT \citep{olmo2024} (300 steps, 5,685 problems, 1,024 tokens); AdamW at $10^{-6}$, strictly on-policy, sequence-sum losses. Evaluation on held-out MATH problems \citep{hendrycks2021math} with 32 samples; reference answers audited (3 of 768 rejected, \cref{app:labels}).
+
+\subsection{Wrong answers carry larger gradients}\label{sec:asym}
+Full-parameter calibration before training gives $F_0/F_1$ of 2.4--3.4 on Qwen and 2.14 [1.55, 2.93] and 2.54 [1.73, 3.65] on OLMo (95\% intervals over questions), contradicting the reward-independence assumed by recent variance analyses \citep{wang2026vsr}. Wrong answers are only 9\% longer. The ratio decays to about 1.5 by step 50 (re-measured on the same questions); with re-measured $F$'s, \cref{thm:moments} predicts the measured second moment within 0.69--1.18 in every 50-step window, against 0.18--0.89 with the initial $F$'s alone.
+
+\subsection{Negative reinforcement is a slower positive reinforcement}
+NSR's measured noise is 6 times PSR's on Qwen and 19--22 times on OLMo. NSR learns more slowly and reaches the same pass@64 (83.0 vs 83.2). At matched accuracy (\cref{tab:audit}) NSR is equivalent to PSR on both families. The verl-style implementation of \citet{zhu2025nsr} (sample reuse with clipping, token averaging, selected-sample normalization) does not recreate the reported advantage: at step 150, NSR's pass@32 is 7.0 and 1.6 points \emph{lower}. W-REINFORCE, which that paper recommends, had the lowest pass@64.
+
+\begin{table}[t]
+\caption{Matched-accuracy differences in pass@16 (points; 90\% bootstrap intervals over problems, pooled over seeds). All 90\% intervals inside $\pm2$ are average equivalence.}
+\label{tab:audit}
+\centering\small
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llr@{}}
+\toprule
+Comparison & Model, seeds & Difference [90\%]\\
+\midrule
+NSR vs PSR & OLMo, 2 & $-0.30$ [$-1.28$, $+0.77$]\\
+NSR vs PSR & Qwen, 3 fresh & $-0.20$ [$-0.97$, $+0.55$]\\
+NSR vs PSR & Qwen, 5 & $-0.43$ [$-1.12$, $+0.21$]\\
+PSR + matched noise vs PSR & Qwen, 3 & $-0.37$ [$-1.13$, $+0.46$]\\
+NSR, 2$\times$ lr vs PSR & Qwen, 3 & $-0.03$ [$-0.88$, $+0.88$]\\
+pass@4 objective vs Dr.\ GRPO & OLMo, 2 & $+1.32$ [$+0.24$, $+2.26$]\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{The noise is the cause of the lag}
+Same-mean baselines $A=r-b$ order learning speed by their predicted noise (rank correlation 0.9--0.97). To separate noise size from what NSR's extra term does systematically, we add to PSR a random-sign term $c_ts_i$ whose size matches NSR's predicted second moment at each step; it has mean zero and no systematic push on wrong answers. The match holds (measured ratio to a same-policy NSR shadow 1.02 [1.01, 1.05]). On the pre-registered speed measure (position between NSR and PSR, 0 and 1), PSR plus noise is at $\phi=-0.11$ [$-0.22,-0.05$], within the $\pm1/3$ margin: \emph{noise of NSR's size reproduces NSR's lag}. NSR at twice the learning rate reaches $\phi=1.16$ [1.07, 1.26]; at matched doubled rates the gap shrinks to 31\%. Adam absorbs most of the scale (NSR/PSR noise 6 raw, 1.0--1.3 after per-coordinate scaling), and NSR's actual updates project 13--27\% less onto the population gradient. The mechanism is not uniquely identified: noise geometry and Adam's response remain possible routes.
+
+\subsection{Reweighting and temperature}
+An exact pass@4 objective \citep{walder2025pkpo} is on the curve on Qwen ($+1.6$, $+0.2$) and suggestively above it on OLMo ($+1.32$, inconclusive). Training does not sharpen next-token distributions on fixed text: on 256 base-model answers the entropy is 1.081 for the base and 1.064 after 150 steps of PSR, while the on-policy entropy falls three- to fourfold. RL moves the model onto confident paths. \pending{Pre-registration 11 verdict: late checkpoint at raised temperature versus the training trajectory.}
+
+\section{Method}\label{sec:method}
+\pending{Chosen by Pre-registration 11's verdict before its result was known. Branch M candidate: coverage-weighted memory. Verified, stop-terminated successes enter an archive; each step adds $\lambda\nabla\sum_{q}\log\sum_{y\in S_q}\pi(y\mid q)$ over 8 archived questions sampled in proportion to the posterior mean of $k\,p(1-p)^{k-1}=\partial\,\mathrm{pass@}k/\partial\log p$ ($k=16$). By \cref{prop:spread} the curve moves only if rarely solved questions gain relative to solved ones; by \cref{thm:moments} correctness-only reweighting cannot supply the missing signal on them, but stored successes can. Uniform replay (in the spirit of MAPO, \citealp{liang2018mapo}) is the ablation. Branch S candidate: an entropy floor on the first 32 tokens of each step's own answers, enforced on the actual Adam step.}
+
+\section{Results}\label{sec:results}
+\pending{Pre-registration 12: B, candidate, ablation and audit arms (unlikeliness reward \citealp{he2025unlikely}; entropy bonus; adaptive entropy control), three fresh seeds, 511 held-out problems, matched accuracy against Dr.\ GRPO's trajectory and temperature envelope, untouched-half confirmation; Pre-registration 13: OLMo replication.}
+
+\section{Related work}
+\textbf{Positive and negative samples.} \citet{zhu2025nsr} credit negative samples with preserving pass@$k$; we find the effect is speed. \textbf{Variance and batch size.} Gradient-noise scales \citep{mccandlish2018empirical} have been applied to GRPO \citep{bansal2026critical}; square-root learning-rate scaling for Adam \citep{malladi2022sde} explains why Adam absorbs noise. \textbf{Adaptive rollouts.} \citet{yu2025dapo,xiong2025reinforceada,sara2026,chen2026sera,knapsack2025,greso2025} allocate samples; by \cref{thm:moments} they reweight and reduce noise. Several report gains against steps rather than generated answers. \textbf{Diversity and pass@$k$.} \citet{yue2025limit} show RL can reduce coverage; \citet{wen2025cotpassk} grade reasoning; \citet{walder2025pkpo,thrampoulidis2025shaping} optimize pass@$k$; \citet{cui2025entropy} study entropy collapse; \citet{karan2025sampling} recover RL gains by sampling. \textbf{Memory.} MAPO \citep{liang2018mapo}, self-imitation \citep{oh2018sil}, STaR, RAFT and ReST \citep{zelikman2022star,dong2023raft,gulcehre2023rest} reuse successes; our weighting is derived from \cref{prop:spread}. \textbf{Evaluation.} Our protocol follows the spirit of \citet{henderson2018matters,lucic2018gans}.
+
+\section{Limitations}
+Two model families of about 1.5B parameters and 150--300 steps; \citet{zhu2025nsr} used 4--8B models and $k$ up to 256. Bootstrap intervals cover problem sampling, not run-to-run variation, beyond the seeds we ran. Average equivalence does not exclude checkpointwise differences. The speed prediction failed in one OLMo seed (a tie). Learning rates were not tuned per method beyond the doubled-rate arms.
+
+\bibliography{paper}
+\bibliographystyle{icml2026}
+
+\newpage
+\appendix
+\onecolumn
+\section{Proofs}\label{app:proofs}
+\textbf{Theorem \ref{thm:moments}.} Couple the rule to an i.i.d.\ sequence $y_1,y_2,\dots$ with rewards $r$. Given $r$, $N$ and $A_i$ are fixed and the answers are independent with $\E[\ell(y_i)\mid r]=\kappa(r_i)\nabla p$, $\kappa(1)=1/p$, $\kappa(0)=-1/(1-p)$, and $\E[\|\ell(y_i)\|^2\mid r]=F_{r_i}$. Hence $\E[g\mid r]=\sum_{i\le N}A_i\kappa(r_i)\nabla p$ and $\E[\|g\|^2\mid r]=\sum_iA_i^2F_{r_i}+\sum_{i\neq j}A_iA_j\kappa(r_i)\kappa(r_j)\|\nabla p\|^2$; averaging over $r$, whose law depends only on $p$, gives the claim. \textbf{Proposition \ref{prop:spread}.} $f(p)=1-(1-p)^k$ has $f''(p)=-k(k-1)(1-p)^{k-2}<0$ for $k>1$; apply Jensen's inequality and the definition of a mean-preserving spread.
+
+\section{Pre-registrations}\label{app:prereg}
+\pending{Table of Pre-registrations 1--13: question, design, rule, verdict (from report/story.tex Appendix A).}
+
+\section{Signal shape}\label{app:shape}
+\pending{Per-question $\|\nabla p\|^2$ against $p$ with three fitted shapes.}
+
+\section{Label audit}\label{app:labels}
+Claude Haiku 5.5 solved each evaluation and validation problem; Claude Opus 5.5 adjudicated disagreements; 3 of 768 references were rejected (a sign error, corrected; two multi-answer questions, excluded). Excluding the affected problem changes no Pre-registration 9 verdict.
+
+\end{document}
