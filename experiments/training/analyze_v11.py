@@ -35,10 +35,13 @@ def load():
         for f in (job / "eval").glob("step*_T*_eval.json"):
             step, t = re.match(r"step(\d+)_T([\d.]+)_eval", f.name).groups()
             d = json.loads(f.read_text())
+            num = lambda k: isinstance(d.get(k), (int, float)) and math.isfinite(d[k])
             ok = ("counts" in d and d.get("n") == N and len(d["counts"]) == N_PROBLEMS and d.get("problems") == N_PROBLEMS
-                  and abs(d.get("temperature", -1) - float(t)) < 1e-6 and "prefix_entropy" in d)
+                  and all(isinstance(c, int) and 0 <= c <= N for c in d["counts"])
+                  and num("temperature") and abs(d["temperature"] - float(t)) < 1e-6
+                  and num("prefix_entropy") and all(num(k) for k in ("boxed_rate", "truncated_rate", "mean_length_tokens")))
             if not ok:
-                print(f"   invalid result skipped: {job.name}/{f.name}")
+                print(f"   invalid result skipped (counts as missing, so the verdict is incomplete evaluation): {job.name}/{f.name}")
                 continue
             out[(seed, int(step), round(float(t), 2))] = d
     return out

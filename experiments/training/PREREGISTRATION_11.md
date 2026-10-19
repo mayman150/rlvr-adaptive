@@ -16,10 +16,12 @@ the p_x lowers it. RL makes the model sharper (probe entropy falls from about 0.
 accuracy-versus-diversity curve of Pre-registrations 5-10 is mostly a sharpening curve, then
 undoing sharpening at inference (a higher sampling temperature on a late checkpoint) should
 trace the same curve as stopping training earlier. If late checkpoints at a higher
-temperature lie above the training trajectory, competence and sharpening are separable, and a
-method that limits sharpening during training has room to move the curve. If they lie below,
-training loses coverage that temperature cannot restore (forgetting), and a method must add
-information (memory).
+temperature lie above the training trajectory, competence and sharpening are separable at
+inference, which makes a sharpening-limiting training method worth testing (it does not show
+that such a method works). If they lie below, one hypothesis is that training loses coverage
+that temperature cannot restore, which makes an information-adding method (memory) the
+higher priority; temperature comparisons cannot establish either conclusion about training
+interventions.
 
 ## Models and evaluation
 
@@ -82,12 +84,14 @@ reported.
   trajectory's, interpolated at the same pass@1 including the base model, by more than 10
   points is flagged).
 
-## What each outcome implies (Pre-registration 12)
+## Research priority for Pre-registration 12 (not conclusions)
 
 - **Separable:** build a sharpening-limiting method (Dr. GRPO with an entropy floor on frozen
   prefixes, enforced on the actual optimizer step) and test it against Dr. GRPO plus
   temperature calibration and against adaptive entropy control.
-- **Average agreement** or **below:** limiting sharpening cannot help along this path; build an
+- **Average agreement** or **below:** inference-time de-sharpening does not recover coverage
+  here, so a sharpening-limiting method becomes the lower priority (a hypothesis, not a
+  conclusion about training); build an
   information-adding method (memory of verified successes) and test it against the same
   baselines.
 - **Inconclusive** or **insufficient overlap:** enlarge the evaluation before choosing.
