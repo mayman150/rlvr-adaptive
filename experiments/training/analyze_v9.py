@@ -204,10 +204,12 @@ def main():
     for s in seeds:
         g = {}
         for arm in ("O128", "DR"):
-            for suffix in ("", "a", "b"):
-                job = latest(f"worth-{args.eval_version}-{arm}{suffix}-s{s}-*")
-                f = job / "eval" / "step300_eval.json" if job else None
-                if f and f.exists() and "greedy" in json.loads(f.read_text()):
+            # Newest job (by timestamp, across split parts) with a step-300 greedy result.
+            jobs = sorted((j for suffix in ("", "a", "b") for j in RES.glob(f"worth-{args.eval_version}-{arm}{suffix}-s{s}-*")),
+                          key=lambda j: j.name[-15:])
+            for job in jobs:
+                f = job / "eval" / "step300_eval.json"
+                if f.exists() and "greedy" in json.loads(f.read_text()):
                     g[arm] = np.array(json.loads(f.read_text())["greedy"]["correct"])
         if len(g) == 2:
             d = 100 * (g["O128"] - g["DR"])
