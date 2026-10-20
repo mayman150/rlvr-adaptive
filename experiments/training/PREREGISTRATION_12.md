@@ -215,3 +215,10 @@ rule: greedy test accuracy on all 3,382 held-out numeric MATH test problems at s
 arm (paired over problems, pooled over seeds, against B), as in Pre-registration 9. The
 multi-lane evaluation used for the primary runs was validated by Pre-registration 11's enlarged
 4-lane job.
+
+**Pilot result (October 19; `RESULTS_12_pilot.txt`).** By the rule: CM lambda = 1 (neither strength
+within 3 points of B's validation pass@1 39.3; CM1 at 35.8 is the closer), so M also uses lambda = 1;
+the M group's own choice is also lambda = 1 (M4 is 4.0 points below B), so **MB coincides with M
+and is dropped** (amendment 3 is void). U keeps beta_rank = 0.25. Branch S's arms (EF, A, E) are not
+run in the primary; their pilot results are reported (EF collapsed learning: validation pass@1
+12.6-12.8 against 15.1 for the base model; A at eta 0.01: 25.5 and -2.5 points at matched accuracy).

@@ -1,0 +1,17 @@
+B: step 0: pass@1 15.1 pass@16 63.9, step 50: pass@1 35.5 pass@16 71.1, step 100: pass@1 39.3 pass@16 72.5
+   EF EF6: pass@1 12.6 (B 39.3), pass@16 58.6, matched gain +nan, active True, train acc last 20 34.8
+   EF EF8: pass@1 12.8 (B 39.3), pass@16 56.1, matched gain +nan, active True, train acc last 20 24.4
+EF: choose EF8
+   A A1: pass@1 25.5 (B 39.3), pass@16 65.0, matched gain -2.5, active True, train acc last 20 26.8
+   A A3: pass@1 9.3 (B 39.3), pass@16 48.9, matched gain +nan, active True, train acc last 20 8.0
+A: choose A1
+   E E1: pass@1 39.6 (B 39.3), pass@16 72.6, matched gain +nan, active True, train acc last 20 57.3
+   E E3: pass@1 38.9 (B 39.3), pass@16 72.7, matched gain +0.4, active True, train acc last 20 56.9
+E: choose E3
+   CM CM1: pass@1 35.8 (B 39.3), pass@16 73.3, matched gain +2.1, active True, train acc last 20 53.4
+   CM CM4: pass@1 33.1 (B 39.3), pass@16 70.2, matched gain -0.0, active True, train acc last 20 49.3
+CM: choose CM1
+   M M1: pass@1 38.6 (B 39.3), pass@16 72.4, matched gain +0.2, active True, train acc last 20 53.0
+   M M4: pass@1 35.3 (B 39.3), pass@16 74.2, matched gain +3.2, active True, train acc last 20 51.3
+M: choose M1
+choices: {'EF': 'EF8', 'A': 'A1', 'E': 'E3', 'CM': 'CM1', 'M': 'M1'} (M uses CM's lambda in the primary runs)
