@@ -1,0 +1,93 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "D0",
+    "script": "discover.py",
+    "part": 0,
+    "args": [
+     "--problems",
+     "train.json",
+     "--n",
+     "32",
+     "--shard",
+     "0",
+     "--shards",
+     "8",
+     "--gen-batch",
+     "256",
+     "--max-new",
+     "512"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "D1",
+    "script": "discover.py",
+    "part": 1,
+    "args": [
+     "--problems",
+     "train.json",
+     "--n",
+     "32",
+     "--shard",
+     "1",
+     "--shards",
+     "8",
+     "--gen-batch",
+     "256",
+     "--max-new",
+     "512"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "D2",
+    "script": "discover.py",
+    "part": 2,
+    "args": [
+     "--problems",
+     "train.json",
+     "--n",
+     "32",
+     "--shard",
+     "2",
+     "--shards",
+     "8",
+     "--gen-batch",
+     "256",
+     "--max-new",
+     "512"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "D3",
+    "script": "discover.py",
+    "part": 3,
+    "args": [
+     "--problems",
+     "train.json",
+     "--n",
+     "32",
+     "--shard",
+     "3",
+     "--shards",
+     "8",
+     "--gen-batch",
+     "256",
+     "--max-new",
+     "512"
+    ]
+   }
+  ]
+ ]
+}

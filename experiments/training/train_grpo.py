@@ -483,6 +483,60 @@ def unlikeliness_rewards(rewards, seq_lp, G, beta):
     return out
 
 
+def load_discovery(runner, path, problems):
+    """Discovery results (list of {question, c, n, response}) mapped to indices of `problems`, with the
+    retained response tokenized as a complete answer (stop token appended)."""
+    p = Path(path) if Path(path).exists() else HERE / "data" / path
+    found = {d["question"]: d for d in json.loads(p.read_text())}
+    tok = runner.tok
+    im_end = tok.convert_tokens_to_ids("<|im_end|>")
+    stop = im_end if isinstance(im_end, int) and im_end in runner.stop_ids else runner.stop_ids[0]
+    out = {}
+    for i, q in enumerate(problems):
+        d = found.get(q["question"])
+        if d is None:
+            continue
+        seq = None
+        if d.get("response"):
+            pi = torch.tensor(tok(build_prompt(tok, q["question"])).input_ids)
+            ri = torch.tensor(tok(d["response"], add_special_tokens=False).input_ids[:runner.args.max_new - 1] + [stop])
+            seq = (pi, ri)
+        out[i] = {"c": int(d["c"]), "n": int(d["n"]), "seq": seq}
+    return out
+
+
+def sft_phase(runner, args, discovery, arm):
+    """Supervised fine-tuning on the discovered successes (mean token log-likelihood), AdamW at
+    args.sft_lr, until args.sft_tokens response tokens are processed (cycling, shuffled by seed)."""
+    seqs = [d["seq"] for d in discovery.values() if d["seq"] is not None]
+    rng = random.Random(args.seed * 31337)
+    opt = torch.optim.AdamW(runner.params, lr=args.sft_lr, betas=(0.9, 0.99), weight_decay=0.0)
+    runner.model.train()
+    seen, steps, order = 0, 0, []
+    while seen < args.sft_tokens:
+        if not order:
+            order = list(range(len(seqs)))
+            rng.shuffle(order)
+        batch = [seqs[order.pop()] for _ in range(min(args.sft_batch, len(order)))]
+        n_tok = sum(len(r) for _, r in batch)
+        opt.zero_grad(set_to_none=True)
+        for s in range(0, len(batch), args.train_batch):
+            chunk = [(a.to(runner.device), b.to(runner.device)) for a, b in batch[s:s + args.train_batch]]
+            (-runner.logprob_sum(chunk).sum() / n_tok).backward()
+        torch.nn.utils.clip_grad_norm_(runner.params, args.clip)
+        opt.step()
+        seen += n_tok
+        steps += 1
+        if steps % 50 == 0:
+            print(f"[{arm}] SFT step {steps}: {seen} response tokens", flush=True)
+    opt.zero_grad(set_to_none=True)
+    del opt
+    if runner.device == "cuda":
+        torch.cuda.empty_cache()
+    print(f"[{arm}] SFT done: {steps} steps, {seen} response tokens, {len(seqs)} distinct successes", flush=True)
+    return {"steps": steps, "tokens": seen, "sequences": len(seqs)}
+
+
 def coverage_weight(c, n, k):
     """Posterior mean of d pass@k / d log p = k p (1 - p)^(k-1) under p ~ Beta(c + 1/2, n - c + 1/2)
     (c of n correct at the question's latest attempt): k B(a + 1, b + k - 1) / B(a, b)."""
@@ -741,6 +795,21 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     bank = bank_tensors(runner, args.floor_bank, args.floor_bank_size) if args.floor_rho > 0 else None
     floor = args.floor_rho * bank_entropy(runner, bank) if bank is not None else None
     archive, phat, mem_rng = {}, {}, random.Random(args.seed * 7717)
+    base_trace = set()  # archive keys that still hold a base-model trace (retired at the first own success)
+    sft_stats = None
+    if args.seed_archive or args.sft_archive:
+        discovery = load_discovery(runner, args.seed_archive or args.sft_archive, problems)
+        print(f"[{arm}] discovery: {len(discovery)} questions, {sum(d['seq'] is not None for d in discovery.values())} with a success", flush=True)
+        if args.seed_archive:
+            for i, d in discovery.items():
+                phat[i] = (d["c"], d["n"])
+                if d["seq"] is not None:
+                    archive[i] = [d["seq"]]
+                    base_trace.add(i)
+        if args.sft_archive:
+            sft_stats = sft_phase(runner, args, discovery, arm)
+            opt = torch.optim.AdamW(runner.params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)  # reset for RL
+        del discovery
     early_ref = []
     ent_coef, ent_target = args.entropy_coef, None
     adaptive_entropy = args.entropy_target_frac > 0
@@ -752,7 +821,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
     interventions = (args.entropy_coef > 0 or args.entropy_target_frac > 0 or args.floor_rho > 0 or args.memory_lambda > 0
-                     or args.unlikely_beta > 0 or args.early_floor_rho > 0)
+                     or args.unlikely_beta > 0 or args.early_floor_rho > 0 or bool(args.seed_archive) or bool(args.sft_archive))
     assert not (args.floor_rho > 0 and args.early_floor_rho > 0), "choose one entropy floor"
     assert not (interventions and (surrogate or args.diagnostics)), "Pre-registration 12 options need the plain on-policy loss without diagnostics"
     assert not (interventions and arm != "baseline"), "Pre-registration 12 options are defined for Dr. GRPO (arm baseline)"
@@ -944,14 +1013,21 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 phat[keys[j]] = (c, n)  # counts at the question's latest attempt
             for k, ((pi, ri), rew) in enumerate(zip(answers, rewards)):
                 if rew == 1 and len(ri) and int(ri[-1]) in runner.stop_ids:
-                    slot = archive.setdefault(keys[owner[k]], [])
+                    key = keys[owner[k]]
+                    if key in base_trace:  # the first own success retires the base-model trace
+                        archive[key] = []
+                        base_trace.discard(key)
+                    slot = archive.setdefault(key, [])
                     if len(slot) < args.memory_max and all(not torch.equal(ri.cpu(), b) for _, b in slot):
                         slot.append((pi.cpu(), ri.cpu()))
             extra["archive_questions"] = sum(1 for v in archive.values() if v)
+            extra["archive_base_traces"] = len(base_trace)
         mixed = sum(0 < k < n for k, n in groups)
         texts_out = [runner.tok.decode(r) for _, r in answers]
         boxed_rate = sum(last_boxed(t) is not None for t in texts_out) / len(texts_out)
         truncated_rate = sum(1 for _, r in answers if len(r) >= args.max_new and int(r[-1]) not in runner.stop_ids) / len(answers)
+        if step == 0 and sft_stats is not None:
+            extra["sft"] = sft_stats
         rec = {"step": step, "mean_reward": sum(rewards) / len(rewards),
                "boxed_rate": boxed_rate, "truncated_rate": truncated_rate,
                "first_block_reward": sum(first_block) / len(first_block), "mixed_groups": mixed,
@@ -1027,6 +1103,11 @@ def main():
     parser.add_argument("--memory-weighting", default="uniform", choices=("uniform", "coverage"))
     parser.add_argument("--coverage-k", type=int, default=16)
     parser.add_argument("--memory-lambda", type=float, default=0.0, help="log-mass replay of archived successes (0: off)")
+    parser.add_argument("--seed-archive", default=None, help="discovery file: seed the replay archive and its priorities")
+    parser.add_argument("--sft-archive", default=None, help="discovery file: supervised fine-tuning on its successes before RL")
+    parser.add_argument("--sft-lr", type=float, default=1e-5)
+    parser.add_argument("--sft-tokens", type=float, default=2.46e6)
+    parser.add_argument("--sft-batch", type=int, default=8)
     parser.add_argument("--memory-questions", type=int, default=8)
     parser.add_argument("--memory-max", type=int, default=4)
     parser.add_argument("--unlikely-beta", type=float, default=0.0, help="unlikeliness reward (He et al. 2025) for Dr. GRPO")

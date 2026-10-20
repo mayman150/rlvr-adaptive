@@ -26,3 +26,9 @@ us-west-2:worth-v12e-E2L0-s8-20261020-063530
 us-west-2:worth-v12e-E2L1-s8-20261020-063533
 us-west-2:worth-v12e-E2L2-s8-20261020-063537
 us-west-2:worth-v12e-E2L3-s8-20261020-063540
+us-east-2:worth-v12e-E1L0-s8-20261020-173614
+us-east-2:worth-v12e-E1L1-s8-20261020-173619
+us-east-2:worth-v12e-E2L1-s8-20261020-173623
+us-east-2:worth-v12e-E2L2-s8-20261020-173628
+us-east-2:worth-v12e-E1L0-s8-20261020-173632
+us-east-2:worth-v12e-E1L1-s8-20261020-173636

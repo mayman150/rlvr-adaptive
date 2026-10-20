@@ -1,0 +1,7 @@
+us-east-1:worth-v14d-A-s0-20261020-173411
+us-west-2:worth-v14d-B-s0-20261020-173416
+us-east-1:worth-v14d-L0-s0-20261020-173419
+us-east-1:worth-v14d-L1-s0-20261020-173424
+us-east-1:worth-v14d-L2-s0-20261020-173428
+us-west-2:worth-v14d-L4-s0-20261020-173437
+us-west-2:worth-v14d-L7-s0-20261020-173448

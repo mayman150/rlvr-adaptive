@@ -61,6 +61,11 @@ def run_plan(plan):
         # and writes to /opt/ml/checkpoints/<name>/eval.
         def eval_lane(gpu, specs):
             for spec in specs:
+                if spec.get("script") == "discover.py":
+                    cmd = [sys.executable, str(HERE / "training" / "discover.py"), "--model", local[1],
+                           "--out", str(LIVE / spec["name"]), *spec["args"]]
+                    run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
+                    continue
                 base = ["--base", local[1]] if spec.get("include_base") else []
                 ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
                 cmd = [sys.executable, str(EVAL), "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"),
