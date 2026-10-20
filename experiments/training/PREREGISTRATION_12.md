@@ -199,3 +199,12 @@ varies between steps (1.1 to 3.4, different questions), so EF's reference is the
 entropy over steps 0-4, with enforcement from step 5. Both branches' pilots run now (they do not
 depend on Pre-registration 11's verdict; only the branch's arms are used afterwards). The pilot
 also runs U and M at both lambdas for information; M's primary lambda remains CM's choice.
+
+**Amendment 3 (October 19, before any primary run; the pilot's step-100 validation points of the
+memory and audit arms were visible, B's step-100 point was not).** Branch M adds a fifth arm,
+**MB: uniform memory at its own strength**, chosen from M1/M4 by the pilot rule applied to the M
+group (as for every other arm). It runs as a single-GPU job per seed with the same seed, protocol
+and evaluation. MB is secondary: it does not replace CM as the candidate, and the CM-versus-M
+weighting test still uses M at CM's lambda. MB is compared with B's envelope by the primary rule,
+reported as "uniform memory at its best pilot strength". Rationale: if replaying stored successes
+is what moves the curve, its best uniform form must be tested, not only the one matched to CM.
