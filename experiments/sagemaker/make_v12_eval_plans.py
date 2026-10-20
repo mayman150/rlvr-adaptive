@@ -17,8 +17,9 @@ common = ["--problems", "eval_frontier_512.json", "--n", "32", "--max-new", "512
 
 
 def ev(name, steps, temps, part):
+    greedy = ["--greedy-problems", "eval_math_test_numeric.json", "--greedy-steps", "150"] if steps == "150" and temps.startswith("1.0") else []
     return {"name": name, "sub": name, "part": part,
-            "args": common + ["--sampled-steps", steps, "--temperatures", temps]}
+            "args": common + ["--sampled-steps", steps, "--temperatures", temps] + greedy}
 
 
 base = {"name": "BASE", "sub": None, "part": 9, "include_base": True,

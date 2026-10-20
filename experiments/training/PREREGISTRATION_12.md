@@ -208,3 +208,10 @@ and evaluation. MB is secondary: it does not replace CM as the candidate, and th
 weighting test still uses M at CM's lambda. MB is compared with B's envelope by the primary rule,
 reported as "uniform memory at its best pilot strength". Rationale: if replaying stored successes
 is what moves the curve, its best uniform form must be tested, not only the one matched to CM.
+
+**Amendment 4 (October 19, before any primary run).** Branch M is selected (Pre-registration 11
+enlarged: inconclusive, D -1.42, 90% [-2.19, -0.68]; the declared fallback). Reported without a
+rule: greedy test accuracy on all 3,382 held-out numeric MATH test problems at step 150 for every
+arm (paired over problems, pooled over seeds, against B), as in Pre-registration 9. The
+multi-lane evaluation used for the primary runs was validated by Pre-registration 11's enlarged
+4-lane job.
