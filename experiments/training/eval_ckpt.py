@@ -185,7 +185,8 @@ def main():
             if (out_dir / f"{full}_eval.json").exists():
                 print(f"{full}: already done", flush=True)
                 continue
-            evaluate(path, full, args, problems, greedy_problems if step in greedy_steps else None, out_dir, sampled,
+            greedy_here = step in greedy_steps and (t is None or abs(t - 1.0) < 1e-9)  # greedy once per checkpoint
+            evaluate(path, full, args, problems, greedy_problems if greedy_here else None, out_dir, sampled,
                      1.0 if t is None else t, prefixes)
     print("done", flush=True)
 
