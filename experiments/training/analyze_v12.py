@@ -65,7 +65,7 @@ def arm_points(res, arm, seed, w):
     return [(s, *met(res[(arm, seed, s, 1.0)], w)) for s in STEPS]
 
 
-def differences(res, arm, ref_fn, w, qualifying, seeds):
+def differences(res, arm, ref_fn, w, qualifying, seeds, stats=None):
     out = {}
     for seed in seeds:
         value, _, _ = ref_fn(res, seed, w)
@@ -75,12 +75,16 @@ def differences(res, arm, ref_fn, w, qualifying, seeds):
             v = value(pts[s][0])
             # a resampled point outside the reference ranges takes the nearest defined value
             if v is None:
+                if stats is not None:
+                    stats["clamped"] = stats.get("clamped", 0) + 1
                 v = value(min(max(pts[s][0], ref_fn(res, seed, w)[1]), ref_fn(res, seed, w)[2]))
             out[seed].append(pts[s][1] - v)
+            if stats is not None:
+                stats["points"] = stats.get("points", 0) + 1
     return out
 
 
-def compare(res, arm, ref_fn, seeds, draws, rng, mask=None):
+def compare(res, arm, ref_fn, seeds, draws, rng, mask=None, stats=None):
     n = len(res[("BASE", 0, 0, 1.0)])
     ones = np.ones(n) if mask is None else mask.astype(float)
     qualifying = {}
@@ -95,7 +99,7 @@ def compare(res, arm, ref_fn, seeds, draws, rng, mask=None):
     boot, bp = [], []
     for _ in range(draws):
         w = np.bincount(rng.integers(0, n, n), minlength=n).astype(float) * ones
-        d = differences(res, arm, ref_fn, w, qualifying, seeds)
+        d = differences(res, arm, ref_fn, w, qualifying, seeds, stats)
         boot.append(np.mean([np.mean(v) for v in d.values()]))
         bp.append(np.concatenate([d[s] for s in seeds]))
     boot = np.array(boot)

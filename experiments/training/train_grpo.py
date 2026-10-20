@@ -484,24 +484,38 @@ def unlikeliness_rewards(rewards, seq_lp, G, beta):
 
 
 def load_discovery(runner, path, problems):
-    """Discovery results (list of {question, c, n, response}) mapped to indices of `problems`, with the
-    retained response tokenized as a complete answer (stop token appended)."""
+    """Discovery results (list of {question, answer, c, n, response}) mapped to indices of `problems`.
+    Canonicalization (fixed by Pre-registration 14, amendment 1): the retained response text is
+    retokenized without special tokens and the stop token appended; a trace is dropped (its count c is
+    kept) if the retokenized answer exceeds max_new - 1 tokens, or if its decoding no longer verifies or
+    has no parseable final box. Every training problem must appear exactly once."""
     p = Path(path) if Path(path).exists() else HERE / "data" / path
-    found = {d["question"]: d for d in json.loads(p.read_text())}
+    records = json.loads(p.read_text())
+    found = {d["question"]: d for d in records}
+    if len(found) != len(records):
+        raise ValueError(f"{p}: {len(records) - len(found)} duplicate discovery records")
+    absent = [q["question"] for q in problems if q["question"] not in found]
+    if absent:
+        raise ValueError(f"{p}: {len(absent)} training problems have no discovery record")
     tok = runner.tok
     im_end = tok.convert_tokens_to_ids("<|im_end|>")
     stop = im_end if isinstance(im_end, int) and im_end in runner.stop_ids else runner.stop_ids[0]
-    out = {}
+    out, dropped = {}, {"too_long": 0, "unverified": 0}
     for i, q in enumerate(problems):
-        d = found.get(q["question"])
-        if d is None:
-            continue
+        d = found[q["question"]]
         seq = None
         if d.get("response"):
-            pi = torch.tensor(tok(build_prompt(tok, q["question"])).input_ids)
-            ri = torch.tensor(tok(d["response"], add_special_tokens=False).input_ids[:runner.args.max_new - 1] + [stop])
-            seq = (pi, ri)
+            ids = tok(d["response"], add_special_tokens=False).input_ids
+            text = tok.decode(ids, skip_special_tokens=True)
+            if len(ids) > runner.args.max_new - 1:
+                dropped["too_long"] += 1
+            elif not (reward(text, q["answer"]) and last_boxed(text) is not None):
+                dropped["unverified"] += 1
+            else:
+                seq = (torch.tensor(tok(build_prompt(tok, q["question"])).input_ids), torch.tensor(ids + [stop]))
         out[i] = {"c": int(d["c"]), "n": int(d["n"]), "seq": seq}
+    kept = sum(d["seq"] is not None for d in out.values())
+    print(f"discovery: {len(out)} problems, {kept} retained traces, dropped {dropped}", flush=True)
     return out
 
 
@@ -509,6 +523,8 @@ def sft_phase(runner, args, discovery, arm):
     """Supervised fine-tuning on the discovered successes (mean token log-likelihood), AdamW at
     args.sft_lr, until args.sft_tokens response tokens are processed (cycling, shuffled by seed)."""
     seqs = [d["seq"] for d in discovery.values() if d["seq"] is not None]
+    if not seqs:
+        raise ValueError("SFT archive has no retained successes")
     rng = random.Random(args.seed * 31337)
     opt = torch.optim.AdamW(runner.params, lr=args.sft_lr, betas=(0.9, 0.99), weight_decay=0.0)
     runner.model.train()

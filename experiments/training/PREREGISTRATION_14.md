@@ -80,3 +80,24 @@ reasoning validity of correct answers at step 150 if rule 1 passes.
 ## Cost
 
 Discovery about $40, training and SFT about $135, evaluation about $185, reserve $40.
+
+## Amendment 1 (October 20, 2026; before any training run or outcome of this design)
+
+From the independent review of the code:
+1. **Discovery canonicalization.** Discovery stores answer text, not token IDs. Each retained answer
+   is retokenized without special tokens and the stop token appended. A trace is dropped (its count
+   c is kept for priorities) if the retokenized answer exceeds 511 tokens, or if its decoding no
+   longer verifies or lacks a parseable final box. The number dropped is reported. Training refuses
+   to start if any training problem lacks a discovery record, if a record is duplicated, or (S32) if
+   no trace remains.
+2. **Holm gates the claims.** The family is the five registered tests: D32 against B's envelope,
+   Pre-registration 12's CM primary test, and the three mechanism contrasts. The joint win and each
+   contrast are claimed only if they also survive Holm. Pre-registration 12's own verdict is
+   reported unchanged.
+3. **S32's trajectory starts at its own post-fine-tuning checkpoint** (step 0), not the base model.
+   S32's step-0 and temperature evaluations are part of the completeness check.
+4. **Shared bootstrap draws.** Every comparison and the accuracy-equivalence check use the same
+   2,000 draws over problems; CM's test therefore reproduces Pre-registration 12's exactly. The
+   frequency of interpolation endpoint clamping is reported for each test.
+5. The fine-tuning token budget can overshoot by at most one batch (8 answers); the actual count is
+   reported.
