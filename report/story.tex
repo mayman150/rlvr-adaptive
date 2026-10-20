@@ -19,7 +19,7 @@
 
 \title{\textbf{Same Direction, Different Noise}\\[6pt]
 \large The full story of the project, told from zero:\\ the problem, the literature, the gap, every experiment and why we ran it,\\ and where we stand}
-\author{Mohamed Ayman\\\small Version 2, October 20, 2026}
+\author{Mohamed Ayman\\\small Version 3, October 20, 2026 (interim main-run results)}
 \date{}
 
 \begin{document}
@@ -525,8 +525,23 @@ Early-token entropy floor & 12.6--12.8 & 56.1--58.6 & collapsed (below the base 
 \end{center}
 \textbf{Reading.} Memory is the only family that lifts the curve; at the same strength, coverage weighting gives $+2.1$ against $+0.2$ for uniform replay (one seed, noise about $\pm2$). Entropy-based fixes do not help or break learning, as the diagnosis predicted.
 
-\subsection{The main runs (running)}
-Seeds 8, 9, 10; Dr.\ GRPO, coverage memory, uniform memory and the unlikeliness reward, run in parallel on one 4-GPU machine per seed, 150 steps; evaluation on 511 held-out problems with 32 samples at steps 50, 100, 150, Dr.\ GRPO also at raised temperatures, and greedy accuracy on 3,382 test problems. Pre-registered rules: coverage memory \textbf{moves the curve} if it is at least 2 points above Dr.\ GRPO's curve, \emph{including the best temperature for Dr.\ GRPO}, with a 95\% interval above 0, in all three seeds, and confirmed on the 256 problems never used before; \textbf{coverage weighting matters} if it beats uniform memory by at least 1 point with a 95\% interval above 0; its accuracy at equal compute is reported separately.
+\subsection{The main runs: interim results (October 20)}
+Seeds 8, 9, 10; Dr.\ GRPO, coverage memory, uniform memory and the unlikeliness reward, one 4-GPU machine per seed, 150 steps; evaluation on 511 held-out problems with 32 samples at steps 50, 100, 150, Dr.\ GRPO also at raised temperatures, greedy accuracy on 3,382 test problems. Rules: coverage memory \textbf{moves the curve} if at least 2 points above Dr.\ GRPO's curve \emph{including its best temperature}, 95\% interval above 0, in all three seeds, and confirmed on the 256 never-used problems; \textbf{coverage weighting matters} if it beats uniform memory by at least 1 point.
+
+\textbf{Training is finished for all 12 runs; the four arms train equally well:}
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Arm & Training accuracy, last 25 steps (seeds 8 / 9 / 10) & Greedy MATH-500, step 150\\
+\midrule
+Dr.\ GRPO & 60.3 / 63.5 / 62.7 & 44.8 / 46.4 / 45.1\\
+Coverage memory & 61.4 / 60.9 / 60.4 & 43.1 / 46.4 / 45.3\\
+Uniform memory & 60.7 / 63.1 / 61.1 & 46.4 / 43.1 / 45.6\\
+Unlikeliness & 59.9 / 61.8 / 62.4 & 44.8 / 47.3 / 47.0\\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Evaluation so far (seed 10 only, 511 problems):} Dr.\ GRPO reaches pass@1 37.3, 40.6, 44.6 and pass@16 72.4, 71.9, 75.2 at steps 50, 100, 150 (greedy test accuracy 48.2\% on 3,382 problems); coverage memory is at 36.4 / 71.8 (step 50) and 39.6 / 72.9 (step 100), about $-0.2$ and $+0.3$ points from Dr.\ GRPO's curve and temperature envelope. \textbf{Interim reading: no lift in this seed so far;} the pilot's $+2.1$ is not replicating here. This is 2 of 9 comparison points; the pre-registered verdict waits for all three seeds.
 
 \section{Where we stand, and the path to ICML}
 \subsection{The independent review over time}
@@ -609,7 +624,7 @@ L & Are the answer keys right? & Two errors spotted & LLM solve plus adjudicatio
 \midrule
 12p & Pilot: which strength? & Fix settings before the main runs & 12 arms, 1 seed, validation set & Coverage memory $\lambda=1$: $+2.1$; uniform $+0.2$; entropy fixes flat or collapsed\\
 \midrule
-12 & Does coverage-weighted memory move the curve? & The method derived from the diagnosis & 4 arms, 3 fresh seeds, 511 problems, Dr.\ GRPO envelope, untouched-half confirmation & \textbf{Running}\\
+12 & Does coverage-weighted memory move the curve? & The method derived from the diagnosis & 4 arms, 3 fresh seeds, 511 problems, Dr.\ GRPO envelope, untouched-half confirmation & Training done; seed 10 interim: about 0 ($-0.2$, $+0.3$); \textbf{evaluating}\\
 \bottomrule
 \end{longtable}
 \normalsize
