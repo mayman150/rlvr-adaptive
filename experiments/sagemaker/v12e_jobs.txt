@@ -1,2 +1,8 @@
 us-east-2:worth-v12e-E1-s10-20261020-043644
 us-east-2:worth-v12e-E1-s10-20261020-043648
+us-east-2:worth-v12e-E2-s10-20261020-045218
+us-east-1:worth-v12e-E2-s10-20261020-045633
+us-east-1:worth-v12e-E1-s9-20261020-062855
+us-east-1:worth-v12e-E2-s9-20261020-062859
+us-west-2:worth-v12e-E1-s8-20261020-062904
+us-west-2:worth-v12e-E2-s8-20261020-062907
