@@ -19,15 +19,18 @@
 
 \title{\textbf{Same Direction, Different Noise}\\[6pt]
 \large The full story of the project, told from zero:\\ the problem, the literature, the gap, every experiment and why we ran it,\\ and where we stand}
-\author{Mohamed Ayman\\\small October 18, 2026}
+\author{Mohamed Ayman\\\small Version 2, October 20, 2026}
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent This document assumes no background. It explains how language models are trained with reinforcement learning to solve math problems, what the research literature says and where it has gaps, and then tells, in order, everything this project has done: an earlier idea (STOP) and why it failed, a theory of what each generated answer is worth (WORTH), the measurements and experiments that tested it, the change of direction they forced, the main finding (rewarding right answers and penalizing wrong answers push the model the same way on average, and differ only in noise), an independent review that scored the work 4 out of 10 for ICML and what we changed because of it, and the two experiments now running that decide what kind of paper this becomes. Every experiment is listed with its question, its reason, its design, its pre-registered prediction, and its result (Appendix~\ref{app:tracker}).
+\noindent This document assumes no background. It explains how language models are trained with reinforcement learning to solve math problems, what the literature says and where it has gaps, and then tells, in order, everything this project has done: an earlier idea (STOP) and why it failed; a theory of what each generated answer is worth; the measurements and experiments that tested it; the change of direction they forced; the main finding, that rewarding right answers and penalizing wrong ones push the model the same way and differ only in noise; an independent review (4/10 for ICML) and what we changed; the replication on a second model family and the experiment showing that the noise is the cause (review now 6/10); a test of whether the curve is a temperature effect (it is not); an audit of the answer keys; and how the diagnosis leads to a method, coverage-weighted replay of verified successes, now in its main runs. Every experiment is listed with its question, reason, design, pre-registered prediction and result (Appendix~\ref{app:tracker}).
 \end{abstract}
+
+\begin{idea}{The idea in one paragraph}When a model is trained with reinforcement learning on math, there are many ways to score its answers: reward the right ones, penalize the wrong ones, change the baseline, aim at pass@$k$. People pick among them for ``diversity''. We show that all of these push the model the same way on average and differ only in how noisy the push is; wrong answers carry most of the noise. More noise means slower learning, and a slower run looks more diverse at any fixed step, which is how the field compares methods. At matched accuracy, the methods are equally diverse, on two model families, and adding noise alone recreates the effect of the famous one. Diversity at matched accuracy only measures how evenly the model succeeds across questions, so a method can move it only by bringing new signal to the questions it rarely solves; our method replays the model's own rare successes, weighted toward exactly those questions.
+\end{idea}
 
 \setcounter{tocdepth}{1}
 \tableofcontents
@@ -407,103 +410,163 @@ Verdict: \textbf{reject as it stands, 4 out of 10 (about 10 to 20\% acceptance),
 \textbf{What we changed (no GPU needed):} the report, the collaborator brief and the story now credit baseline invariance and PKPO, drop every ``nobody measured this'' claim, describe the Qwen result as absence of detected separation, state the scale gap to the NSR paper, and disclose the clipping in Pre-registration 6. \textbf{What we launched:} the two experiments below, each reviewed by Codex several times (Pre-registration 9 four times, Pre-registration 10 three times) and changed after every review.
 
 %=====================================================================
-\section{The two experiments running now}
-
-\subsection{Pre-registration 9: does the picture hold for another model family?}
+\section{A second model family (Pre-registration 9)}\label{sec:p9}
 \begin{why}
-Qwen2.5-Math reacts even to random rewards, so a reviewer will discount small effects on it. The claim must hold on a different family, for longer training, with a larger evaluation and proper equivalence intervals.
+Qwen2.5-Math reacts even to random rewards, so small effects on it are suspect. The claim had to hold on a different family, for longer training, with a larger evaluation and proper equivalence intervals rather than ``no difference seen''.
 \end{why}
-\textbf{Design.} OLMo-2-1B-SFT (AllenAI, 1.48B parameters, never RL-trained; the launcher checks the architecture), all seven MATH training subjects (5,685 numeric problems, so 300 steps never repeat a question), \textbf{300 steps}, answers up to \textbf{1,024 tokens} (a GPU smoke test found 37 to 62\% of OLMo's answers cut off at 512, which would let format learning pass for accuracy). Five rules, two seeds: Dr.\ GRPO, PSR, NSR, the pass@4 objective, and the optimal rule at 128 answers per step. Checkpoints every 50 steps; separate evaluation jobs then sample 32 answers per problem on a fixed, subject-stratified set of 256 held-out MATH problems for the base model and every checkpoint, and greedy accuracy on 3,382 problems at step 300.
-
-\textbf{Decision rules (pre-registered):}
-\begin{enumerate}[leftmargin=*,itemsep=1pt]
-\item Asymmetry: $F_0/F_1$'s 95\% interval (over questions) above 1.2 in both seeds.
-\item Noise and speed: NSR's measured noise above PSR's (interval above 1), and NSR slower to reach the midpoint of PSR's improvement, in both seeds.
-\item \textbf{Primary, average matched-accuracy equivalence:} pass@16 at matched pass@1 (NSR against PSR, pass@4 against Dr.\ GRPO), pooled over seeds, 2,000 bootstrap draws over the 256 problems; equivalent if the 90\% interval lies within $\pm2$ points, different if the 95\% interval excludes 0 and the estimate is at least 2 points; otherwise inconclusive; incomplete evaluation and insufficient overlap are separate verdicts. A simultaneous band over all checkpoints is reported so crossings cannot hide in an average.
-\item Optimal rule minus Dr.\ GRPO at equal answers (budget checked within 2\%).
-\end{enumerate}
-\textbf{Status.} All 10 runs are training (about 90 to 115 seconds per step; done in about 6 to 8 hours), followed by about 3 hours of evaluation jobs. At step 50, greedy MATH-500 accuracy had moved from 12.9\% to 15 to 19\%.
-
-\subsection{Pre-registration 10: is the noise the cause?}
-\begin{why}
-This answers the review's causal objection. In the baseline family, more noise and a harder push on wrong answers always come together. We need an arm with NSR's noise but without NSR's push.
-\end{why}
-\textbf{The intervention, PSR+N.} Give every answer advantage $r_i+c_t s_i$, where $s_i$ is a random sign ($\pm1$ with probability one half). Over the signs, the added term averages to zero, so the expected update is exactly PSR's and NSR's. The size $c_t$ is set at each step so that the theorem's predicted noise equals NSR's on that step's answers. So PSR+N has NSR's noise size but pushes wrong answers neither up nor down systematically.
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-\item If PSR+N learns as slowly as NSR: trace-matched noise reproduces NSR's lag, so noise size is enough to produce it (noise geometry and Adam's reaction remain possible routes).
-\item If PSR+N learns clearly faster: noise size alone does not account for the lag; something about NSR's specific update matters (without telling us what).
-\end{itemize}
-\textbf{Design.} Qwen2.5-Math-1.5B, the earlier protocol, fresh seeds 5, 6, 7; per seed four arms run in parallel on one 4-GPU machine: PSR, NSR, PSR+N, and NSR at twice the learning rate; plus PSR at twice the learning rate for seeds 5 and 6 (a fair comparison at the higher rate). All arms of a seed see the same questions at every step, so comparisons are paired. Extra measurements: an NSR ``shadow'' computed on PSR+N's own answers at the same moment (to check the noise really matches), $F_0/F_1$ re-measured at steps 50, 100, 150 on the same questions, and two Adam statistics (the gradient scaled by Adam's denominator, and how well each actual Adam step aligns with the true improvement direction).
-
-\textbf{Decision rules (pre-registered).} Speed $\phi$ places a run between NSR (0) and PSR (1) using training accuracy over steps 25 to 49, pooled over the three seeds, with a paired block bootstrap (a power check on old runs gave interval half-widths of about 0.1). Manipulation check: PSR+N's measured noise within a factor 1.3 of the shadow NSR's. Primary: $\phi$(PSR+N)'s 90\% interval inside $\pm1/3$ means ``reproduces NSR's lag'' (the margin is where the $b=0.75$ run sat); 95\% interval above $1/3$ means ``clearly faster''. Also: the first formal equivalence test for NSR against PSR on Qwen (three fresh seeds as the primary test; adding seeds 3 and 4 as a disclosed secondary), and whether doubling the learning rate recovers NSR's lag.
-
+\textbf{Design.} OLMo-2-1B-SFT (AllenAI, never RL-trained), all seven MATH training subjects (5,685 problems), 300 steps, answers up to 1,024 tokens, five rules (Dr.\ GRPO, PSR, NSR, the pass@4 objective, the optimal collection rule) and two seeds; checkpoints every 50 steps evaluated with 32 samples on 256 held-out, subject-stratified problems; greedy accuracy on 3,382 test problems at the end.
 \begin{found}
-\textbf{Results (all 14 runs complete, verdicts checked independently by Codex).}
+\begin{center}\small
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}lll@{}}
+\toprule
+Test & Result & Verdict\\
+\midrule
+Wrong answers have larger gradients & 2.14 [1.55, 2.93] and 2.54 [1.73, 3.65] & \textbf{passed}, both seeds\\
+NSR noisier than PSR & 19.5$\times$ and 22.2$\times$ & \textbf{passed}\\
+NSR slower to reach the midpoint & seed 1 tie (52 vs 52), seed 2 88 vs 41 & failed (needs both)\\
+\textbf{NSR vs PSR, same curve (primary)} & $-0.30$, 90\% [$-1.28$, $+0.77$] & \textbf{equivalent within $\pm2$}\\
+pass@4 objective vs Dr.\ GRPO & $+1.32$, 90\% [$+0.24$, $+2.26$] & inconclusive (a small lift)\\
+Optimal rule vs Dr.\ GRPO, equal answers & $+0.65$ [$-0.24$, $+1.54$] & inconclusive\\
+\bottomrule
+\end{tabular}}
+\end{center}
+The main claim replicates on a second family: penalizing wrong answers lies on the same accuracy--diversity curve as rewarding right ones. No formatting flag; removing the one problem whose answer key was wrong changes nothing.
+\end{found}
+\begin{figure}[H]
+\centering\includegraphics[width=0.85\linewidth]{olmo_curves.pdf}
+\caption{OLMo: accuracy (pass@1) against diversity (pass@16) at steps 0 to 300. The rules lie on one curve.}
+\end{figure}
+
+\section{Is the noise the cause? (Pre-registration 10)}\label{sec:p10}
+\begin{why}
+The reviewer's main objection: noise \emph{predicts} learning speed, but in the baseline family more noise always came with a harder push on wrong answers, so the cause was not shown.
+\end{why}
+\textbf{The intervention.} Add to PSR a random-sign term whose size, at every step, matches NSR's predicted noise. It averages to zero, so the expected update is unchanged, and it never pushes wrong answers down systematically. If this ``PSR + noise'' learns as slowly as NSR, noise of that size is enough to cause NSR's lag. Three fresh seeds; also NSR and PSR at twice the learning rate; an NSR ``shadow'' computed on the same answers to check the noise really matches.
+\begin{found}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-\item Manipulation check passed: PSR+N's noise is 1.02 times the same-policy NSR shadow's (90\% interval [1.01, 1.05]).
-\item \textbf{Primary: passed.} $\phi$(PSR+N) $=-0.11$, 90\% interval $[-0.22,-0.05]$, inside $\pm1/3$: noise of NSR's size reproduces NSR's early lag. PSR+N is slightly slower than NSR, and seed 7 ($-0.40$) triggers the heterogeneity flag.
-\item Doubling NSR's learning rate recovers its whole lag ($\phi=+1.16$, [1.07, 1.26]); at a matched doubled rate NSR still lags by 4.7 points, 31\% of the original gap.
-\item \textbf{Same curve: passed.} At matched pass@1, PSR+N ($-0.37$, 90\% $[-1.13,+0.46]$), NSR ($-0.20$, $[-0.97,+0.55]$) and NSR at twice the rate ($-0.03$) are all equivalent to PSR within $\pm2$ points; adding seeds 3 and 4 gives $-0.43$, $[-1.12,+0.21]$. Checkpoint-by-checkpoint equivalence is unresolved with 128 problems.
-\item The asymmetry fades: $F_0/F_1$ falls from 2.7--3.4 to about 1.5 by step 50 (persistence verdict inconclusive). With the re-measured sizes, the noise formula matches training within 0.69--1.18 in every window.
-\item Adam (descriptive): NSR's raw noise is 6 times PSR's, but only 1.0--1.3 times after Adam's per-coordinate scaling; NSR's Adam steps project 13--27\% less onto the population gradient.
+\item The noise matched: 1.02 [1.01, 1.05] times NSR's.
+\item \textbf{PSR + noise is as slow as NSR}: speed $\phi=-0.11$ [$-0.22$, $-0.05$] on a scale where NSR is 0 and PSR is 1 (pre-registered margin $\pm1/3$; passed; one seed flagged).
+\item NSR at twice the learning rate recovers its whole lag ($\phi=1.16$); at a matched doubled rate the gap shrinks to 31\%.
+\item \textbf{Same curve}, now with intervals on Qwen: NSR vs PSR $-0.20$ [$-0.97$, $+0.55$], PSR + noise $-0.37$ [$-1.13$, $+0.46$], NSR at 2$\times$ $-0.03$ (all equivalent within $\pm2$).
+\item The noise formula fits training within 0.69--1.18 once gradient sizes are re-measured (the asymmetry fades from about 3$\times$ to 1.5$\times$).
+\item Adam: NSR's raw noise is 6$\times$ PSR's but only 1.0--1.3$\times$ after Adam's scaling; NSR's steps point 13--27\% less along the true improvement direction. Noise does not shrink Adam's steps, it misdirects them.
 \end{itemize}
-What it does not show: that noise \emph{size} is the unique mechanism (noise geometry and Adam's reaction remain possible routes). Codex's updated score: 5 of 10, about 6 with a clear OLMo replication.
+\end{found}
+\begin{figure}[H]
+\centering\includegraphics[width=0.85\linewidth]{noise_test.pdf}
+\caption{Left: training accuracy; PSR + matched noise (orange) learns as slowly as NSR (red); NSR at twice the learning rate (brown) as fast as PSR (green). Right: all four lie on one accuracy--diversity curve.}
+\end{figure}
+
+\section{Is the curve a temperature effect? (Pre-registration 11)}\label{sec:p11}
+\begin{why}
+By our proposition, diversity at matched accuracy is how evenly success is spread over questions. If RL simply made the model globally more confident (like lowering the temperature), then sampling a late checkpoint at a higher temperature should beat the training curve, and a method that limits sharpening would have room to work. This decides which method to build.
+\end{why}
+\textbf{Design.} The PSR checkpoints of Pre-registration 10 and the base model, sampled at temperatures 0.5 to 1.6; the quantity $D$ is the late checkpoint's pass@16 at a raised temperature minus the training trajectory's pass@16 at the same pass@1. The model's entropy is also measured on fixed base-model answers.
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item \textbf{RL does not sharpen globally.} On fixed text the entropy barely changes (1.081 for the base, 1.064 after training), while on the model's own samples it falls three- to fourfold: RL steers into confident paths.
+\item \textbf{Undoing sharpening does not help.} At the temperature that restores the base entropy ($T^\ast=1.01$), $D=0.0$ in every seed; slightly higher temperatures stay on the curve; at 1.3 formatting breaks and coverage falls. Pre-registered verdict: inconclusive ($D=-1.54$ on 256 problems; $-1.42$, 90\% [$-2.19$, $-0.68$], on 511).
+\item RL is far above anything temperature does for the base model ($+7$ to $+16$ points): RL adds ability, not only sharpening.
+\end{itemize}
+\textbf{Consequence (declared in advance):} the memory branch of the method experiment runs.
+\end{found}
+\begin{figure}[H]
+\centering\includegraphics[width=0.5\linewidth]{temperature.pdf}
+\caption{Training trajectory (blue), the late checkpoint at higher temperatures (red), and the base model at lower temperatures (gray).}
+\end{figure}
+
+\section{Checking the answer keys}
+\begin{why}
+An independent review found two wrong reference answers in the evaluation sets. Before using them to judge a method, every answer had to be checked.
+\end{why}
+\begin{found}
+Claude Haiku 5.5 solved all 768 evaluation and validation problems; where it disagreed with the key, Claude Opus 5.5 adjudicated. \textbf{3 of 768 keys were wrong (0.4\%)}: a sign error (corrected) and two questions with several answers whose key kept one (excluded). They affect all methods equally; excluding the one in the OLMo set changes no verdict.
 \end{found}
 
-%=====================================================================
-\section{Where we stand, and the path to a paper}
+\section{From diagnosis to method (Pre-registration 12)}\label{sec:p12}
+\subsection{What the diagnosis says a method must do}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{0.46\linewidth}Y@{}}
+\toprule
+\textbf{Diagnostic finding} & \textbf{Requirement for a method}\\
+\midrule
+Correctness-only rules (PSR, NSR, baselines, pass@$k$ weights, adaptive sampling) only reweight questions and change noise; they share one curve & Bring in information the current samples do not contain\\
+Diversity at matched accuracy = how evenly success is spread across questions & Raise success on rarely solved questions without hurting solved ones\\
+On rarely solved questions a group of 8 is usually all wrong, and the signal fades as $p^2(1-p)^2$ & Supply signal exactly there\\
+RL does not sharpen globally; entropy control blocks learning & Do not regulate entropy\\
+Extra noise slows learning & Keep Dr.\ GRPO's low-noise update as the base\\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-\subsection{The claim we would submit}
-\begin{idea}{Claim (if both running experiments pass)}
-In on-policy RLVR, positive and negative reinforcement share their expected update. NSR's extra term is zero-mean noise concentrated on wrong answers, which carry 2.5 to 3 times larger gradients. The size of that noise, predicted from four numbers per question, sets how fast a run moves along an accuracy-versus-diversity curve that reward shaping does not move. The optimal answer-collection rule is the practical consequence: it moves faster along the curve at equal cost.
+\subsection{The method: coverage-weighted success replay}
+\begin{idea}{Coverage-weighted memory (CM)}
+Train with Dr.\ GRPO as usual. Store every verified, completed, distinct correct answer the model finds (at most 4 per question). Each step, replay 8 stored questions by adding the gradient of $\lambda\sum_q\log\sum_{y\in S_q}\pi(y\mid q)$, choosing questions in proportion to the expected value of $k\,p(1-p)^{k-1}$ ($k=16$, $p$ the question's estimated success rate). This weight is exactly $\partial\,\mathrm{pass@}k/\partial\log p$: replay goes to questions solved about one time in $k$, whose pass@$k$ can still rise, not to questions already solved.
+\end{idea}
+Plain replay of stored successes is known (MAPO, self-imitation, STaR, RAFT, ReST); the new parts are the derivation from the diagnosis and the coverage weighting, so uniform replay (M) is run as the ablation at the same strength. Audit arms: the published unlikeliness reward (U), entropy bonus (E), adaptive entropy control (A), and, for the other branch, an entropy floor on the first 32 tokens of each answer (EF).
+
+\subsection{The pilot (one seed, 100 steps, 255 validation problems)}
+\begin{center}\small
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}lccc@{}}
+\toprule
+Arm & pass@1 & pass@16 & gain at matched accuracy\\
+\midrule
+Dr.\ GRPO, steps 0 / 50 / 100 & 15.1 / 35.5 / 39.3 & 63.9 / 71.1 / 72.5 & reference\\
+\textbf{Coverage memory, $\lambda=1$ (chosen)} & 35.8 & 73.3 & \textbf{$+2.1$}\\
+Coverage memory, $\lambda=4$ & 33.1 & 70.2 & $0.0$\\
+Uniform memory, $\lambda=1$ & 38.6 & 72.4 & $+0.2$\\
+Uniform memory, $\lambda=4$ & 35.3 & 74.2 & $+3.2$ (4 points slower; excluded by the rule)\\
+Entropy bonus & 38.9--39.6 & 72.6--72.7 & about 0\\
+Unlikeliness reward & 38.7 & 71.7 & about $-0.5$\\
+Adaptive entropy & 9.3--25.5 & 48.9--65.0 & $-2.5$ or collapsed\\
+Early-token entropy floor & 12.6--12.8 & 56.1--58.6 & collapsed (below the base model)\\
+\bottomrule
+\end{tabular}}
+\end{center}
+\textbf{Reading.} Memory is the only family that lifts the curve; at the same strength, coverage weighting gives $+2.1$ against $+0.2$ for uniform replay (one seed, noise about $\pm2$). Entropy-based fixes do not help or break learning, as the diagnosis predicted.
+
+\subsection{The main runs (running)}
+Seeds 8, 9, 10; Dr.\ GRPO, coverage memory, uniform memory and the unlikeliness reward, run in parallel on one 4-GPU machine per seed, 150 steps; evaluation on 511 held-out problems with 32 samples at steps 50, 100, 150, Dr.\ GRPO also at raised temperatures, and greedy accuracy on 3,382 test problems. Pre-registered rules: coverage memory \textbf{moves the curve} if it is at least 2 points above Dr.\ GRPO's curve, \emph{including the best temperature for Dr.\ GRPO}, with a 95\% interval above 0, in all three seeds, and confirmed on the 256 problems never used before; \textbf{coverage weighting matters} if it beats uniform memory by at least 1 point with a 95\% interval above 0; its accuracy at equal compute is reported separately.
+
+\section{Where we stand, and the path to ICML}
+\subsection{The independent review over time}
+\begin{center}\small
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}lll@{}}
+\toprule
+When & Score (Codex as ICML reviewer) & Why it changed\\
+\midrule
+After the Qwen experiments & 4/10 & claims too broad; equivalence and cause not shown\\
+After the noise-only test & 5/10 & noise shown to cause the lag\\
+After OLMo & 6/10 (weak accept) & same curve on a second family, with intervals\\
+Target & 7/10 & a method that moves the curve, beyond plain replay, replicated on OLMo\\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\subsection{The paper}
+\begin{idea}{Claim}
+In on-policy RLVR, reward shaping that uses only correctness changes \emph{how fast} a model moves along an accuracy--diversity curve, not the curve: positive and negative reinforcement share their expected update and differ in noise, which wrong answers dominate. Diversity at matched accuracy is how evenly success is spread across questions, so moving the curve needs information on rarely solved questions; coverage-weighted replay of verified successes supplies it. \textcolor{red}{[last sentence pending the main runs]}
 \end{idea}
 
-\subsection{Evidence status}
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\linewidth}{@{}P{0.38\linewidth}P{0.16\linewidth}Y@{}}
+\subsection{Outcomes}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{0.42\linewidth}Y@{}}
 \toprule
-\textbf{Piece} & \textbf{Status} & \textbf{Evidence}\\
+Main runs & Paper\\
 \midrule
-Two-moment accounting & Established & Exact proof, exact enumeration\\
-Wrong answers carry larger gradients & Established on Qwen & Every run; OLMo smoke test 2.3; P9 tests it formally\\
-Noise formula matches real training & Yes, with re-measured $F$ & 0.69--1.18 in every window (P10)\\
-Noise predicts speed & Supported, correlational & Dose-response, two seeds\\
-Noise of NSR's size reproduces NSR's lag & Shown on Qwen & P10: $\phi=-0.11$ within $\pm1/3$; mechanism not uniquely identified\\
-Rules share one curve & Average equivalence on Qwen & P10: NSR, PSR+N, NSR$\times$2 within $\pm2$ of PSR; P9 tests OLMo\\
-Holds beyond Qwen & Open & P9 (running)\\
-Optimal rule faster at equal cost & Partial & $+1.1$, $+3.3$; threshold missed; P9 repeats it\\
+Coverage memory moves the curve and beats uniform replay; replicates on OLMo & Diagnosis plus a derived method: the 7/10 case\\
+Memory moves the curve, but weighting does not matter & Diagnosis plus ``replay is what moves the curve, and here is why'': about 6--6.5/10\\
+Nothing moves the curve & Diagnostic paper with a strong negative audit: about 6/10\\
 \bottomrule
 \end{tabularx}
-\end{table}
+\end{center}
 
-\subsection{What each outcome means}
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\linewidth}{@{}P{0.3\linewidth}P{0.3\linewidth}Y@{}}
-\toprule
-\textbf{OLMo (P9)} & \textbf{Noise-only test (P10)} & \textbf{Paper}\\
-\midrule
-Equivalence holds & PSR+N as slow as NSR & The full claim; ICML submission (review estimate about 6 of 10)\\
-Equivalence holds & PSR+N faster than NSR & ``One curve'', and NSR's slowness is more than noise size: a sharper, still interesting paper\\
-Curves differ & either & A boundary result: where reward shaping does move the curve, explained by the measured noise or not; about 5 of 10\\
-Inconclusive & either & TMLR as a carefully scoped diagnostic paper\\
-\bottomrule
-\end{tabularx}
-\end{table}
+\subsection{Timeline}
+Main runs: about 3 hours of training and 4 of evaluation, then the analysis and an independent review. If positive: the OLMo replication (Pre-registration 13, about one day, reusing the existing OLMo Dr.\ GRPO runs). Then the ICML draft (already started, \texttt{paper/icml/}), with a larger model as an option if time allows (deadline usually late January).
 
-\subsection{Next steps}
-\begin{enumerate}[leftmargin=*,itemsep=1pt]
-\item When P9's training ends: launch its evaluation jobs (already reviewed), run the pre-registered analysis, have Codex review the results.
-\item When P10 ends: run its analysis, Codex review.
-\item Write the ICML draft around the single claim (can start now, with slots for the new results).
-\item If both hold: larger evaluation at a few overlapping accuracy levels from saved checkpoints, longer PSR and NSR runs, one larger model if it fits on one GPU.
-\end{enumerate}
+\subsection{Cost}
+Roughly \$1,500--2,000 so far across all experiments on SageMaker, plus about \$30 of LLM judging and auditing; the main method runs add about \$350--450.
 
-\subsection{Cost so far}
-About 118 GPU-instance hours (roughly \$480) before the afternoon of October 17, about 30 runs since (a few hundred dollars), \$9 of LLM judging; Pre-registration 9 about \$350 and Pre-registration 10 about \$280 when finished. All jobs run on SageMaker (single L40S GPUs, or one 4-GPU machine per seed in P10).
-
-%=====================================================================
 \appendix
 \section{Experiment tracker}\label{app:tracker}
 \small
@@ -536,9 +599,17 @@ M & How does the learning signal vary with difficulty? & Shapes the optimal rule
 \midrule
 R & Is it an ICML paper? & Independent check before spending more & Codex as ICML reviewer & 4/10; corrections made; P9, P10 designed\\
 \midrule
-9 & Does it hold on OLMo, longer, with intervals? & Generality; Qwen is suspect for small effects & 5 rules, 2 seeds, 300 steps, 256 problems, equivalence $\pm2$ & \textbf{Running}\\
+9 & Does it hold on OLMo, longer, with intervals? & Generality; Qwen is suspect for small effects & 5 rules, 2 seeds, 300 steps, 256 problems, equivalence $\pm2$ & NSR vs PSR $-0.30$ [$-1.28$, $+0.77$]: \textbf{equivalent}; asymmetry passed; speed rule failed (tie); pass@4 and optimal rule inconclusive\\
 \midrule
-10 & Is the noise the cause? & Causal test asked by the review & PSR+N, NSR$\times$2, PSR$\times$2, 3 fresh seeds; $\phi$ within $\pm1/3$ & $\phi=-0.11$ [$-0.22$, $-0.05$]: \textbf{passed}; curves equivalent; Codex 5/10\\
+10 & Is the noise the cause? & Causal test asked by the review & PSR + matched noise, NSR$\times$2, PSR$\times$2, 3 fresh seeds; $\phi$ within $\pm1/3$ & $\phi=-0.11$: \textbf{passed}; curves equivalent; Codex 5/10, then 6/10 with OLMo\\
+\midrule
+11 & Is the curve a temperature effect? & Decide the method branch & Late checkpoints at raised temperature vs the training trajectory & \textbf{Inconclusive} on 256 and 511 problems ($D=-1.42$); entropy on fixed text unchanged; RL $\gg$ base at any temperature $\to$ memory branch\\
+\midrule
+L & Are the answer keys right? & Two errors spotted & LLM solve plus adjudication, 768 problems & 3 wrong (0.4\%); corrected or excluded\\
+\midrule
+12p & Pilot: which strength? & Fix settings before the main runs & 12 arms, 1 seed, validation set & Coverage memory $\lambda=1$: $+2.1$; uniform $+0.2$; entropy fixes flat or collapsed\\
+\midrule
+12 & Does coverage-weighted memory move the curve? & The method derived from the diagnosis & 4 arms, 3 fresh seeds, 511 problems, Dr.\ GRPO envelope, untouched-half confirmation & \textbf{Running}\\
 \bottomrule
 \end{longtable}
 \normalsize
