@@ -13,6 +13,7 @@ while IFS= read -r spec; do
   case "${st}" in InProgress*|*ExpiredToken*) live+=("${spec}");; esac
 done < "${FILE}"
 echo "$(date +%H:%M:%S) watching ${#live[@]} jobs"
+[ "${#live[@]}" -eq 0 ] && { echo "no running jobs"; exit 0; }
 while true; do
   for spec in "${live[@]}"; do
     st=$(state "${spec%%:*}" "${spec#*:}")

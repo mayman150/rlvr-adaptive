@@ -1,0 +1,6 @@
+us-east-1:worth-v12-ALL-s8-20261020-010837
+us-west-2:worth-v12-ALL-s8-20261020-010842
+us-east-2:worth-v12-ALL-s9-20261020-010846
+us-east-1:worth-v12-ALL-s9-20261020-010850
+us-west-2:worth-v12-ALL-s10-20261020-010854
+us-east-2:worth-v12-ALL-s10-20261020-010858
