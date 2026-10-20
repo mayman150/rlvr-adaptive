@@ -23,7 +23,7 @@ STEPS = (50, 100, 150)
 def load():
     out = {}
     for job in sorted(RES.glob("worth-v12e-E*-s*-*"), key=lambda j: j.name[-15:]):
-        seed = int(re.match(r"worth-v12e-E\d-s(\d+)-", job.name).group(1))
+        seed = int(re.match(r"worth-v12e-E\w*-s(\d+)-", job.name).group(1))
         for arm_dir in job.iterdir():
             for f in (arm_dir / "eval").glob("step*_T*_eval.json") if (arm_dir / "eval").exists() else []:
                 step, t = re.match(r"step(\d+)_T([\d.]+)_eval", f.name).groups()
