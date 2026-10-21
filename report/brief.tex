@@ -92,21 +92,21 @@ Train with Dr.\ GRPO. Store the verified, completed correct answers the model fi
 
 \textbf{Pilot} (1 seed, 255 validation problems): memory was the only family that lifted the curve (coverage memory $+2.1$; uniform memory $+0.2$); entropy bonus and the unlikeliness reward did nothing; entropy floors and adaptive entropy collapsed learning.
 
-\textbf{Main runs} (3 fresh seeds, 511 test problems with audited answer keys). Pre-registered rule: \emph{moves the curve} if at least $+2$ points of pass@16 above Dr.\ GRPO's curve, including its best temperature, with the 95\% interval above 0, in all three seeds. Seeds 9 and 10 are complete; seed 8 waits for one evaluation.
+\textbf{Main runs} (3 fresh seeds, 511 test problems with audited answer keys). Pre-registered rule: \emph{moves the curve} if at least $+2$ points of pass@16 above Dr.\ GRPO's curve, including its best temperature, with the 95\% interval above 0, in all three seeds. \textbf{Final result (October 21):}
 
 \begin{center}\small
 \resizebox{\linewidth}{!}{\begin{tabular}{@{}lccc@{}}
 \toprule
-Arm (seeds 9 and 10) & Gain at matched accuracy & 95\% interval & Step-150 pass@1 / greedy test acc.\\
+Arm (seeds 8, 9, 10) & Gain at matched accuracy & 95\% interval & Step-150 pass@1 / greedy test acc.\\
 \midrule
-Dr.\ GRPO (reference) & 0 & & 44.3 / 48.1\\
-\textbf{Coverage memory} & \textbf{$+1.0$} (seed 9: $+1.4$, seed 10: $+0.6$) & [$+0.3$, $+1.6$] & 42.5 / 48.0\\
-Uniform memory & $+0.6$ & [$-0.1$, $+1.2$] & 42.9 / 47.4\\
-Unlikeliness reward (published) & $+0.3$ & [$-0.4$, $+0.8$] & 43.5 / 47.5\\
+Dr.\ GRPO (reference) & 0 & & 44.1 / 47.9\\
+\textbf{Coverage memory} & \textbf{$+1.19$} (per seed $+1.5$, $+1.4$, $+0.6$) & [$+0.54$, $+1.79$] & 42.1 / 47.7\\
+Uniform memory & $+0.61$ & [$-0.04$, $+1.27$] & 42.9 / 47.3\\
+Unlikeliness reward (published) & $+0.14$ & [$-0.32$, $+0.62$] & 43.4 / 47.6\\
 \bottomrule
 \end{tabular}}
 \end{center}
-\textbf{Reading.} A real lift, but half the $+2$ bar; the likely verdict is ``average agreement'' (within $\pm2$). Test accuracy is kept; sampled pass@1 is about 1.8 points lower. \textbf{Why so small:} in 150 steps each training question is visited about once; a group of 8 finds a success on a question with $p=1/16$ only 40\% of the time ($p=1/32$: 22\%), so the memory misses most of the questions it is meant to help.
+\textbf{Registered verdict: ``average agreement''.} A small, consistent lift (positive in every seed, interval above 0, larger than uniform replay and the published unlikeliness reward), but below the $+2$ bar; coverage weighting over uniform replay ($+0.66$) misses its $+1$ bar. Greedy test accuracy is kept ($-0.18$, 90\% [$-0.83$, $+0.43$]); sampled pass@1 at step 150 is 2 points lower. \textbf{Why so small:} in 150 steps each training question is visited about once; a group of 8 finds a success on a question with $p=1/16$ only 40\% of the time ($p=1/32$: 22\%), so the memory misses most of the questions it is meant to help.
 
 \section{Method, version 2: seed the memory from the base model (Pre-reg.\ 14, running)}
 Before training, sample the base model 32 times on every training question (``discovery''); this finds a success on a $p=1/16$ question 87\% of the time (for $p=1/32$: 64\%). Seed the memory with one base success per question; replace it once the model finds its own. Each arm answers one question about \emph{why} it works:
@@ -129,9 +129,9 @@ G32: plain Dr.\ GRPO, groups of 32 & Is it just ``more samples''?\\
 
 \begin{now}{{Status on October 21, 2026}}
 \begin{itemize}
-\item Smoke test passed: all arms run, the memory is seeded with 3,904 questions, base traces retire as the model finds its own successes, memory use equals Dr.\ GRPO's.
-\item Discovery: 6 of 8 shards done; the last two wait for GPUs (capacity is scarce in all three regions).
-\item G32 training started (seed 9 running, seeds 8 and 10 queued). The other four arms start when discovery finishes: about 3.5 h of training, then about 4 h of evaluation.
+\item Smoke test passed: all arms run, the memory is seeded, base traces retire as the model finds its own successes, memory use equals Dr.\ GRPO's.
+\item Discovery done (125,440 base-model answers): 3,433 of 3,920 training questions solved at least once; 3,235 with a retained success, including 988 of the 1,181 rarely solved ones (1--4 successes in 32).
+\item Training launched for D32, U32, S32, C05 (one 4-GPU job per seed) and G32; waiting for GPUs. About 3.5 h of training (G32 about 9 h), then about 4 h of evaluation.
 \end{itemize}
 \end{now}
 
