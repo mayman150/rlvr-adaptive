@@ -132,6 +132,23 @@ class Runner:
                     entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return torch.stack(sums)
 
+    def token_logprobs(self, pairs):
+        """Differentiable per-token response log-probabilities for each (prompt_ids, response_ids) pair."""
+        seqs = [torch.cat([p, r]) for p, r in pairs]
+        width = max(len(s) for s in seqs)
+        ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
+        mask = torch.zeros_like(ids)
+        for i, ((p, r), s) in enumerate(zip(pairs, seqs)):
+            ids[i, : len(s)] = s
+            mask[i, : len(s)] = 1
+        with self.autocast:
+            logits = self.model(input_ids=ids, attention_mask=mask).logits
+        out = []
+        for i, (p, r) in enumerate(pairs):
+            rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
+            out.append(rows.gather(1, r[:, None]).squeeze(1) - torch.logsumexp(rows, dim=-1))
+        return out
+
     def logprob_and_entropy(self, pairs):
         """Response log-probability sums and differentiable token-entropy sums for each pair."""
         seqs = [torch.cat([p, r]) for p, r in pairs]
@@ -277,7 +294,7 @@ def table_scale(table):
     return 1.0 / biggest if biggest > 0 else 1.0
 
 
-FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift", "passk", "psrnoise")
+FIXED_ARMS = ("baseline", "scaled", "psr", "nsr", "wreinforce", "shift", "passk", "psrnoise", "maxrl")
 
 
 def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
@@ -294,6 +311,9 @@ def fixed_advantage(arm, r, m, w, pos_weight, shift=0.0, n=8, k=4):
         return pos_weight if r else -1.0
     if arm == "shift":
         return float(r) - shift
+    if arm == "maxrl":
+        # Tajwar et al. (2026), Algorithm 1: (r - mean) / mean, no gradient for groups without a success.
+        return (r - m) / m if m > 0 else 0.0
     if arm == "passk":
         # Unbiased pass@k weight with a leave-one-out baseline (independent of this answer):
         # expected update 2 k (1-p)^(k-1) grad p for n = 2k, in general (n/k) k (1-p)^(k-1) grad p.
@@ -551,6 +571,65 @@ def sft_phase(runner, args, discovery, arm):
         torch.cuda.empty_cache()
     print(f"[{arm}] SFT done: {steps} steps, {seen} response tokens, {len(seqs)} distinct successes", flush=True)
     return {"steps": steps, "tokens": seen, "sequences": len(seqs)}
+
+
+def bbg_utility(m, n, k):
+    """Yuan et al. (2026), Bayesian boundary gating: E[k (1 - p)^(k-1)] under p ~ Beta(m + 1, n - m + 1)."""
+    out = float(k)
+    for j in range(1, k):
+        out *= (n - m + j) / (n + 1 + j)
+    return out
+
+
+def bbg_coefficients(groups, k, tau):
+    """Per-problem coefficients alpha(m) = u(m; n, k) if u >= tau (n + 1), else 0, rescaled to mean 1 over
+    the step's problems (so the step size matches the ungated rule when every problem is active)."""
+    alpha = []
+    for c, n in groups:
+        u = bbg_utility(c, n, k)
+        alpha.append(u if u >= tau * (n + 1) else 0.0)
+    total = sum(alpha)
+    return [a * len(alpha) / total if total > 0 else 0.0 for a in alpha]
+
+
+def tar_bank(runner, args, discovery):
+    """TAR's memory bank (Li et al. 2026) from the discovery archive: the retained base successes with
+    their per-token log-probabilities under the starting (base) model."""
+    seqs = [d["seq"] for d in discovery.values() if d["seq"] is not None]
+    if not seqs:
+        raise ValueError("TAR bank has no retained successes")
+    base = []
+    with torch.no_grad():
+        for s in range(0, len(seqs), args.train_batch):
+            chunk = [(a.to(runner.device), b.to(runner.device)) for a, b in seqs[s:s + args.train_batch]]
+            base.extend(t.detach().cpu() for t in runner.token_logprobs(chunk))
+    print(f"TAR bank: {len(seqs)} base successes", flush=True)
+    return seqs, base
+
+
+def tar_backward(runner, args, bank, rng):
+    """Gradient of lambda * L_rep (Li et al. 2026, Eq. 8): over a uniform replay batch from the bank,
+    sg[g] * sum_t sg[w_t] (-log pi_t) / (eps + sum_t sg[w_t]), averaged over trajectories, with
+    delta_t = log pi_base - log pi, g = phi(mean_t delta_t), w_t = phi(delta_t), phi(x) = max(1 - e^-x, 0)."""
+    seqs, base = bank
+    pick = rng.sample(range(len(seqs)), min(args.tar_batch, len(seqs)))
+    gates, active, tokens = [], 0, 0
+    for s in range(0, len(pick), args.train_batch):
+        idx = pick[s:s + args.train_batch]
+        chunk = [(seqs[i][0].to(runner.device), seqs[i][1].to(runner.device)) for i in idx]
+        loss = 0.0
+        for i, lp in zip(idx, runner.token_logprobs(chunk)):
+            delta = base[i].to(runner.device) - lp.detach()
+            g = max(1.0 - math.exp(-float(delta.mean())), 0.0)
+            wt = torch.clamp(1.0 - torch.exp(-delta), min=0.0)
+            gates.append(g)
+            if g > 0:
+                active += 1
+                tokens += int((wt > 0).sum())
+                loss = loss + g * (wt * (-lp)).sum() / (1e-8 + wt.sum())
+        if torch.is_tensor(loss):
+            (args.tar_lambda * loss / len(pick)).backward()
+    return {"replayed": len(pick), "active": active, "mean_gate": sum(gates) / len(gates), "weighted_tokens": tokens}
 
 
 def coverage_weight(c, n, k):
@@ -813,6 +892,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     archive, phat, mem_rng = {}, {}, random.Random(args.seed * 7717)
     base_trace = set()  # archive keys that still hold a base-model trace (retired at the first own success)
     sft_stats = None
+    tar = None
+    if args.tar_archive:
+        assert arm == "baseline" and args.memory_lambda == 0 and not (args.seed_archive or args.sft_archive), \
+            "TAR replay is run on Dr. GRPO without other replay"
+        tar = tar_bank(runner, args, load_discovery(runner, args.tar_archive, problems))
     if args.seed_archive or args.sft_archive:
         discovery = load_discovery(runner, args.seed_archive or args.sft_archive, problems)
         print(f"[{arm}] discovery: {len(discovery)} questions, {sum(d['seq'] is not None for d in discovery.values())} with a success", flush=True)
@@ -932,6 +1016,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     adv.extend(r - m for r in g)
             if arm == "psrnoise":
                 adv, extra["noise_c"] = add_sign_noise(adv, groups, calib, args, step)
+            if args.bbg_k > 0:
+                coef = bbg_coefficients(groups, args.bbg_k, args.bbg_tau)
+                adv = [a * coef[i // G] for i, a in enumerate(adv)]
+                extra["bbg_active"] = sum(c > 0 for c in coef)
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)
@@ -999,6 +1087,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             if args.memory_lambda > 0 and arm in FIXED_ARMS:
                 extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm, phat)
                 n_live = max(n_live, extra["memory"]["questions"])
+            if tar is not None:
+                extra["tar"] = tar_backward(runner, args, tar, mem_rng)
+                n_live = max(n_live, extra["tar"]["active"])
         live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
         if args.entropy_every and step % args.entropy_every == 0:
             extra["probe"] = probe_entropy(runner, args, answers, rewards, owner)
@@ -1121,6 +1212,11 @@ def main():
     parser.add_argument("--memory-lambda", type=float, default=0.0, help="log-mass replay of archived successes (0: off)")
     parser.add_argument("--seed-archive", default=None, help="discovery file: seed the replay archive and its priorities")
     parser.add_argument("--sft-archive", default=None, help="discovery file: supervised fine-tuning on its successes before RL")
+    parser.add_argument("--tar-archive", default=None, help="discovery file: TAR's gated replay of base successes (Li et al. 2026)")
+    parser.add_argument("--tar-lambda", type=float, default=1.0)
+    parser.add_argument("--tar-batch", type=int, default=16, help="stored trajectories replayed per step")
+    parser.add_argument("--bbg-k", type=int, default=0, help="Bayesian boundary gating reference k (Yuan et al. 2026; 0: off)")
+    parser.add_argument("--bbg-tau", type=float, default=0.01)
     parser.add_argument("--sft-lr", type=float, default=1e-5)
     parser.add_argument("--sft-tokens", type=float, default=2.46e6)
     parser.add_argument("--sft-batch", type=int, default=8)

@@ -141,3 +141,23 @@ From the independent review of Pre-registration 12's result. Arms, strengths and
 - Disclosed: Pre-registration 12's second half was used for branch selection in Pre-registration 11,
   so it is not untouched; the single shared discovery archive and the unmatched budgets remain
   stated limits.
+
+## Amendment 4 (October 21, 2026; no evaluation of this design exists)
+
+A literature search found TAR (Li, Galhotra, Cardie, arXiv 2610.24236, October 16, 2026): replay of
+base-model successes gated on the policy falling below the base. A reviewer would ask whether D32
+beats it, so it is added before any evaluation of this design (training logs were viewed only for
+liveness: step counts and rewards of a few steps).
+- **T32: TAR's replay rule on our recipe.** Dr. GRPO with Pre-registration 12's settings, plus
+  lambda_rep L_rep (TAR's Eq. 8): over 16 trajectories drawn uniformly from the bank each step,
+  sg[g] sum_t sg[w_t] (-log pi_t) / (1e-8 + sum_t sg[w_t]), averaged over trajectories, with
+  delta_t = log pi_base - log pi, g = max(1 - exp(-mean_t delta_t), 0), w_t = max(1 - exp(-delta_t), 0),
+  lambda_rep = 1, base log-probabilities from the starting model. The bank is this design's shared
+  discovery archive (one retained base success per solved question from 32 samples at T = 1; TAR
+  keeps up to 3 embedding-diverse successes from 128 samples at T = 0.6), so T32 is an adaptation
+  that isolates the replay rule on the same data. TAR's replay batch size is not specified in the
+  paper; 16 matches the prompts per step. L_rep is added to our loss as is (our Dr. GRPO loss is
+  within a factor of about 0.8 of TAR's token-mean scale). No retirement.
+- **Fifth mechanism contrast: D32 against T32's trajectory** (+1 and 95% rule). Holm's family becomes
+  seven tests. T32 against B's envelope is reported without a rule.
+- Cost about $130.

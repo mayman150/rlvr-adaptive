@@ -1,0 +1,44 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [
+  "--seed",
+  "8",
+  "--steps",
+  "6",
+  "--group",
+  "8",
+  "--prompts-per-step",
+  "16",
+  "--max-new",
+  "512",
+  "--lr",
+  "1e-6",
+  "--gen-batch",
+  "192",
+  "--calib-prompts",
+  "16",
+  "--eval-steps",
+  "6",
+  "--entropy-every",
+  "5",
+  "--save-steps",
+  "6",
+  "--train",
+  "train.json"
+ ],
+ "gpus": [
+  [
+   [
+    "T32",
+    [
+     "--arms",
+     "baseline",
+     "--tar-archive",
+     "discovery_qwen_train32.json"
+    ]
+   ]
+  ]
+ ]
+}

@@ -1,7 +1,8 @@
 """Pre-registration 14 plans. Usage: python make_v14_plans.py train | eval SEED
 train: plans/v14_s{8,9,10}_ALL.json (lanes D32, U32, S32, C05), plans/v14_s<seed>_<ARM>.json (one lane each,
-including G32, Dr. GRPO with groups of 32; amendment 2).
-eval SEED: plans/v14e_s<SEED>_E1.json and _E2.json (4 lanes each), _E3.json (G32, 2 lanes); ckpts channel = the
+including G32, Dr. GRPO with groups of 32, amendment 2; T32, TAR's gated replay of the same base successes,
+amendment 4).
+eval SEED: plans/v14e_s<SEED>_E1.json and _E2.json (4 lanes each), _E3.json (G32, 2 lanes), _E4.json (T32, 2 lanes); ckpts channel = the
 training-job prefix holding the arms.
 """
 
@@ -24,7 +25,7 @@ def train():
                  [["S32", ["--arms", "baseline", "--sft-archive", DISC, "--save-steps", "0,50,100,150"]]],
                  [["C05", ["--arms", "baseline", "--memory-lambda", "0.5", "--memory-weighting", "coverage"]]]]
         (HERE / "plans" / f"v14_s{seed}_ALL.json").write_text(json.dumps({**META, "common": common, "gpus": lanes}, indent=1))
-        for lane in lanes + [[["G32", ["--arms", "baseline", "--group", "32"]]]]:
+        for lane in lanes + [[["G32", ["--arms", "baseline", "--group", "32"]]], [["T32", ["--arms", "baseline", "--tar-archive", DISC]]]]:
             (HERE / "plans" / f"v14_s{seed}_{lane[0][0]}.json").write_text(json.dumps({**META, "common": common, "gpus": [lane]}, indent=1))
     print("wrote plans/v14_s{8,9,10}_ALL.json and _{D32,U32,S32,C05,G32}.json")
 
@@ -43,7 +44,8 @@ def evals(seed):
     e2 = [[ev("C05", "150", "1.0", 2)], [ev("S32", "0,50", "1.0", 1, s0)], [ev("S32", "100,150", "1.0", 2, s0)],
           [ev("S32", "150", "1.15,1.3", 3, s0)]]
     e3 = [[ev("G32", "50,100", "1.0", 1)], [ev("G32", "150", "1.0", 2)]]
-    for name, lanes in (("E1", e1), ("E2", e2), ("E3", e3)):
+    e4 = [[ev("T32", "50,100", "1.0", 1)], [ev("T32", "150", "1.0", 2)]]
+    for name, lanes in (("E1", e1), ("E2", e2), ("E3", e3), ("E4", e4)):
         (HERE / "plans" / f"v14e_s{seed}_{name}.json").write_text(json.dumps({**META, "common": [], "gpus": [], "eval_lanes": lanes}, indent=1))
     print(f"wrote plans/v14e_s{seed}_E1.json, _E2.json and _E3.json")
 

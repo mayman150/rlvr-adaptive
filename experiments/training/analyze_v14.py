@@ -2,7 +2,7 @@
 
 Usage: python analyze_v14.py [--draws 2000]
 References (B, BASE, CM) from Pre-registration 12's evaluation jobs (worth-v12e-*); arms D32, U32, S32, C05
-from worth-v14e-* (G32 added by amendment 2). Every comparison uses the same bootstrap draws over problems (a fresh generator with
+from worth-v14e-* (G32 added by amendment 2, T32 by amendment 4). Every comparison uses the same bootstrap draws over problems (a fresh generator with
 seed 0 per comparison), so CM's test reproduces Pre-registration 12's primary test exactly.
 """
 
@@ -62,7 +62,7 @@ def main():
     fresh = lambda: np.random.default_rng(0)
     print(f"problem alignment: {A.check_alignment(('worth-v12e-', 'worth-v14e-'))} evaluation files share one problem order")
     res = load()
-    arms = ["B", "D32", "U32", "S32", "C05", "G32"]
+    arms = ["B", "D32", "U32", "S32", "C05", "G32", "T32"]
     need = [("BASE", 0, 0, 1.0)] + [(a, s, st, 1.0) for a in arms + ["CM"] for s in A.SEEDS for st in A.STEPS] + \
            [(a, s, 150, t) for a in ("B", "S32") for s in A.SEEDS for t in (1.15, 1.3)] + \
            [("S32", s, 0, 1.0) for s in A.SEEDS]
@@ -81,7 +81,7 @@ def main():
 
     prim = run("D32 vs B envelope", "D32", envelope)
     run("CM vs B envelope (Pre-registration 12 primary)", "CM", envelope)
-    contrasts = ("U32", "S32", "C05", "G32")
+    contrasts = ("U32", "S32", "C05", "G32", "T32")
     for other in contrasts:
         run(f"D32 vs {other} trajectory", "D32", traj_ref(other))
     h = holm(tests)
