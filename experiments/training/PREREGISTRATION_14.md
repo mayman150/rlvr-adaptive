@@ -122,3 +122,22 @@ Added at the reviewer-anticipated question "is the gain from discovery, or from 
 - G32 vs B's envelope is reported without a rule. Its compute (about four times B's sampling and
   gradient work in training) is reported next to D32's (discovery plus training).
 - Cost: about $150 more (training about $100, evaluation about $50).
+
+## Amendment 3 (October 21, 2026; Pre-registration 12's final result known, no outcome of this design)
+
+From the independent review of Pre-registration 12's result. Arms, strengths and thresholds unchanged.
+- **Fresh confirmation, conditional on rule 1.** The 511 evaluation problems are reused, so a joint
+  win is checked on 512 fresh problems: `data/confirm_fresh_512.json`, drawn now (seed 1414,
+  stratified by subject in the 511's proportions) from the numeric MATH test problems outside the
+  511, the 255 validation problems, MATH-500 and training. If rule 1 passes, D32 and B (steps 50,
+  100, 150 at T = 1, B also at 1.15 and 1.3) are evaluated there with 32 samples, after the same
+  answer-key audit; the joint win is reported as **confirmed on fresh problems** if D32's gain
+  against B's envelope has the same sign and its 90% interval excludes 0, otherwise **not
+  confirmed**. Not run if rule 1 fails. Cost about $80 if run.
+- **Inherited analysis fixes.** Points are ordered by pass@1 with ties by step or temperature, as
+  Pre-registration 12 specified (the code had placed pass@16 before the tiebreak; Pre-registration
+  12's output is identical after the fix). Every saved evaluation's problem list is checked to be
+  the same, in the same order.
+- Disclosed: Pre-registration 12's second half was used for branch selection in Pre-registration 11,
+  so it is not untouched; the single shared discovery archive and the unmatched budgets remain
+  stated limits.
