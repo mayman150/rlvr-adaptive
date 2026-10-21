@@ -1,0 +1,130 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "D32",
+    "sub": "D32",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "D32",
+    "sub": "D32",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   },
+   {
+    "name": "U32",
+    "sub": "U32",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "U32",
+    "sub": "U32",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "C05",
+    "sub": "C05",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}
