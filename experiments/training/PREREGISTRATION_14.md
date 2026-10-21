@@ -106,13 +106,19 @@ From the independent review of the code:
 
 Added at the reviewer-anticipated question "is the gain from discovery, or from more samples?":
 - **G32: Dr. GRPO with groups of 32** (Pre-registration 12's settings otherwise; same seeds and
-  questions per step; the loss normalizer scales with the group, so the expected step is unchanged
-  and only the noise falls). Each visited question gets 32 samples from the current policy instead of
-  32 from the base model before training. Evaluated like the other arms (steps 50, 100, 150; greedy
+  questions per step; the loss normalizer scales with the group, so the expected raw gradient
+  changes only by the self-inclusive centering factor 1 - 1/G (31/28 relative to B, before clipping
+  and Adam) while its noise falls). Each visited question gets 32 samples from the current policy
+  instead of 32 from the base model before training. Evaluated like the other arms (steps 50, 100, 150; greedy
   test accuracy at step 150).
 - **Fourth mechanism contrast: D32 against G32's trajectory** (same +1 and 95% rule). Holm's family
-  becomes six tests. If D32 beats B's envelope but not G32's trajectory, the claim is that more
-  samples per visited question help, not that seeding from the base model does.
+  becomes six tests. If D32 beats B's envelope but not G32's trajectory, the report says
+  "superiority over larger online groups not shown"; that is neither equivalence nor evidence that
+  more samples help. A positive claim that larger groups help needs G32's own result against B.
+- **Scope.** G32 is a larger-online-group control, not a matched budget: it draws 76,800 online
+  samples, against D32's 125,440 offline discovery samples plus 19,200 online (the archive serves
+  every seed and arm). Conclusions are scoped to these two strategies; a strict attribution to
+  discovery would need a matched-budget control, which is not run.
 - G32 vs B's envelope is reported without a rule. Its compute (about four times B's sampling and
   gradient work in training) is reported next to D32's (discovery plus training).
 - Cost: about $150 more (training about $100, evaluation about $50).
