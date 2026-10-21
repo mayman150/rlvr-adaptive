@@ -46,7 +46,7 @@ def main():
     args = ap.parse_args()
     print(f"problem alignment: {A.check_alignment(('worth-v12e-', 'worth-v14e-', 'worth-v15e-'))} evaluation files share one problem order")
     res = load()
-    arms = ["BBG", "MXR"]
+    arms = ["BBG", "MXR", "WRF"]
     need = [("BASE", 0, 0, 1.0)] + [(a, s, st, 1.0) for a in ["B"] + arms for s in A.SEEDS for st in A.STEPS] + \
            [("B", s, 150, t) for s in A.SEEDS for t in (1.15, 1.3)]
     missing = [k for k in need if k not in res]
@@ -59,9 +59,12 @@ def main():
         clamps[a] = {}
         tests[a] = A.compare(res, a, envelope, A.SEEDS, args.draws, np.random.default_rng(0), stats=clamps[a])
     h = V14.holm(tests)
-    print("1. Against B's trajectory-and-temperature envelope at matched pass@1")
+    print("1. Against B's trajectory-and-temperature envelope at matched pass@1 (directional verdicts need Holm)")
     for a in arms:
-        A.show(a, tests[a], A.three_way(tests[a]) + (" (Holm-significant)" if h[a][1] else " (not significant under Holm)"))
+        v = A.three_way(tests[a])
+        if v in ("moves the curve", "worse") and not h[a][1]:
+            v = f"inconclusive ({v} before correction, not significant under Holm)"
+        A.show(a, tests[a], v + ("; fresh confirmation required" if v == "moves the curve" else ""))
         c = clamps[a]
         print(f"      clamping: {c.get('clamped', 0)} of {c.get('points', 0)}")
     print("2. Fixed-step reading next to the matched-accuracy reading (step 150, minus B, pooled over seeds)")
@@ -69,6 +72,9 @@ def main():
         (p16, ci16), (p1, ci1) = paired(res, a, "pass@16", args.draws), paired(res, a, "pass@1", args.draws)
         print(f"   {a}: pass@16 {p16:+.2f} [{ci16[0]:+.2f}, {ci16[1]:+.2f}]; pass@1 {p1:+.2f} [{ci1[0]:+.2f}, {ci1[1]:+.2f}]"
               f" -> at matched accuracy {tests[a].get('estimate', float('nan')):+.2f}")
+    print("Reported: BBG against W-REINFORCE's trajectory (the gate's own contribution)")
+    r = A.compare(res, "BBG", V14.traj_ref("WRF"), A.SEEDS, args.draws, np.random.default_rng(0))
+    A.show("BBG vs WRF trajectory", r, "reported")
     print("Reported: D32 against each arm's trajectory (if Pre-registration 14 is evaluated)")
     if all((("D32", s, st, 1.0) in res) for s in A.SEEDS for st in A.STEPS):
         for a in arms:

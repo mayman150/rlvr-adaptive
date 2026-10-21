@@ -921,7 +921,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     assert not (surrogate and args.diagnostics), "diagnostics need the plain on-policy loss"
     assert not surrogate or arm in FIXED_ARMS, "verl-like options are implemented for fixed groups only"
     interventions = (args.entropy_coef > 0 or args.entropy_target_frac > 0 or args.floor_rho > 0 or args.memory_lambda > 0
-                     or args.unlikely_beta > 0 or args.early_floor_rho > 0 or bool(args.seed_archive) or bool(args.sft_archive))
+                     or args.unlikely_beta > 0 or args.early_floor_rho > 0 or bool(args.seed_archive) or bool(args.sft_archive)
+                     or bool(args.tar_archive))
+    assert not (args.bbg_k > 0 and (surrogate or args.diagnostics or arm not in FIXED_ARMS)), \
+        "Bayesian boundary gating is implemented for the plain on-policy loss of fixed groups"
     assert not (args.floor_rho > 0 and args.early_floor_rho > 0), "choose one entropy floor"
     assert not (interventions and (surrogate or args.diagnostics)), "Pre-registration 12 options need the plain on-policy loss without diagnostics"
     assert not (interventions and arm != "baseline"), "Pre-registration 12 options are defined for Dr. GRPO (arm baseline)"
