@@ -60,6 +60,7 @@ def main():
     ap.add_argument("--draws", type=int, default=2000)
     args = ap.parse_args()
     fresh = lambda: np.random.default_rng(0)
+    print(f"problem alignment: {A.check_alignment(('worth-v12e-', 'worth-v14e-'))} evaluation files share one problem order")
     res = load()
     arms = ["B", "D32", "U32", "S32", "C05", "G32"]
     need = [("BASE", 0, 0, 1.0)] + [(a, s, st, 1.0) for a in arms + ["CM"] for s in A.SEEDS for st in A.STEPS] + \

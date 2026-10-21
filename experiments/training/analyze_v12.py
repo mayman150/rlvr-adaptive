@@ -42,8 +42,24 @@ def met(c, w):
 
 def curve(points, w):
     """points: list of (counts, tiebreak); returns sorted pass@1 and pass@16 arrays."""
-    m = sorted((*met(c, w), tb) for c, tb in points)
+    m = sorted(((*met(c, w), tb) for c, tb in points), key=lambda x: (x[0], x[2]))  # pass@1, ties by step or temperature
     return np.array([x[0] for x in m]), np.array([x[1] for x in m])
+
+
+def check_alignment(prefixes=("worth-v12e-",)):
+    """Every saved evaluation must use the same problems in the same order; returns the number of files checked."""
+    import gzip
+    import hashlib
+    ref, n = None, 0
+    for prefix in prefixes:
+        for f in RES.glob(f"{prefix}E*-s*-*/*/eval/*_texts.json.gz"):
+            qs = json.load(gzip.open(f))["problems"]
+            h = hashlib.sha256(json.dumps([(q["question"], q["answer"]) for q in qs]).encode()).hexdigest()
+            ref = ref or h
+            if h != ref:
+                raise ValueError(f"problem order differs in {f}")
+            n += 1
+    return n
 
 
 def reference(res, seed, w, envelope):
