@@ -2,7 +2,7 @@
 
 Usage: python analyze_v14.py [--draws 2000]
 References (B, BASE, CM) from Pre-registration 12's evaluation jobs (worth-v12e-*); arms D32, U32, S32, C05
-from worth-v14e-*. Every comparison uses the same bootstrap draws over problems (a fresh generator with
+from worth-v14e-* (G32 added by amendment 2). Every comparison uses the same bootstrap draws over problems (a fresh generator with
 seed 0 per comparison), so CM's test reproduces Pre-registration 12's primary test exactly.
 """
 
@@ -61,7 +61,7 @@ def main():
     args = ap.parse_args()
     fresh = lambda: np.random.default_rng(0)
     res = load()
-    arms = ["B", "D32", "U32", "S32", "C05"]
+    arms = ["B", "D32", "U32", "S32", "C05", "G32"]
     need = [("BASE", 0, 0, 1.0)] + [(a, s, st, 1.0) for a in arms + ["CM"] for s in A.SEEDS for st in A.STEPS] + \
            [(a, s, 150, t) for a in ("B", "S32") for s in A.SEEDS for t in (1.15, 1.3)] + \
            [("S32", s, 0, 1.0) for s in A.SEEDS]
@@ -80,7 +80,8 @@ def main():
 
     prim = run("D32 vs B envelope", "D32", envelope)
     run("CM vs B envelope (Pre-registration 12 primary)", "CM", envelope)
-    for other in ("U32", "S32", "C05"):
+    contrasts = ("U32", "S32", "C05", "G32")
+    for other in contrasts:
         run(f"D32 vs {other} trajectory", "D32", traj_ref(other))
     h = holm(tests)
 
@@ -105,18 +106,18 @@ def main():
         print(f"   VERDICT: {verdict}")
 
     print("2. Mechanism contrasts (claim needs >= +1, 95% interval above 0, and Holm significance)")
-    for other in ("U32", "S32", "C05"):
+    for other in contrasts:
         k = f"D32 vs {other} trajectory"
         t = tests[k]
         ok = "estimate" in t and t["estimate"] >= 1 and t["ci95"][0] > 0 and h[k][1]
         A.show(k, t, "supported" if ok else "not shown")
-    print("   Holm over the five registered tests:")
+    print(f"   Holm over the {len(h)} registered tests:")
     for k, (p, ok) in sorted(h.items(), key=lambda x: x[1][0]):
         print(f"      {k}: p = {p:.4f} -> {'significant' if ok else 'not significant'}")
     print("   Pre-registration 12's own verdict for CM is reported unchanged in RESULTS_12; its p-value enters here only.")
 
     print("3. Reported without a rule")
-    for other in ("U32", "S32", "C05"):
+    for other in contrasts:
         t = A.compare(res, other, envelope, A.SEEDS, args.draws, fresh())
         A.show(f"{other} vs B envelope", t, A.three_way(t))
     print("   Interpolation endpoint clamping (bootstrap points outside the reference's pass@1 range):")

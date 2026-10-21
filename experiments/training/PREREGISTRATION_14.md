@@ -101,3 +101,18 @@ From the independent review of the code:
    frequency of interpolation endpoint clamping is reported for each test.
 5. The fine-tuning token budget can overshoot by at most one batch (8 answers); the actual count is
    reported.
+
+## Amendment 2 (October 20, 2026; before any training run or outcome of this design)
+
+Added at the reviewer-anticipated question "is the gain from discovery, or from more samples?":
+- **G32: Dr. GRPO with groups of 32** (Pre-registration 12's settings otherwise; same seeds and
+  questions per step; the loss normalizer scales with the group, so the expected step is unchanged
+  and only the noise falls). Each visited question gets 32 samples from the current policy instead of
+  32 from the base model before training. Evaluated like the other arms (steps 50, 100, 150; greedy
+  test accuracy at step 150).
+- **Fourth mechanism contrast: D32 against G32's trajectory** (same +1 and 95% rule). Holm's family
+  becomes six tests. If D32 beats B's envelope but not G32's trajectory, the claim is that more
+  samples per visited question help, not that seeding from the base model does.
+- G32 vs B's envelope is reported without a rule. Its compute (about four times B's sampling and
+  gradient work in training) is reported next to D32's (discovery plus training).
+- Cost: about $150 more (training about $100, evaluation about $50).
