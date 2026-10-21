@@ -1,3 +1,6 @@
 us-east-1:worth-v14-G32-s8-20261021-000351
 us-east-2:worth-v14-G32-s9-20261021-000421
 us-west-2:worth-v14-G32-s10-20261021-000424
+us-west-2:worth-v14-ALL-s8-20261021-022902
+us-east-1:worth-v14-ALL-s9-20261021-022917
+us-east-2:worth-v14-ALL-s10-20261021-022938
