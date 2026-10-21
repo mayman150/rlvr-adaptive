@@ -33,6 +33,7 @@ accuracy:
   (BBG against WRF's trajectory, reported) and BBG against B is not read as the gate's effect alone.
 - **MXR (MaxRL):** advantages (r - mean) / mean per group; no gradient for groups without a success
   (the paper's Algorithm 1).
+- The trainer rejects TAR or BBG combined with surrogate (verl-like) losses or diagnostics.
 - Adaptations, disclosed: 1.5B model, 150 steps, 512 tokens, on-policy single update (no PPO
   clipping or KL), our verifier and normalizer.
 
