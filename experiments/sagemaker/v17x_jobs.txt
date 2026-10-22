@@ -1,0 +1,6 @@
+us-east-1:worth-v17x-B-s8-20261022-184144
+us-east-1:worth-v17x-B-s9-20261022-184202
+us-east-2:worth-v17x-B-s10-20261022-184219
+us-west-2:worth-v17x-S32-s8-20261022-184226
+us-east-1:worth-v17x-S32-s9-20261022-184247
+us-east-2:worth-v17x-S32-s10-20261022-184310
