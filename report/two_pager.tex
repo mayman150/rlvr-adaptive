@@ -1,0 +1,69 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.72in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,enumitem,xcolor,microtype,tabularx}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\setlength{\parskip}{3pt}\setlength{\parindent}{0pt}
+\setlist{leftmargin=*,itemsep=0.5pt,topsep=1pt}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\hd}[1]{\vspace{3pt}{\large\textbf{#1}}\par\vspace{1pt}}
+\pagestyle{empty}
+
+\begin{document}
+\begin{center}
+{\Large\textbf{Reward Shaping Is Noise Shaping: where the RLVR project stands}}\\[2pt]
+Mohamed Ayman \quad October 22, 2026
+\end{center}
+\vspace{-4pt}
+
+\hd{1. The question}
+RL with verifiable rewards (RLVR) trains a language model on math: it writes answers, a checker grades them, and the update $g=\sum_i A_i\nabla\log\pi(y_i)$ pushes each answer up or down by its \emph{advantage} $A_i$. Dozens of papers change the advantage (reward right answers only, PSR; penalize wrong ones only, NSR; change the baseline; aim at pass@$k$; add entropy or ``unlikeliness'' bonuses) and report more \emph{diversity}, meaning higher pass@$k$ (at least one of $k$ samples right). Almost all of them compare methods \textbf{at the same training step}. Our question: is that diversity real, or is it an artifact of how methods are compared?
+
+\hd{2. The idea and the diagnosis (finished, solid)}
+\textbf{Theory.} For any rule that scores answers only by correctness, with $p$ a question's success rate,
+$\E g=c(p)\nabla p$ and $\E\|g\|^2=F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p)$.
+Every such rule pushes the model in the \emph{same direction} ($\nabla p$); it can only reweight questions and change the \emph{noise}. Wrong answers carry most of the noise (2--3$\times$ larger squared gradients, measured on two model families).
+\textbf{Consequence.} Noise sets how \emph{fast} a run moves along one accuracy--diversity curve, not the curve. A slower run is less sharpened at any fixed step, so it \emph{looks} more diverse. The fair comparison is \textbf{pass@$k$ at matched pass@1}, interpolated along the reference run's trajectory.
+\textbf{Identity.} At matched pass@1, pass@$k=\E_x[1-(1-p_x)^k]$, so diversity at equal accuracy only measures how evenly success is spread across questions. To move it, a method must bring signal to \emph{rarely solved} questions.
+
+\textbf{Evidence} (Qwen2.5-Math-1.5B and OLMo-2-1B, all pre-registered, reviewed by an independent model, Codex):
+\begin{enumerate}
+\item \textbf{One curve.} PSR, NSR, five baselines between them, the NSR paper's own implementation, and a pass@4 objective all move along one curve. On OLMo, NSR minus PSR at matched accuracy is $-0.30$, 90\% $[-1.28,+0.77]$: equivalent within $\pm2$.
+\item \textbf{Noise is the cause.} Adding zero-mean random noise of NSR's size to PSR makes it exactly as slow as NSR (speed $\phi=-0.11$ $[-0.22,-0.05]$ on a scale where NSR $=0$, PSR $=1$). With Adam, noise does not shrink steps; it misdirects them.
+\item \textbf{Not temperature.} RL barely changes entropy on fixed text but cuts it 3--4$\times$ on its own samples; sampling a late checkpoint hotter does not beat the training curve.
+\item \textbf{Popular fixes stay on the curve:} entropy bonus, adaptive entropy, entropy floors (these even stop learning), the published unlikeliness reward.
+\end{enumerate}
+
+\hd{3. Turning the diagnosis into a method (so far: small gains)}
+The diagnosis says the only lever is \emph{new information on rarely solved questions}. Results, as pass@16 gain over Dr.\ GRPO at matched pass@1 (3 seeds, 511 held-out problems):
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}p{0.2\linewidth}@{}}
+\toprule
+Method & Gain & Status\\
+\midrule
+Reward shaping, entropy control, unlikeliness, pass@$k$ objectives & $\approx 0$ & finished\\
+Replay the model's own past successes, weighted to rare questions (Pre-reg.\ 12) & $+1.19$ $[+0.54,+1.79]$ & finished; below the $+2$ bar\\
+Same replay, seeded with base-model successes (Option A, Pre-reg.\ 14) & about $+1$; 5 points less accurate at step 150 & interim\\
+\textbf{Fine-tune on the base-model successes first, then Dr.\ GRPO} (a control in Option A) & beyond Dr.\ GRPO's range & interim\\
+\bottomrule
+\end{tabularx}
+\end{center}
+The surprise is the warm start: step-150 accuracy 51--53\% vs 44\%, pass@16 78--80 vs 75, greedy test accuracy 54.9\% vs 47.5\%. Its pass@16 gain sits on the hardest questions, those the base model \emph{never} solves in 32 tries (24 $\to$ 34), exactly where the diagnosis says diversity must come from. Two caveats: (i) Dr.\ GRPO never gets above about 45\% in 150 steps, so the warm start cannot yet be compared at matched accuracy; (ii) our 512-token answer limit truncates 48\% of Dr.\ GRPO's answers but 33\% of the warm start's, so part of the gain may be ``learned to finish in time''.
+
+\hd{4. The 2026 literature (searched October 21)}
+\begin{itemize}
+\item \textbf{Still ours, unpublished:} noise sets the speed along one curve; NSR on PSR's curve on two families; the noise-injection causal test; the matched-accuracy protocol; temperature does not beat the curve; the spread identity. \textbf{No 2026 method paper compares at matched accuracy}, and several (BBG, EliteReplay) gain pass@$k$ while losing pass@1, the confound we describe.
+\item \textbf{Already published:} ``same direction, per-question weight'' (Davis \& Recht 2025; Heckel et al.\ 2026); base-seeded replay (TAR, Oct.\ 2026); nearly our coverage weight (BBG, June 2026); fine-tuning on own successes before RL (STaR, DART-Math, TREK, PKR); rescuing all-wrong groups (LSPO). Barakat et al.\ (NeurIPS 2026) show weights can rotate the update through shared parameters, so ``one curve'' must be an empirical claim, not a theorem.
+\end{itemize}
+
+\hd{5. Honest assessment}
+Independent review (Codex): \textbf{5/10} today (diagnosis strong; method gains small and partly published). A clean method win with all controls: about 7/10. Codex's brainstorm of three new RL methods (inserting base successes into all-wrong groups; noise-minimizing weights; value-of-information rollout allocation) found each already published or likely to score only 4--5/10 even if it wins. \textbf{The open problem is the method}: the diagnosis is sound, but the obvious ways of acting on it are crowded.
+
+\hd{6. What is running and what comes next}
+\begin{itemize}
+\item \textbf{Option A evaluation} (AWS): about 8 of 23 lanes left; the registered verdict follows, then Codex review. A full win is unlikely given the accuracy gap.
+\item \textbf{Audit of 2026 methods at matched accuracy} (AWS): TAR, BBG, MaxRL (ICML 2026), plus W-REINFORCE as BBG's control, 3 seeds each; waiting for spot GPUs. If their gains vanish at matched accuracy, the diagnosis is shown on this year's papers; if they hold, they are the baselines to beat.
+\item \textbf{Token-budget check} (AWS): Dr.\ GRPO and the warm start re-evaluated at 1,024 tokens; reading rules fixed in advance.
+\item \textbf{Tamia} (your H100 nodes, set up today): first, retrain Dr.\ GRPO and the warm start at 2,048 tokens to settle the budget question; then scale to Qwen2.5-Math-7B (BBG's own setting) to replicate the diagnosis and the audit. Scale was Codex's other main criticism.
+\end{itemize}
+\textbf{The decision ahead:} find a method that acts on ``information on rare questions'' inside RL and is not in the 2026 papers, or build the paper around the diagnosis plus the matched-accuracy audit of 2026 methods at two scales. If the warm-start effect survives the 2,048-token and 7B tests, it tells us exactly what an RL method has to reproduce.
+\end{document}
