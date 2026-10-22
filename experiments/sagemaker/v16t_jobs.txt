@@ -1,0 +1,7 @@
+us-east-1:worth-v16t-L0-s9-20261022-033806
+us-east-1:worth-v16t-L1-s9-20261022-033817
+us-east-1:worth-v16t-L2-s9-20261022-033830
+us-east-1:worth-v16t-L3-s9-20261022-033849
+us-east-2:worth-v16t-L0-s10-20261022-033908
+us-east-2:worth-v16t-L1-s10-20261022-033943
+us-east-2:worth-v16t-L2-s10-20261022-034023
