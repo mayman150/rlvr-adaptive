@@ -1,0 +1,32 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "D0",
+    "script": "discover.py",
+    "part": 0,
+    "args": [
+     "--problems",
+     "deep_base_309.json",
+     "--n",
+     "256",
+     "--shard",
+     "0",
+     "--shards",
+     "4",
+     "--gen-batch",
+     "256",
+     "--max-new",
+     "512",
+     "--chunk",
+     "8"
+    ]
+   }
+  ]
+ ]
+}

@@ -1190,6 +1190,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             if seen[j] <= args.ref_block:
                 first_block.append(rewards[k])
         grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
+        if n_live and not math.isfinite(grad_norm):
+            # A non-finite gradient would corrupt every parameter; skip the update and record it.
+            print(f"[{arm}] step {step}: non-finite gradient norm, update skipped", flush=True)
+            extra["nonfinite_grad"] = True
+            n_live = 0
         if n_live:
             opt.step()
             if args.diagnostics:

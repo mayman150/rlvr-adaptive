@@ -1,0 +1,4 @@
+us-west-2:worth-v17d-L0-s0-20261022-190358
+us-west-2:worth-v17d-L1-s0-20261022-190425
+us-east-1:worth-v17d-L2-s0-20261022-190458
+us-west-2:worth-v17d-L3-s0-20261022-190907
