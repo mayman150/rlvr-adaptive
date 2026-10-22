@@ -66,6 +66,11 @@ def run_plan(plan):
                            "--out", str(LIVE / spec["name"]), *spec["args"]]
                     run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
                     continue
+                if spec.get("script") == "transfer_probe.py":
+                    cmd = [sys.executable, str(HERE / "training" / "transfer_probe.py"), "--ckpts", str(CKPT_CHANNEL / spec["sub"]),
+                           "--base", local[1], "--out", str(LIVE / spec["name"] / "probe"), *spec["args"]]
+                    run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
+                    continue
                 base = ["--base", local[1]] if spec.get("include_base") else []
                 ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
                 cmd = [sys.executable, str(EVAL), "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"),
