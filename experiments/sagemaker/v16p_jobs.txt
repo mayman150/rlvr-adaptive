@@ -1,0 +1,8 @@
+us-west-2:worth-v16p-B-s12-20261022-182343
+us-west-2:worth-v16p-S32-s12-20261022-182355
+us-west-2:worth-v16p-AR-s12-20261022-182410
+us-east-1:worth-v16p-GC-s12-20261022-182417
+us-east-1:worth-v16p-PG-s12-20261022-182431
+us-east-1:worth-v16p-MXGC-s12-20261022-182449
+us-east-2:worth-v16p-SD-s12-20261022-182516
+us-east-2:worth-v16p-MXR-s12-20261022-182545

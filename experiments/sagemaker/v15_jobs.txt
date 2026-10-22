@@ -7,3 +7,8 @@ us-west-2:worth-v15-WRF-s8-20261021-061125
 us-east-1:worth-v15-BBG-s9-20261021-061127
 us-east-1:worth-v15-MXR-s9-20261021-061131
 us-east-1:worth-v15-WRF-s9-20261021-061134
+us-west-2:worth-v15-BBG-s8-20261022-182158
+us-east-1:worth-v15-BBG-s9-20261022-182208
+us-east-2:worth-v15-BBG-s10-20261022-182215
+us-east-2:worth-v15-MXR-s10-20261022-182228
+us-east-2:worth-v15-WRF-s10-20261022-182246

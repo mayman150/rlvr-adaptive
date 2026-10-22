@@ -4,3 +4,13 @@ us-east-2:worth-v12-ALL-s9-20261020-010846
 us-east-1:worth-v12-ALL-s9-20261020-010850
 us-west-2:worth-v12-ALL-s10-20261020-010854
 us-east-2:worth-v12-ALL-s10-20261020-010858
+us-east-2:worth-v12-ALL-s8-20261020-012402
+us-west-2:worth-v12-ALL-s8-20261020-012407
+us-east-2:worth-v12-B-s8-20261020-012803
+us-east-2:worth-v12-CM-s8-20261020-012807
+us-east-2:worth-v12-M-s8-20261020-012811
+us-east-2:worth-v12-U-s8-20261020-012815
+us-west-2:worth-v12-B-s8-20261020-012823
+us-west-2:worth-v12-CM-s8-20261020-012828
+us-west-2:worth-v12-M-s8-20261020-012831
+us-west-2:worth-v12-U-s8-20261020-012835
