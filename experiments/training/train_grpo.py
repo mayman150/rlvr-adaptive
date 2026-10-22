@@ -604,15 +604,21 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
             cuts.append(cut)
     if not items:
         return {"frac": f, "questions": 0}
-    # the prefix counts against the answer budget: prefix + continuation stays within max_new tokens
-    outs = runner.generate(items, 1, args.max_new - max(cuts), args.seed * 100003 + step + 7919)
-    solved = 0
-    for (pi, ri), slot, pre in zip(outs, slots, prefixes):
+    # The prefix counts against the answer budget: each continuation is capped at max_new - its prefix length
+    # (generated to the largest cap, then cut, which is the same as stopping at its own cap).
+    outs = runner.generate(items, 1, args.max_new - min(cuts), args.seed * 100003 + step + 7919)
+    solved, capped, tokens = 0, 0, 0
+    for (pi, ri), slot, pre, cut in zip(outs, slots, prefixes, cuts):
+        cap = args.max_new - cut
+        if len(ri) >= cap:
+            ri = ri[:cap]
+            capped += int(int(ri[-1]) not in runner.stop_ids)
         r = reward(pre + runner.tok.decode(ri), batch[slot // G]["answer"])
         answers[slot], rewards[slot] = (pi, ri), r
         runner._prefixed.add(slot)
         solved += r
-    return {"frac": f, "questions": len(items) // m, "rollouts": len(items), "solved": solved}
+        tokens += len(pi) + len(ri)
+    return {"frac": f, "questions": len(items) // m, "rollouts": len(items), "solved": solved, "capped": capped, "tokens": tokens}
 
 
 def bbg_utility(m, n, k):
@@ -944,6 +950,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 rescue[i] = [d["seq"]]
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
+    assert args.prefix_rollouts <= args.group and args.prefix_anneal_steps > 0, "prefix rollouts must fit in a group"
     tar = None
     if args.tar_archive:
         assert arm == "baseline" and args.memory_lambda == 0 and not (args.seed_archive or args.sft_archive), \
@@ -1091,6 +1098,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                         injected.append(((seq[0].to(runner.device), seq[1].to(runner.device)),
                                          fixed_advantage(arm, 1, m, w, args.pos_weight, args.shift, G + 1, args.train_k)))
                 extra["completed_groups"] = len(injected)
+                extra["completion_tokens"] = sum(len(a[0]) + len(a[1]) for a, _ in injected)
+            if args.prefix_rollouts > 0:
+                plain = [r for k, r in enumerate(rewards) if k not in getattr(runner, "_prefixed", set())]
+                extra["mean_reward_unassisted"] = sum(plain) / max(len(plain), 1)
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)

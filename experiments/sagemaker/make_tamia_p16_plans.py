@@ -27,8 +27,8 @@ ARMS = {"B": ["--arms", "baseline"],
 EV = ["--problems", "val_frontier_256.json", "--n", "32", "--max-new", "512", "--gen-batch", "256"]
 
 
-def ev(name, steps, expect, temps="1.0", base=False):
-    s = {"name": name, "sub": name, "part": 0, "args": EV + ["--expect-steps", expect, "--sampled-steps", steps, "--temperatures", temps]}
+def ev(name, steps, expect, temps="1.0", part=1):
+    s = {"name": name, "sub": name, "part": part, "args": EV + ["--expect-steps", expect, "--sampled-steps", steps, "--temperatures", temps]}
     return s
 
 
@@ -36,7 +36,7 @@ BASE = {"name": "BASE", "sub": None, "part": 9, "include_base": True,
         "args": EV + ["--temperatures", "1.0", "--base-temperatures", "1.0", "--sampled-steps", "0", "--expect-steps", "0"]}
 for tag, names in (("A", ("B", "S32", "AR", "GC")), ("B", ("PG", "MXGC", "SD", "MXR"))):
     (HERE / "plans" / f"tamia_p16_{tag}.json").write_text(json.dumps({**META, "common": COMMON, "gpus": [[[n, ARMS[n]]] for n in names]}, indent=1))
-e_a = [[ev("B", "50,100", "50,100,150"), BASE], [ev("B", "150", "50,100,150", "1.0,1.15,1.3")],
+e_a = [[ev("B", "50,100", "50,100,150"), BASE], [ev("B", "150", "50,100,150", "1.0,1.15,1.3", part=2)],
        [ev("S32", "0,50,100,150", "0,50,100,150")], [ev("AR", "50,100,150", "50,100,150"), ev("GC", "50,100,150", "50,100,150")]]
 e_b = [[ev("PG", "50,100,150", "50,100,150")], [ev("MXGC", "50,100,150", "50,100,150")],
        [ev("SD", "0,50,100,150", "0,50,100,150")], [ev("MXR", "50,100,150", "50,100,150")]]

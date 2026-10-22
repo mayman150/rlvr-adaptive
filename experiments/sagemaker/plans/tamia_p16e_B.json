@@ -9,7 +9,7 @@
    {
     "name": "PG",
     "sub": "PG",
-    "part": 0,
+    "part": 1,
     "args": [
      "--problems",
      "val_frontier_256.json",
@@ -32,7 +32,7 @@
    {
     "name": "MXGC",
     "sub": "MXGC",
-    "part": 0,
+    "part": 1,
     "args": [
      "--problems",
      "val_frontier_256.json",
@@ -55,7 +55,7 @@
    {
     "name": "SD",
     "sub": "SD",
-    "part": 0,
+    "part": 1,
     "args": [
      "--problems",
      "val_frontier_256.json",
@@ -78,7 +78,7 @@
    {
     "name": "MXR",
     "sub": "MXR",
-    "part": 0,
+    "part": 1,
     "args": [
      "--problems",
      "val_frontier_256.json",

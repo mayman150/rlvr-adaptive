@@ -16,6 +16,14 @@ from pathlib import Path
 CODE = Path(__file__).resolve().parent.parent / "training"
 
 
+def guarded(fn, gpu, specs, status):
+    try:
+        fn(gpu, specs)
+    except Exception as e:  # a lane that crashes must not look successful
+        status[f"lane{gpu}"] = f"exception: {e!r}"
+        print(f"lane {gpu} exception: {e!r}", flush=True)
+
+
 def run_one(name, cmd, gpu, status, log):
     env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu), "HF_HUB_OFFLINE": "1"}
     with open(log / f"{name}.log", "a") as f:
@@ -54,13 +62,13 @@ def main():
                 run_one(name, cmd, gpu, status, log)
         lanes = plan["gpus"]
     for g, specs in enumerate(lanes):
-        threads.append(threading.Thread(target=lane, args=(g, specs)))
+        threads.append(threading.Thread(target=guarded, args=(lane, g, specs, status)))
         threads[-1].start()
     for t in threads:
         t.join()
     (out / "status.json").write_text(json.dumps(status, indent=1))
     print("status:", status, flush=True)
-    sys.exit(1 if any(v != 0 for v in status.values()) else 0)
+    sys.exit(1 if any(v != 0 for v in status.values()) else 0)  # includes lane exceptions (non-zero strings)
 
 
 if __name__ == "__main__":
