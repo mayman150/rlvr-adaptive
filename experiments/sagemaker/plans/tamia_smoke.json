@@ -42,6 +42,16 @@
      "--bbg-tau",
      "0.01"
     ]
+   ],
+   [
+    "GC",
+    [
+     "--arms",
+     "baseline",
+     "--rescue-archive",
+     "discovery_qwen_train32.json",
+     "--complete-groups"
+    ]
    ]
   ],
   [
@@ -50,6 +60,21 @@
     [
      "--arms",
      "maxrl"
+    ]
+   ],
+   [
+    "PG",
+    [
+     "--arms",
+     "baseline",
+     "--rescue-archive",
+     "discovery_qwen_train32.json",
+     "--prefix-rollouts",
+     "2",
+     "--prefix-frac",
+     "0.5",
+     "--prefix-anneal-steps",
+     "100"
     ]
    ]
   ],
@@ -62,6 +87,23 @@
      "--tar-archive",
      "discovery_qwen_train32.json"
     ]
+   ],
+   [
+    "AR",
+    [
+     "--arms",
+     "baseline",
+     "--seed-archive",
+     "discovery_qwen_train32.json",
+     "--memory-lambda",
+     "4",
+     "--memory-weighting",
+     "coverage",
+     "--memory-questions",
+     "16",
+     "--memory-anneal-steps",
+     "100"
+    ]
    ]
   ],
   [
@@ -70,6 +112,16 @@
     [
      "--arms",
      "baseline"
+    ]
+   ],
+   [
+    "MXGC",
+    [
+     "--arms",
+     "maxrl",
+     "--rescue-archive",
+     "discovery_qwen_train32.json",
+     "--complete-groups"
     ]
    ]
   ]

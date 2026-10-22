@@ -573,6 +573,48 @@ def sft_phase(runner, args, discovery, arm):
     return {"steps": steps, "tokens": seen, "sequences": len(seqs)}
 
 
+def surrogate_flags(args):
+    return args.reuse > 1 or args.length_norm or args.norm_selected
+
+
+def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, rescue, disc_c):
+    """Replace the last `prefix_rollouts` answers of each rare question's group (base successes c <= prefix_max_c of 32,
+    or no success at its latest attempt, and a stored success) with rollouts that continue from the first
+    f_t of a stored success's tokens, f_t = prefix_frac (1 - step / prefix_anneal_steps); the prefix is context
+    (no gradient), the reward is the verifier's on prefix + continuation. Edits answers and rewards in place."""
+    G, m = args.group, args.prefix_rollouts
+    f = args.prefix_frac * max(0.0, 1.0 - step / args.prefix_anneal_steps)
+    runner._prefixed = set()
+    if f <= 0:
+        return {"frac": 0.0, "questions": 0}
+    items, slots, prefixes, cuts = [], [], [], []
+    for j, key in enumerate(keys):
+        bank = rescue.get(key)
+        if not bank or disc_c.get(key, 0) > args.prefix_max_c:
+            continue
+        seq = bank[step % len(bank)]
+        cut = int(f * (len(seq[1]) - 1))
+        if cut < 1:
+            continue
+        pre = runner.tok.decode(seq[1][:cut])
+        for i in range(m):
+            items.append(texts[j] + pre)
+            slots.append(j * G + G - 1 - i)
+            prefixes.append(pre)
+            cuts.append(cut)
+    if not items:
+        return {"frac": f, "questions": 0}
+    # the prefix counts against the answer budget: prefix + continuation stays within max_new tokens
+    outs = runner.generate(items, 1, args.max_new - max(cuts), args.seed * 100003 + step + 7919)
+    solved = 0
+    for (pi, ri), slot, pre in zip(outs, slots, prefixes):
+        r = reward(pre + runner.tok.decode(ri), batch[slot // G]["answer"])
+        answers[slot], rewards[slot] = (pi, ri), r
+        runner._prefixed.add(slot)
+        solved += r
+    return {"frac": f, "questions": len(items) // m, "rollouts": len(items), "solved": solved}
+
+
 def bbg_utility(m, n, k):
     """Yuan et al. (2026), Bayesian boundary gating: E[k (1 - p)^(k-1)] under p ~ Beta(m + 1, n - m + 1)."""
     out = float(k)
@@ -892,6 +934,16 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     archive, phat, mem_rng = {}, {}, random.Random(args.seed * 7717)
     base_trace = set()  # archive keys that still hold a base-model trace (retired at the first own success)
     sft_stats = None
+    rescue, disc_c = None, {}
+    if args.rescue_archive:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics, "rescue options need the plain on-policy loss"
+        rescue = {}
+        for i, d in load_discovery(runner, args.rescue_archive, problems).items():
+            disc_c[i] = d["c"]
+            if d["seq"] is not None:
+                rescue[i] = [d["seq"]]
+        print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
+    assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
     tar = None
     if args.tar_archive:
         assert arm == "baseline" and args.memory_lambda == 0 and not (args.seed_archive or args.sft_archive), \
@@ -995,6 +1047,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 texts = [build_prompt(runner.tok, q["question"]) for q in batch]
                 pool_answers = runner.generate(texts, G, args.max_new, args.seed * 100003 + step)
                 pool_rewards = [reward(runner.tok.decode(r), batch[k // G]["answer"]) for k, (_, r) in enumerate(pool_answers)]
+                if args.prefix_rollouts > 0:
+                    extra["prefix"] = prefix_rollouts(runner, args, step, batch, texts, pool_answers, pool_rewards,
+                                                      [order[(step * pps + j) % len(order)] for j in range(n_pool)], rescue, disc_c)
                 pool_old = old_logprobs(runner, args, pool_answers) if surrogate else None
             j0 = (step % args.reuse) * pps * G
             answers = pool_answers[j0:j0 + pps * G]
@@ -1023,6 +1078,19 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 coef = bbg_coefficients(groups, args.bbg_k, args.bbg_tau)
                 adv = [a * coef[i // G] for i, a in enumerate(adv)]
                 extra["bbg_active"] = sum(c > 0 for c in coef)
+            injected = []
+            if args.complete_groups:
+                # Zero-success groups whose question has a stored success: append it as a correct answer
+                # (G + 1 answers, mean 1 / (G + 1)) and recompute the group's advantages with the arm's rule.
+                m = 1.0 / (G + 1)
+                for j in range(pps):
+                    if groups[j][0] == 0 and rescue.get(keys[j]):
+                        seq = rescue[keys[j]][step % len(rescue[keys[j]])]
+                        for i in range(j * G, (j + 1) * G):
+                            adv[i] = fixed_advantage(arm, 0, m, w, args.pos_weight, args.shift, G + 1, args.train_k)
+                        injected.append(((seq[0].to(runner.device), seq[1].to(runner.device)),
+                                         fixed_advantage(arm, 1, m, w, args.pos_weight, args.shift, G + 1, args.train_k)))
+                extra["completed_groups"] = len(injected)
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)
@@ -1087,9 +1155,18 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             else:
                 backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
+            if arm in FIXED_ARMS and injected:
+                backward_weighted(runner, args, [a for a, _ in injected], list(range(len(injected))), [x for _, x in injected], norm)
+                n_live = max(n_live, len(injected))
             if args.memory_lambda > 0 and arm in FIXED_ARMS:
-                extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm, phat)
-                n_live = max(n_live, extra["memory"]["questions"])
+                base_lambda = args.memory_lambda
+                if args.memory_anneal_steps > 0:
+                    args.memory_lambda = base_lambda * max(0.0, 1.0 - step / args.memory_anneal_steps)
+                if args.memory_lambda > 0:
+                    extra["memory"] = memory_backward(runner, args, archive, mem_rng, norm, phat)
+                    extra["memory"]["lambda"] = args.memory_lambda
+                    n_live = max(n_live, extra["memory"]["questions"])
+                args.memory_lambda = base_lambda
             if tar is not None:
                 extra["tar"] = tar_backward(runner, args, tar, mem_rng)
                 n_live = max(n_live, extra["tar"]["active"])
@@ -1117,6 +1194,12 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 ent_target = args.entropy_target_frac * extra["batch_entropy"]
             ent_coef = max(0.0, ent_coef + args.entropy_lr * (ent_target - extra["batch_entropy"]))
             extra["entropy_target"] = ent_target
+        if rescue is not None and arm in FIXED_ARMS and keys is not None:
+            for k, ((pi, ri), rew) in enumerate(zip(answers, rewards)):
+                if rew == 1 and len(ri) and int(ri[-1]) in runner.stop_ids and not getattr(runner, "_prefixed", set()) & {k}:
+                    slot = rescue.setdefault(keys[owner[k]], [])
+                    if len(slot) < args.memory_max and all(not torch.equal(ri.cpu(), b) for _, b in slot):
+                        slot.append((pi.cpu(), ri.cpu()))
         if args.memory_lambda > 0 and arm in FIXED_ARMS and keys is not None:
             # Verified, stop-terminated, unique successes join the archive after the update.
             for j, (c, n) in enumerate(groups):
@@ -1218,6 +1301,13 @@ def main():
     parser.add_argument("--tar-archive", default=None, help="discovery file: TAR's gated replay of base successes (Li et al. 2026)")
     parser.add_argument("--tar-lambda", type=float, default=1.0)
     parser.add_argument("--tar-batch", type=int, default=16, help="stored trajectories replayed per step")
+    parser.add_argument("--rescue-archive", default=None, help="discovery file: stored successes for group completion / prefix rollouts")
+    parser.add_argument("--complete-groups", action="store_true", help="append a stored success to zero-success groups")
+    parser.add_argument("--prefix-rollouts", type=int, default=0, help="rollouts per rare question that continue a stored success's prefix")
+    parser.add_argument("--prefix-frac", type=float, default=0.5)
+    parser.add_argument("--prefix-anneal-steps", type=int, default=100)
+    parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
+    parser.add_argument("--memory-anneal-steps", type=int, default=0, help="replay strength falls linearly to 0 over these steps (0: constant)")
     parser.add_argument("--bbg-k", type=int, default=0, help="Bayesian boundary gating reference k (Yuan et al. 2026; 0: off)")
     parser.add_argument("--bbg-tau", type=float, default=0.01)
     parser.add_argument("--sft-lr", type=float, default=1e-5)
