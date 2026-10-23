@@ -4,7 +4,7 @@
  "architecture": "Qwen2ForCausalLM",
  "common": [
   "--seed",
-  "8",
+  "10",
   "--steps",
   "150",
   "--group",
@@ -31,12 +31,12 @@
  "gpus": [
   [
    [
-    "HA",
+    "HQ",
     [
      "--arms",
      "baseline",
      "--sft-archive",
-     "human_all.json"
+     "human_swap.json"
     ]
    ]
   ]

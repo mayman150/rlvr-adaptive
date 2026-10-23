@@ -31,12 +31,12 @@
  "gpus": [
   [
    [
-    "HA",
+    "HQ",
     [
      "--arms",
      "baseline",
      "--sft-archive",
-     "human_all.json"
+     "human_swap.json"
     ]
    ]
   ]
