@@ -48,7 +48,7 @@ ax.scatter(xs, ys, s=12, color="#ff7f0e", label="OLMo, 5 rules (transferred)", a
 lo, hi = 40, 92
 ax.plot([lo, hi], [lo, hi], "k--", lw=0.8)
 ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
-ax.set_xlabel("predicted pass@16 (law)"); ax.set_ylabel("observed pass@16")
+ax.set_xlabel("predicted pass@16 (model)"); ax.set_ylabel("observed pass@16")
 ax.legend(frameon=False, fontsize=7, loc="upper left")
 fig.tight_layout(); fig.savefig(OUT / "law_fit.pdf")
 
