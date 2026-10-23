@@ -22,3 +22,10 @@ rules, a second model family, and a larger budget within about 1-2 points of pas
 base model's per-question counts and each checkpoint's pass@1. It fails after a warm start, where
 RL lifts never-solved problems less than near-independent learning predicts (a strongly negative
 fitted transfer). Pending: tau_deep (deep base sampling) and T3.
+
+## Deep base sampling (3 of 4 shards: 232 of the 309 problems with c <= 4; shard 3 pending)
+- Of the problems with 0/32 base successes, 53% are solved at least once in 256 further base
+  samples; their mean base success rate is 0.93% (the 32-sample empirical-Bayes prior assumed 1.77%).
+  Problems with 1-4/32: 99% solved at least once, mean rate 8.25%.
+- **tau_deep = +0.20, 90% [+0.10, +0.35]** (bootstrap over problems, 200 draws): with the base
+  difficulty measured precisely, the fitted transfer term is positive and its interval excludes 0.
