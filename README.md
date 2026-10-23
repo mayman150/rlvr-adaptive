@@ -1,20 +1,21 @@
 # adaptive-rlvr
 
-The statistics of adaptive rollout collection in RL with verifiable rewards.
+Reward shaping is noise shaping: a diagnosis of the accuracy-diversity trade-off in RL with
+verifiable rewards (RLVR), a predictive law for its frontier, and the search for a method that moves it.
 
-`theory/exact.py` checks, by exact enumeration, that for binary rewards every collection
-scheme whose sampling, stopping, filtering, and advantages depend only on a prompt's
-rewards has (1) an expected update equal to a scalar c_S(p) times the gradient of the
-prompt's success probability, with c_S depending only on p, and (2) a second moment fixed
-by four numbers per prompt. Dynamic sampling (dropping constant groups) only rescales the
-batch update. Token-mean length normalization and non-binary rewards break the structure.
+## Read first
 
-```
-cd theory && python3 exact.py
-```
+- `docs/report.pdf`: the current report (what is established, what is open, what is running).
+- `docs/slides.pdf`: the same story in 12 slides.
 
-## Paper
+## Records
 
-- `paper/worth_paper.pdf`: working draft with every result so far; pending results are marked.
-- `paper/STORY.md`: the narrative, how it changes with pending results, and status.
-- `proposal/proposal.pdf`: the original proposal.
+- `experiments/training/PREREGISTRATION_*.md`, `CHECK_*.md`: every experiment, declared before it ran.
+- `experiments/training/RESULTS_*.md` and `*_output.txt`: registered results.
+- `paper/RELATED_2026.md`: the 2025-2026 literature and how this work relates to it.
+- `theory/`: exact checks of the two-moment theorem (`python3 theory/exact.py`) and `THEORY.md`.
+- `experiments/sagemaker/`, `experiments/tamia/`: launch scripts and plans (AWS SageMaker, Alliance Tamia).
+
+## Archive
+
+`archive/`: superseded reports, slides, drafts and notes (kept for history).
