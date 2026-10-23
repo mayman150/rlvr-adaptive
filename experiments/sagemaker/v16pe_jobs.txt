@@ -1,2 +1,6 @@
 us-west-2:worth-v16pe-AR-s12-20261023-000713
 us-east-1:worth-v16pe-MXGC-s12-20261023-000735
+us-east-2:worth-v16pe-B-s12-20261023-014751
+us-east-1:worth-v16pe-S32-s12-20261023-014811
+us-west-2:worth-v16pe-AR-s12-20261023-014821
+us-east-1:worth-v16pe-MXGC-s12-20261023-014853
