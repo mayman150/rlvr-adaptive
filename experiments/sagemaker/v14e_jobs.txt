@@ -35,3 +35,10 @@ us-east-2:worth-v14e-E3L1-s9-20261022-030001
 us-west-2:worth-v14e-E3L1-s10-20261022-030253
 us-east-1:worth-v14e-E3L0-s8-20261022-182249
 us-west-2:worth-v14e-E3L0-s10-20261022-182253
+us-west-2:worth-v14e-E4L0-s8-20261023-180602
+us-west-2:worth-v14e-E4L1-s8-20261023-180616
+us-east-1:worth-v14e-E4L0-s9-20261023-180627
+us-east-1:worth-v14e-E4L1-s9-20261023-180642
+us-east-2:worth-v14e-E4L0-s10-20261023-180711
+us-east-2:worth-v14e-E4L1-s10-20261023-180743
+us-west-2:worth-v14e-E3L0-s10-20261023-181832

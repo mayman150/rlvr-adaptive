@@ -1,0 +1,12 @@
+us-east-1:worth-v15e-BBGa-s9-20261023-180802
+us-east-1:worth-v15e-BBGb-s9-20261023-180829
+us-east-2:worth-v15e-BBGa-s10-20261023-180907
+us-east-2:worth-v15e-BBGb-s10-20261023-180947
+us-west-2:worth-v15e-MXRa-s8-20261023-181009
+us-west-2:worth-v15e-MXRb-s8-20261023-181032
+us-east-1:worth-v15e-MXRa-s9-20261023-181104
+us-east-1:worth-v15e-MXRb-s9-20261023-181138
+us-west-2:worth-v15e-WRFa-s8-20261023-181204
+us-west-2:worth-v15e-WRFb-s8-20261023-181233
+us-east-1:worth-v15e-WRFa-s9-20261023-181309
+us-east-1:worth-v15e-WRFb-s9-20261023-181349
