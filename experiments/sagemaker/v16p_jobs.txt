@@ -9,3 +9,4 @@ us-east-2:worth-v16p-MXR-s12-20261022-182545
 us-east-2:worth-v16p-B-s12-20261022-204348
 us-west-2:worth-v16p-GC-s12-20261022-204403
 us-east-1:worth-v16p-S32-s12-20261022-204457
+us-west-2:worth-v16p-PG-s12-20261023-000802
