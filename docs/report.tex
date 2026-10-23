@@ -124,7 +124,7 @@ For a problem $x$ and a fixed base-model answer $y$, $\ell(y)=|y|^{-1}\log\pi(y\
 
 \section{Relation to the 2025--2026 literature}
 \begin{itemize}
-\item \textbf{Not found in the surveyed papers:} the noise-injection test; matched-pass@1 evaluation of advantage rules on two families; the temperature control; a frozen-parameter model predicting the matched-pass@1 frontier from base counts. None of the surveyed method papers reports matched-pass@1 evaluation (PBA, arXiv 2607.20543, includes one early-stopped control).
+\item \textbf{Not found in the surveyed papers:} the noise-injection test; matched-pass@1 evaluation of advantage rules on two families; the temperature control; a frozen-parameter model predicting the matched-pass@1 frontier from base counts. Closest evaluation practice: DARS (arXiv 2508.13755) plots Pass@1--Pass@$K$ curves and reports higher Pass@128 at fixed Pass@1 in a figure, without intervals or a registered protocol; PBA (2607.20543) includes one early-stopped control.
 \item \textbf{Prior papers and preprints:} per-problem transforms of $p$ (Davis \& Recht, 2510.13651) and weight-dependent convergence (Heckel et al., 2602.11128); base-seeded replay (TAR, 2610.24236); a Bayesian pass@16 gate close to our coverage weight (BBG, 2606.15455); off-policy rescue of zero-success groups (LSPO, 2607.27787; LUFFY, 2504.14945; ExGRPO, 2510.02245); transfer-driven curricula (TAC, 2606.25178; GradAlign, 2602.21492); per-prompt GRPO recurrences (Mroueh, 2503.06639); the Matthew effect in RLVR (NGU, 2609.13443); and ``RLVR is a Kernel'' (2609.22547), which argues that base success does not determine post-RL success and is the main challenge to the frontier model.
 \end{itemize}
 

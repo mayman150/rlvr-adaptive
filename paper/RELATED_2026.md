@@ -47,3 +47,12 @@ at matched pass@1 (PBA has one early-stopped control).
 
 Not published as one method: replay questions chosen by d pass@k / d log p, base traces retired at
 the first own success, the log-sum archive objective, matched-accuracy evaluation.
+
+## Correction (October 23, 2026)
+
+DARS (Depth-Breadth Synergy, arXiv 2508.13755) plots Pass@1-Pass@K curves along training and states
+that at any fixed Pass@1 its Pass@128 is higher (its Figure 12), without intervals or a registered
+protocol; its checkpoint selection does not hold Pass@1 fixed. The earlier statement that no surveyed
+paper compares at matched Pass@1 is therefore too strong: matched-Pass@1 comparison appears informally
+in DARS. DARS also allocates extra rollouts to low-accuracy problems (at a larger total budget), and HORA
+(2605.07114) allocates a fixed budget by posterior hit utility with per-problem normalization.

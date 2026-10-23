@@ -1,0 +1,6 @@
+us-west-2:worth-v18-AC-s8-20261023-203258
+us-east-1:worth-v18-AC-s9-20261023-203330
+us-east-2:worth-v18-AC-s10-20261023-203339
+us-west-2:worth-v18-AV-s8-20261023-203358
+us-east-1:worth-v18-AV-s9-20261023-203440
+us-east-2:worth-v18-AV-s10-20261023-203522
