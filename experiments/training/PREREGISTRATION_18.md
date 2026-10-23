@@ -13,7 +13,8 @@ Reweighting advantages does not change this; the number of rollouts a problem re
 the frontier model, redistributing a fixed rollout budget toward problems where the matched-pass@1
 frontier value per rollout is positive moves the frontier; redistributing toward high per-rollout
 signal does not; and HORA's per-problem normalization (each problem's terms scaled by G / N_i)
-cancels the expected effect of extra rollouts.
+nearly cancels the expected effect of extra rollouts (for fixed N the scaled expectation is
+8 (1 - 1/N) p (1 - p), against 7 p (1 - p) for B; conditioning on the pilot adds further dependence).
 
 ## Arms (seeds 8, 9, 10; Pre-registration 12's settings: 16 problems per step, AdamW 1e-6, 150 steps, 512 tokens; same problems per step as B)
 
@@ -24,7 +25,9 @@ each group.
 - **AC (frontier-value allocation):** extras in proportion to the frontier value of one rollout under
   the model, v(c) = max(0, E[p^2 (1 - p)^2 (16 (1 - p)^15 - lambda)]), p ~ Beta(c + 1/2, 4 - c + 1/2),
   lambda = 0.37 (Dr. GRPO's observed pass@16-vs-pass@1 slope, steps 50-150). With 4 pilot rollouts only
-  c = 0 has positive value, so the extras go to problems with no pilot success. Dr. GRPO's fixed normalizer.
+  c = 0 has positive value, so the extras go to problems with no pilot success; when those reach the
+  32-rollout cap, or when no problem has c = 0, the remaining extras are spread uniformly over the other
+  problems (largest-remainder rounding). Dr. GRPO's fixed normalizer.
 - **AV (signal allocation, control):** extras in proportion to E[p (1 - p)] under the same posterior.
   Fixed normalizer.
 - **HR (HORA, 2605.07114, control):** greedy on the marginal posterior hit gain with a Beta(1, 1)
@@ -54,9 +57,12 @@ reported.
 3. **Beyond HORA:** AC against HR's trajectory at least +1 pp, 95% interval above 0.
 Holm over rules 1-3. If rule 1 passes: confirmation on the fresh 512 problems
 (`data/confirm_fresh_512.json`), same sign and 90% interval excluding 0.
-4. **Forecast accuracy (reported):** for each arm, the observed gain over B's envelope compared with
-   the forecast mean of each model variant; a forecast counts as confirmed if within 1.5 pp; the
-   ordering AC > HR > AV is compared with the observed ordering.
+4. **Forecast accuracy (reported):** at the same coordinates as the forecasts, pass@1 = 0.37, 0.40 and
+   0.44: the arm's pass@16 interpolated along its own seed-mean trajectory minus B's seed-mean envelope at
+   the same pass@1. A coordinate outside either range is "not covered" and excluded; with no covered
+   coordinate the arm's forecast check is "insufficient overlap". A forecast counts as confirmed if the
+   mean over covered coordinates is within 1.5 pp of the forecast mean at the same coordinates (each
+   model variant reported); the ordering AC > HR > AV is compared with the observed ordering.
 
 Reported without a rule: group sizes by pilot count; pass@16 by base-count stratum; each arm against
 G32's trajectory where pass@1 ranges overlap; generation time. Prior work: HORA (posterior hit
