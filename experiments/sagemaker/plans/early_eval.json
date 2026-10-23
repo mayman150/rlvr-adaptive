@@ -1,0 +1,78 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "B8",
+    "sub": "B8",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "10,20,30,40,50",
+     "--sampled-steps",
+     "10,20,30,40,50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B9",
+    "sub": "B9",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "10,20,30,40,50",
+     "--sampled-steps",
+     "10,20,30,40,50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B10",
+    "sub": "B10",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "10,20,30,40,50",
+     "--sampled-steps",
+     "10,20,30,40,50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}
