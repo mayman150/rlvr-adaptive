@@ -31,3 +31,17 @@ Registered procedure via `analyze_v12`/`analyze_v14` functions (TAR and G32 cont
 Mean per-problem margin m_x (nats per token), rare / medium problems:
 - B seed 8: base 0.5262 / 0.6444; step 50 0.5394 / 0.6587; step 100 0.5462 / 0.6653; step 150 0.5509 / 0.6697.
 - S32 seed 9: step 0 0.5648 / 0.6973; step 50 0.5693 / 0.7019; step 100 0.5728 / 0.7057; step 150 0.5752 / 0.7075.
+
+## Update, October 23 23:30 UTC
+
+**Long Dr. GRPO run (seed 13), steps 0-250** (pass@1, pass@16): (14.1, 62.6), (36.6, 72.0), (40.3, 71.1),
+(43.5, 74.1), (48.3, 76.5), (51.7, 78.6). Other runs against this single-seed trajectory at matched
+pass@1 (mean over checkpoints in range; B's seeds 8-10 sit at +0.47, the reference seed's own noise):
+S32 +2.38 (10/12), G32 +0.60 (4/6), CM +1.73, U32 +1.74, D32 +1.06, C05 +0.82 (9/9 each).
+BBG seed 9: steps 50/100/150 at pass@1 18.4/24.8/29.8, +1.32/+2.60/+1.37 against the trajectory, but in
+the base-to-step-50 segment, where the reference is a straight chord (biased low for a concave curve).
+
+**Check 17, four of six lanes:** margin change on rare / medium problems at step 150: B seed 8
++0.025/+0.025, seed 10 +0.023/+0.024; S32 seed 9 +0.049/+0.063, seed 10 +0.058/+0.070 (of which
++0.039/+0.053 and +0.045/+0.057 at step 0, after the supervised stage). Reading 1 ("B transfers little
+to rare problems") is not supported in either seed; reading 2 (S32 above B on rare problems) holds.
