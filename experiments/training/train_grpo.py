@@ -587,9 +587,14 @@ def allocated_rollouts(runner, args, step, batch, texts):
     first = runner.generate(texts, n0, args.max_new, args.seed * 100003 + step)
     r1 = [reward(runner.tok.decode(r), batch[k // n0]["answer"]) for k, (_, r) in enumerate(first)]
     c1 = [sum(r1[j * n0:(j + 1) * n0]) for j in range(P)]
-    value = (lambda c: allocation_value(c, n0, args.coverage_k)) if args.alloc_value == "coverage" else \
-        (lambda c: (c + 0.5) * (n0 - c + 0.5) / ((n0 + 1.0) * (n0 + 2.0)))  # variance: posterior mean of p (1 - p)
-    extra = allocate_extra([value(c) for c in c1], total - P * n0, args.alloc_cap - n0)
+    if args.alloc_value == "hora":
+        extra = hora_allocation(c1, n0, total - P * n0, args.alloc_cap - n0)
+    else:
+        value = {"coverage": lambda c: allocation_value(c, n0, args.coverage_k),
+                 "law": lambda c: law_value(c, n0, args.coverage_k, args.alloc_lambda),
+                 "variance": lambda c: (c + 0.5) * (n0 - c + 0.5) / ((n0 + 1.0) * (n0 + 2.0))}[args.alloc_value]
+        extra = allocate_extra([value(c) for c in c1], total - P * n0, args.alloc_cap - n0)
+    assert sum(extra) == total - P * n0, "allocation must use the whole budget"
     items = [texts[j] for j in range(P) for _ in range(extra[j])]
     second = runner.generate(items, 1, args.max_new, args.seed * 100003 + step + 104729) if items else []
     r2 = [reward(runner.tok.decode(r), batch[j]["answer"]) for j, (_, r) in zip([j for j in range(P) for _ in range(extra[j])], second)]
@@ -599,6 +604,7 @@ def allocated_rollouts(runner, args, step, batch, texts):
         rewards += r1[j * n0:(j + 1) * n0] + r2[k2:k2 + extra[j]]
         sizes.append(n0 + extra[j])
         k2 += extra[j]
+    assert len(answers) == len(rewards) == total == sum(sizes)
     stats = {"sizes": sizes, "first_counts": c1, "max": max(sizes), "min": min(sizes)}
     return answers, rewards, sizes, stats
 
@@ -713,6 +719,32 @@ def allocation_value(c, n, k):
     a, b = c + 0.5, n - c + 0.5
     lbeta = lambda x, y: math.lgamma(x) + math.lgamma(y) - math.lgamma(x + y)
     return k * math.exp(lbeta(a + 1, b + k) - lbeta(a, b))
+
+
+def law_value(c, n, k=16, lam=0.37):
+    """Frontier value of one extra rollout under the frontier law: E[p^2 (1-p)^2 (k (1-p)^(k-1) - lam)] with
+    p ~ Beta(c + 1/2, n - c + 1/2) (per-rollout log-odds step p (1-p) times the matched-pass@1 frontier slope
+    d pass@k / d theta - lam d pass@1 / d theta), clipped at 0; lam = Dr. GRPO's observed frontier slope."""
+    a, b = c + 0.5, n - c + 0.5
+    lb = lambda x, y: math.lgamma(x) + math.lgamma(y) - math.lgamma(x + y)
+    v = k * math.exp(lb(a + 2, b + k + 1) - lb(a, b)) - lam * math.exp(lb(a + 2, b + 2) - lb(a, b))
+    return max(v, 0.0)
+
+
+def hora_allocation(counts, n0, extra, cap_each):
+    """HORA (2605.07114): greedy on the marginal posterior hit gain M_i(l) = B(a_i + 1, b_i + l) / B(a_i, b_i),
+    Beta(1, 1) prior, a_i = 1 + c_i, b_i = 1 + n0 - c_i; at most cap_each extras per problem."""
+    a = [1.0 + c for c in counts]
+    b = [1.0 + n0 - c for c in counts]
+    m = [ai / (ai + bi) for ai, bi in zip(a, b)]
+    out = [0] * len(counts)
+    for _ in range(extra):
+        i = max((j for j in range(len(counts)) if out[j] < cap_each), key=lambda j: m[j], default=None)
+        if i is None:
+            break
+        out[i] += 1
+        m[i] *= (b[i] + out[i] - 1) / (a[i] + b[i] + out[i])
+    return out
 
 
 def allocate_extra(values, extra, cap_each):
@@ -1012,7 +1044,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     assert args.prefix_rollouts <= args.group and args.prefix_anneal_steps > 0, "prefix rollouts must fit in a group"
     assert not (args.alloc_first > 0 and (args.reuse > 1 or surrogate_flags(args) or args.diagnostics or args.prefix_rollouts or args.complete_groups
                                           or args.unlikely_beta > 0 or args.bbg_k > 0 or arm == "psrnoise")), "allocation is implemented for the plain on-policy loss"
-    assert args.alloc_first == 0 or args.alloc_first * args.prompts_per_step <= args.prompts_per_step * args.group, "stage 1 exceeds the budget"
+    assert args.alloc_first == 0 or args.alloc_first <= args.group <= args.alloc_cap, "allocation needs alloc_first <= group <= alloc_cap"
     tar = None
     if args.tar_archive:
         assert arm == "baseline" and args.memory_lambda == 0 and not (args.seed_archive or args.sft_archive), \
@@ -1134,7 +1166,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 for n_j in alloc_n:
                     g = rewards[k0:k0 + n_j]
                     m = sum(g) / len(g)
-                    adv.extend(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, n_j, args.train_k) for r in g)
+                    scale = G / n_j if args.alloc_norm == "group" else 1.0  # HORA: each problem keeps equal weight
+                    adv.extend(scale * fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, n_j, args.train_k) for r in g)
                     groups.append([sum(g), n_j])
                     k0 += n_j
             else:
@@ -1400,8 +1433,12 @@ def main():
     parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
     parser.add_argument("--alloc-first", type=int, default=0, help="two-stage allocation: rollouts per problem in stage 1 (0: off)")
     parser.add_argument("--alloc-cap", type=int, default=32, help="maximum rollouts per problem under allocation")
-    parser.add_argument("--alloc-value", default="coverage", choices=("coverage", "variance"),
-                        help="coverage: posterior mean of k p (1-p)^k (frontier gain per rollout); variance: of p (1-p) (signal per rollout)")
+    parser.add_argument("--alloc-value", default="coverage", choices=("coverage", "law", "variance", "hora"),
+                        help="law: frontier value per rollout under the frontier law; variance: posterior mean of p (1-p); "
+                             "hora: HORA's greedy hit utility; coverage: posterior mean of k p (1-p)^k")
+    parser.add_argument("--alloc-lambda", type=float, default=0.37, help="matched-pass@1 frontier slope used by --alloc-value law")
+    parser.add_argument("--alloc-norm", default="global", choices=("global", "group"),
+                        help="global: Dr. GRPO's fixed normalizer; group: each problem's terms scaled by group / n_i (HORA)")
     parser.add_argument("--memory-anneal-steps", type=int, default=0, help="replay strength falls linearly to 0 over these steps (0: constant)")
     parser.add_argument("--bbg-k", type=int, default=0, help="Bayesian boundary gating reference k (Yuan et al. 2026; 0: off)")
     parser.add_argument("--bbg-tau", type=float, default=0.01)

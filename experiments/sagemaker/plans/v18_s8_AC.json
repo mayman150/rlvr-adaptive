@@ -40,7 +40,9 @@
      "--alloc-cap",
      "32",
      "--alloc-value",
-     "coverage"
+     "law",
+     "--alloc-lambda",
+     "0.37"
     ]
    ]
   ]

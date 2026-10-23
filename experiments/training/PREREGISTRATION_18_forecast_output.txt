@@ -1,7 +1,9 @@
 deep samples: 232 of 309 questions, 2688 successes in 59392 draws
 frozen law (32-sample counts, tau -0.20)
-   coverage allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: +2.41 / +2.66 / +3.03  (mean +2.70)
-   variance allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: -1.20 / -1.26 / -1.31  (mean -1.26)
-deep-sample counts, tau_deep +0.20
-   coverage allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: +1.46 / +1.59 / +1.74  (mean +1.60)
-   variance allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: -0.74 / -0.79 / -0.77  (mean -0.77)
+   law     : pass@16 gain at pass@1 0.37/0.40/0.44: +3.91 / +4.32 / +4.79 (mean +4.34); c=0 stratum at 0.44: +6.7
+   variance: pass@16 gain at pass@1 0.37/0.40/0.44: -1.09 / -1.14 / -1.17 (mean -1.13); c=0 stratum at 0.44: -1.1
+   hora    : pass@16 gain at pass@1 0.37/0.40/0.44: +0.12 / +0.16 / +0.17 (mean +0.15); c=0 stratum at 0.44: +0.2
+deep-sample counts (3 of 4 shards), tau_deep +0.20
+   law     : pass@16 gain at pass@1 0.37/0.40/0.44: +2.36 / +2.55 / +2.78 (mean +2.56); c=0 stratum at 0.44: +4.8
+   variance: pass@16 gain at pass@1 0.37/0.40/0.44: -0.70 / -0.72 / -0.73 (mean -0.72); c=0 stratum at 0.44: -1.0
+   hora    : pass@16 gain at pass@1 0.37/0.40/0.44: +0.06 / +0.06 / +0.09 (mean +0.07); c=0 stratum at 0.44: +0.1
