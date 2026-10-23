@@ -577,6 +577,32 @@ def surrogate_flags(args):
     return args.reuse > 1 or args.length_norm or args.norm_selected
 
 
+def allocated_rollouts(runner, args, step, batch, texts):
+    """Two-stage allocation at a fixed total of prompts_per_step x group rollouts: alloc_first per problem,
+    then the rest distributed in proportion to allocation_value (k = coverage_k) of each problem's first-stage
+    counts, at most alloc_cap per problem. Returns answers and rewards grouped by problem, the group sizes,
+    and statistics."""
+    P, n0 = len(batch), args.alloc_first
+    total = args.prompts_per_step * args.group
+    first = runner.generate(texts, n0, args.max_new, args.seed * 100003 + step)
+    r1 = [reward(runner.tok.decode(r), batch[k // n0]["answer"]) for k, (_, r) in enumerate(first)]
+    c1 = [sum(r1[j * n0:(j + 1) * n0]) for j in range(P)]
+    value = (lambda c: allocation_value(c, n0, args.coverage_k)) if args.alloc_value == "coverage" else \
+        (lambda c: (c + 0.5) * (n0 - c + 0.5) / ((n0 + 1.0) * (n0 + 2.0)))  # variance: posterior mean of p (1 - p)
+    extra = allocate_extra([value(c) for c in c1], total - P * n0, args.alloc_cap - n0)
+    items = [texts[j] for j in range(P) for _ in range(extra[j])]
+    second = runner.generate(items, 1, args.max_new, args.seed * 100003 + step + 104729) if items else []
+    r2 = [reward(runner.tok.decode(r), batch[j]["answer"]) for j, (_, r) in zip([j for j in range(P) for _ in range(extra[j])], second)]
+    answers, rewards, sizes, k2 = [], [], [], 0
+    for j in range(P):
+        answers += first[j * n0:(j + 1) * n0] + second[k2:k2 + extra[j]]
+        rewards += r1[j * n0:(j + 1) * n0] + r2[k2:k2 + extra[j]]
+        sizes.append(n0 + extra[j])
+        k2 += extra[j]
+    stats = {"sizes": sizes, "first_counts": c1, "max": max(sizes), "min": min(sizes)}
+    return answers, rewards, sizes, stats
+
+
 def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, rescue, disc_c):
     """Replace the last `prefix_rollouts` answers of each rare question's group (base successes c <= prefix_max_c of 32,
     or no success at its latest attempt, and a stored success) with rollouts that continue from the first
@@ -678,6 +704,39 @@ def tar_backward(runner, args, bank, rng):
         if torch.is_tensor(loss):
             (args.tar_lambda * loss / len(pick)).backward()
     return {"replayed": len(pick), "active": active, "mean_gate": sum(gates) / len(gates), "weighted_tokens": tokens}
+
+
+def allocation_value(c, n, k):
+    """Expected frontier gain per extra rollout on a problem with c successes of n:
+    posterior mean of k p (1 - p)^k under p ~ Beta(c + 1/2, n - c + 1/2) (the pass@k slope
+    k (1 - p)^(k-1) times the per-rollout signal p (1 - p))."""
+    a, b = c + 0.5, n - c + 0.5
+    lbeta = lambda x, y: math.lgamma(x) + math.lgamma(y) - math.lgamma(x + y)
+    return k * math.exp(lbeta(a + 1, b + k) - lbeta(a, b))
+
+
+def allocate_extra(values, extra, cap_each):
+    """Integer allocation of `extra` rollouts proportional to `values`, at most cap_each per problem
+    (largest remainders; overflow redistributed). Ties and all-zero values fall back to uniform."""
+    m = len(values)
+    out = [0] * m
+    left, active = extra, list(range(m))
+    while left > 0 and active:
+        tot = sum(values[i] for i in active)
+        share = {i: (values[i] / tot if tot > 0 else 1.0 / len(active)) * left for i in active}
+        base = {i: min(int(share[i]), cap_each - out[i]) for i in active}
+        for i in active:
+            out[i] += base[i]
+        left -= sum(base.values())
+        order = sorted(active, key=lambda i: -(share[i] - int(share[i])))
+        for i in order:
+            if left == 0:
+                break
+            if out[i] < cap_each:
+                out[i] += 1
+                left -= 1
+        active = [i for i in active if out[i] < cap_each]
+    return out
 
 
 def coverage_weight(c, n, k):
@@ -951,6 +1010,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
     assert args.prefix_rollouts <= args.group and args.prefix_anneal_steps > 0, "prefix rollouts must fit in a group"
+    assert not (args.alloc_first > 0 and (args.reuse > 1 or surrogate_flags(args) or args.diagnostics or args.prefix_rollouts or args.complete_groups
+                                          or args.unlikely_beta > 0 or args.bbg_k > 0 or arm == "psrnoise")), "allocation is implemented for the plain on-policy loss"
+    assert args.alloc_first == 0 or args.alloc_first * args.prompts_per_step <= args.prompts_per_step * args.group, "stage 1 exceeds the budget"
     tar = None
     if args.tar_archive:
         assert arm == "baseline" and args.memory_lambda == 0 and not (args.seed_archive or args.sft_archive), \
@@ -1052,8 +1114,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 n_pool = pps * args.reuse
                 batch = [problems[order[(step * pps + j) % len(order)]] for j in range(n_pool)]
                 texts = [build_prompt(runner.tok, q["question"]) for q in batch]
-                pool_answers = runner.generate(texts, G, args.max_new, args.seed * 100003 + step)
-                pool_rewards = [reward(runner.tok.decode(r), batch[k // G]["answer"]) for k, (_, r) in enumerate(pool_answers)]
+                if args.alloc_first > 0:
+                    pool_answers, pool_rewards, alloc_n, extra["alloc"] = allocated_rollouts(runner, args, step, batch, texts)
+                else:
+                    pool_answers = runner.generate(texts, G, args.max_new, args.seed * 100003 + step)
+                    pool_rewards = [reward(runner.tok.decode(r), batch[k // G]["answer"]) for k, (_, r) in enumerate(pool_answers)]
                 if args.prefix_rollouts > 0:
                     extra["prefix"] = prefix_rollouts(runner, args, step, batch, texts, pool_answers, pool_rewards,
                                                       [order[(step * pps + j) % len(order)] for j in range(n_pool)], rescue, disc_c)
@@ -1063,12 +1128,22 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             rewards = pool_rewards[j0:j0 + pps * G]
             old_lp = pool_old[j0:j0 + pps * G] if surrogate else None
             adv = []
-            for j in range(pps):
-                g = rewards[j * G:(j + 1) * G]
-                m = sum(g) / len(g)
-                for r in g:
-                    adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
-            groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
+            if args.alloc_first > 0:
+                # variable group sizes: Dr. GRPO advantages within each problem's own group
+                groups, k0 = [], 0
+                for n_j in alloc_n:
+                    g = rewards[k0:k0 + n_j]
+                    m = sum(g) / len(g)
+                    adv.extend(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, n_j, args.train_k) for r in g)
+                    groups.append([sum(g), n_j])
+                    k0 += n_j
+            else:
+                for j in range(pps):
+                    g = rewards[j * G:(j + 1) * G]
+                    m = sum(g) / len(g)
+                    for r in g:
+                        adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
+                groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
             keys = [order[(step * pps + j) % len(order)] for j in range(pps)] if args.reuse == 1 else None
             if args.unlikely_beta > 0:
@@ -1323,6 +1398,10 @@ def main():
     parser.add_argument("--prefix-frac", type=float, default=0.5)
     parser.add_argument("--prefix-anneal-steps", type=int, default=100)
     parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
+    parser.add_argument("--alloc-first", type=int, default=0, help="two-stage allocation: rollouts per problem in stage 1 (0: off)")
+    parser.add_argument("--alloc-cap", type=int, default=32, help="maximum rollouts per problem under allocation")
+    parser.add_argument("--alloc-value", default="coverage", choices=("coverage", "variance"),
+                        help="coverage: posterior mean of k p (1-p)^k (frontier gain per rollout); variance: of p (1-p) (signal per rollout)")
     parser.add_argument("--memory-anneal-steps", type=int, default=0, help="replay strength falls linearly to 0 over these steps (0: constant)")
     parser.add_argument("--bbg-k", type=int, default=0, help="Bayesian boundary gating reference k (Yuan et al. 2026; 0: off)")
     parser.add_argument("--bbg-tau", type=float, default=0.01)

@@ -1,0 +1,7 @@
+deep samples: 232 of 309 questions, 2688 successes in 59392 draws
+frozen law (32-sample counts, tau -0.20)
+   coverage allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: +2.41 / +2.66 / +3.03  (mean +2.70)
+   variance allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: -1.20 / -1.26 / -1.31  (mean -1.26)
+deep-sample counts, tau_deep +0.20
+   coverage allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: +1.46 / +1.59 / +1.74  (mean +1.60)
+   variance allocation: predicted pass@16 gain at pass@1 0.37/0.40/0.44: -0.74 / -0.79 / -0.77  (mean -0.77)
