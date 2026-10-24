@@ -1,0 +1,5 @@
+us-east-1:worth-v18e-ACa-s9-20261024-010312
+us-east-1:worth-v18e-ACb-s9-20261024-010402
+us-east-2:worth-v18e-ACa-s10-20261024-010544
+us-east-2:worth-v18e-ACb-s10-20261024-010552
+us-east-2:worth-v18e-AVa-s10-20261024-010641

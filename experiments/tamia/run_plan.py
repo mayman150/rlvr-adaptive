@@ -1,6 +1,6 @@
 """Run a SageMaker-style plan (training "gpus" lanes or "eval_lanes") on one Tamia node, one lane per GPU.
 
-Usage: python run_plan.py PLAN OUT [--ckpts DIR] [--model DIR]
+Usage: python run_plan.py PLAN OUT [--ckpts DIR] [--model DIR] [--gpus N]
 Training lanes write to OUT/<name>; evaluation lanes read OUT-independent checkpoints from --ckpts/<sub> and
 write to OUT/<name>/eval. Mirrors experiments/sagemaker/entry.py.
 """
@@ -16,12 +16,12 @@ from pathlib import Path
 CODE = Path(__file__).resolve().parent.parent / "training"
 
 
-def guarded(fn, gpu, specs, status):
+def guarded(fn, lane, gpu, specs, status):
     try:
         fn(gpu, specs)
     except Exception as e:  # a lane that crashes must not look successful
-        status[f"lane{gpu}"] = f"exception: {e!r}"
-        print(f"lane {gpu} exception: {e!r}", flush=True)
+        status[f"lane{lane}"] = f"exception: {e!r}"
+        print(f"lane {lane} (gpu {gpu}) exception: {e!r}", flush=True)
 
 
 def run_one(name, cmd, gpu, status, log):
@@ -39,6 +39,7 @@ def main():
     ap.add_argument("out")
     ap.add_argument("--ckpts", default=None)
     ap.add_argument("--model", required=True)
+    ap.add_argument("--gpus", type=int, default=0, help="lane k runs on GPU k mod N (default: one lane per GPU)")
     args = ap.parse_args()
     plan, out = json.loads(Path(args.plan).read_text()), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -62,7 +63,8 @@ def main():
                 run_one(name, cmd, gpu, status, log)
         lanes = plan["gpus"]
     for g, specs in enumerate(lanes):
-        threads.append(threading.Thread(target=guarded, args=(lane, g, specs, status)))
+        gpu = g % args.gpus if args.gpus else g
+        threads.append(threading.Thread(target=guarded, args=(lane, g, gpu, specs, status)))
         threads[-1].start()
     for t in threads:
         t.join()
