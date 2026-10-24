@@ -1,0 +1,3 @@
+us-west-2:worth-v21-B0-s8-20261024-183138
+us-west-2:worth-v21-B1-s8-20261024-183148
+us-east-1:worth-v21-HQ-s9-20261024-183152

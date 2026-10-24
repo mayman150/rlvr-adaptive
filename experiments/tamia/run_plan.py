@@ -1,6 +1,6 @@
 """Run a SageMaker-style plan (training "gpus" lanes or "eval_lanes") on one Tamia node, one lane per GPU.
 
-Usage: python run_plan.py PLAN OUT [--ckpts DIR] [--model DIR] [--gpus N]
+Usage: python run_plan.py PLAN OUT [--ckpts DIR] [--model DIR] [--gpus N] [--first-gpu K]
 Training lanes write to OUT/<name>; evaluation lanes read OUT-independent checkpoints from --ckpts/<sub> and
 write to OUT/<name>/eval. Mirrors experiments/sagemaker/entry.py.
 """
@@ -40,6 +40,7 @@ def main():
     ap.add_argument("--ckpts", default=None)
     ap.add_argument("--model", required=True)
     ap.add_argument("--gpus", type=int, default=0, help="lane k runs on GPU k mod N (default: one lane per GPU)")
+    ap.add_argument("--first-gpu", type=int, default=0, help="offset added to every lane's GPU index")
     args = ap.parse_args()
     plan, out = json.loads(Path(args.plan).read_text()), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -63,7 +64,7 @@ def main():
                 run_one(name, cmd, gpu, status, log)
         lanes = plan["gpus"]
     for g, specs in enumerate(lanes):
-        gpu = g % args.gpus if args.gpus else g
+        gpu = args.first_gpu + (g % args.gpus if args.gpus else g)
         threads.append(threading.Thread(target=guarded, args=(lane, g, gpu, specs, status)))
         threads[-1].start()
     for t in threads:
