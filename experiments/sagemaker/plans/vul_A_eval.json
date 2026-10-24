@@ -1,0 +1,201 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "HR8",
+    "sub": "HR8",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "HR8",
+    "sub": "HR8",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "HR9",
+    "sub": "HR9",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "HR9",
+    "sub": "HR9",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "HR10",
+    "sub": "HR10",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "HR10",
+    "sub": "HR10",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "HQ8",
+    "sub": "HQ8",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "0,50,100,150",
+     "--sampled-steps",
+     "0,50",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "HQ8",
+    "sub": "HQ8",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "512",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "0,50,100,150",
+     "--sampled-steps",
+     "100,150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ]
+ ]
+}
