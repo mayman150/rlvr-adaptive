@@ -529,7 +529,7 @@ Early-token entropy floor & 12.6--12.8 & 56.1--58.6 & collapsed (below the base 
 \textbf{Reading.} Memory is the only family that lifts the curve; at the same strength, coverage weighting gives $+2.1$ against $+0.2$ for uniform replay (one seed, noise about $\pm2$). Entropy-based fixes do not help or break learning, as the diagnosis predicted.
 
 \subsection{The main runs: results}
-Seeds 8, 9, 10; Dr.\ GRPO (B), coverage memory (CM, $\lambda=1$), uniform memory (M) and the unlikeliness reward (U), 150 steps; evaluation on 511 held-out problems with 32 samples at steps 50, 100, 150, B also at $T=1.15$ and $1.3$; greedy accuracy on 3,382 test problems. Rule: CM \emph{moves the curve} if at least $+2$ points above B's trajectory-and-temperature envelope with the 95\% interval above 0 in every seed.
+Seeds 8, 9, 10; Dr.\ GRPO (B), coverage memory (CM, $\lambda=1$), uniform memory (M) and the unlikeliness reward (U), 150 steps; evaluation on 511 held-out problems with 32 samples at steps 50, 100, 150, B also at $T=1.15$ and $1.3$; greedy accuracy on 3,382 test problems. Rule: CM \emph{moves the curve} if its pooled mean pass@16 gain over B's trajectory-and-temperature envelope is at least $+2$ points, the pooled 95\% interval is above 0, and the mean gain is positive in every seed.
 
 \begin{center}\small
 \resizebox{\linewidth}{!}{\begin{tabular}{@{}lcccc@{}}
@@ -544,7 +544,7 @@ Unlikeliness (U) & $+0.14$ & $[-0.32,+0.62]$ & 43.4 / 74.0 & 47.6\\
 \end{tabular}}
 \end{center}
 \begin{found}
-Registered verdict for CM: \textbf{average agreement} (90\% interval $[+0.63,+1.69]$ inside $\pm2$). A small, consistent lift, larger than uniform replay and the published unlikeliness reward, but half the registered bar. Coverage weighting over uniform replay ($+0.66$) misses its $+1$ bar; CM's step-150 pass@1 is 2.05 points below B's; greedy accuracy differs by $-0.18$, 90\% $[-0.83,+0.43]$. Both memory arms used the archive on 100\% of steps after step 20. Interpretation: a group of 8 finds a success on a problem with $p=1/16$ only 40\% of the time ($p=1/32$: 22\%), so the policy's own archive misses most of the problems whose pass@16 can still rise.
+Registered verdict for CM: \textbf{average agreement} (90\% interval $[+0.63,+1.69]$ inside $\pm2$). A small, consistent lift, larger than uniform replay and the published unlikeliness reward, but half the registered bar. Coverage weighting over uniform replay ($+0.66$) misses its $+1$ bar; CM's step-150 pass@1 is 2.05 points below B's; greedy accuracy differs by $-0.18$, 90\% $[-0.83,+0.43]$. Both memory arms used the archive on 100\% of steps after step 20. A possible explanation is limited discovery: a group of 8 finds a success with probability $1-(1-p)^8$, about 40\% at $p=1/16$ and 22\% at $p=1/32$. The replay result does not establish discovery as the bottleneck.
 \end{found}
 
 %=====================================================================
@@ -555,27 +555,27 @@ Before choosing the next method, we searched arXiv (October 21) for 2025--2026 w
 \begin{found}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
 \item \textbf{Theory, partly prior:} binary-reward RL as ascent on transforms of per-problem success (Davis and Recht, 2510.13651), weight-dependent convergence (Heckel et al., 2602.11128), pass@$k$ advantage shaping as surrogate rewards (Thrampoulidis et al., 2510.23049), pass@$k$ gradients as reweighted pass@1 gradients (2511.16231). Barakat et al.\ (2602.21189, NeurIPS 2026) show that reweighting toward hard prompts can rotate the aggregate update through shared parameters, so ``one curve'' must be an empirical claim.
-\item \textbf{Methods, largely covered in pieces:} base-seeded replay with a likelihood gate (TAR, 2610.24236); base-model archives for replay (EliteReplay, 2610.22290); a Bayesian pass@16 gate close to our coverage weight (BBG, 2606.15455); off-policy rescue of zero-success groups (LSPO, 2607.27787; LUFFY, 2504.14945; ExGRPO, 2510.02245); rollout allocation by posterior hit utility with per-problem normalization (HORA, 2605.07114); Knapsack RL (2509.25849); DARS (2508.13755), which adds rollouts for low-accuracy problems and plots Pass@1--Pass@$K$ curves; MaxRL (2602.02710, ICML 2026); transfer-driven curricula (TAC, 2606.25178; GradAlign, 2602.21492).
-\item \textbf{Not found:} the noise-injection test; matched-pass@1 evaluation of advantage rules with intervals and registered rules on two families; the temperature control. DARS compares Pass@1--Pass@$K$ curves informally (no intervals or protocol).
+\item \textbf{Methods with substantial overlap:} base-seeded replay with a likelihood gate (TAR, 2610.24236); base-model archives for replay (EliteReplay, 2610.22290); Bayesian boundary gating (BBG, 2606.15455); off-policy assistance for zero-success groups (LSPO, 2607.27787; LUFFY); rollout allocation by posterior hit utility with per-problem normalization (HORA, 2605.07114); Knapsack RL (2509.25849); DARS (2508.13755), which adds rollouts for low-accuracy problems and plots Pass@1--Pass@$K$ curves; MaxRL (2602.02710, ICML 2026). BBG gates on $\E[16(1-p)^{15}]$, whereas CM samples replay problems using $\E[16p(1-p)^{15}]$.
+\item \textbf{Not identified in this search:} a mean-preserving noise intervention; matched-pass@1 evaluation of advantage rules with intervals and registered decision rules on two families; the temperature control. DARS makes an informal matched-pass@1 comparison, without intervals or a registered protocol.
 \end{itemize}
-Codex's re-assessment after the search: about 5/10 for the diagnosis alone; the method side needs to beat the closest published methods, not only Dr.\ GRPO.
+The literature review narrowed the novelty claim and motivated comparisons with the closest published methods.
 \end{found}
 
 %=====================================================================
 \section{Seeding the memory from the base model (Pre-registration 14)}\label{sec:p14}
 \begin{why}
-Pre-registration 12 showed the bottleneck is discovery: the policy rarely finds a success on a rarely solved problem. Thirty-two base-model samples per problem raise the chance of finding one to 87\% at $p=1/16$ and 64\% at $p=1/32$. Seeding the archive with these discoveries tests whether replay can reach the tail.
+Pre-registration 12 suggested a discovery limitation but did not establish it. Thirty-two independent samples find at least one success with probability $1-(1-p)^{32}$, about 87\% at $p=1/16$ and 64\% at $p=1/32$. Seeding the archive tests whether additional base-model discoveries improve replay.
 \end{why}
-\textbf{Discovery.} The base model sampled 32 answers for each of the 3,920 training problems (125,440 completions): 3,433 problems solved at least once; 3,235 with a retained success (correct, stop-terminated, parseable final box), including 988 of the 1,181 problems with 1--4 successes.
+\textbf{Discovery.} The base model sampled 32 answers for each of the 3,920 training problems (125,440 completions): 3,433 problems had at least one success, and 3,235 had a retained success before the trainer's exclusions. Retained answers must verify, terminate with a stop token and contain a parseable final box. After retokenization without special tokens, the answer must contain at most 511 tokens; the appended stop token completes the 512-token budget.
 
-\textbf{Arms} (seeds 8--10, Pre-registration 12's settings): D32, seeded coverage-weighted memory at $\lambda=0.5$ (candidate); U32, seeded uniform memory; S32, a supervised warm start on the same successes (AdamW $10^{-5}$, 2.46 million response tokens) followed by Dr.\ GRPO; C05, unseeded coverage memory at $\lambda=0.5$; G32, Dr.\ GRPO with groups of 32 (amendment 2); T32, TAR's gated replay on the same archive (amendment 4). Holm's correction over seven tests; a joint win needed $\ge+2$ points and step-150 pass@1 within $\pm1$ of B.
+\textbf{Arms} (seeds 8--10, Pre-registration 12's settings): D32, seeded coverage-weighted memory at $\lambda=0.5$ (candidate); U32, seeded uniform memory; S32, a supervised warm start on the same successes (AdamW $10^{-5}$, 2.46 million response tokens) followed by Dr.\ GRPO; C05, unseeded coverage memory at $\lambda=0.5$; G32, Dr.\ GRPO with groups of 32 (amendment 2); T32, TAR's gated replay on the same archive (amendment 4). A joint win requires a pooled gain $\ge+2$ points, a pooled 95\% interval above 0, positive gains in every seed, and the 90\% interval for step-150 pass@1 minus B contained in $[-1,+1]$. Claims must also survive Holm's correction over seven tests.
 
 \begin{found}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-\item D32 against B's envelope: $+1.02$, 95\% $[+0.23,+1.68]$, per seed $+0.71$, $+1.23$, $+1.12$: average agreement; step-150 pass@1 5.35 points below B. No joint win.
-\item D32 against U32's trajectory $-0.39$ (coverage weighting does not help); against C05's $+0.92$ (seeding adds less than $+1$); against S32's: insufficient overlap. U32 against B (reported): $+1.37$; C05: $+0.33$.
-\item S32 and G32 leave B's accuracy range: both end at step-150 pass@1 52.5 (B: 44.1), pass@16 78.7 and 78.9. S32's pass@16 increase over B is concentrated on problems the base never solved in 32 samples (24.0 $\to$ 34.2, \cref{fig:strata}).
-\item In training, S32 starts at 54--59\% accuracy right after the supervised stage and ends near 71\% (B: 60--63\%); D32 learns the training problems more slowly (56--58\%). About 1,500 of the 3,220 seeded traces were still unretired at step 150. T32's evaluation is pending.
+\item Interim D32 against B's envelope: $+1.02$, 95\% $[+0.23,+1.68]$, per seed $+0.71$, $+1.23$, $+1.12$: average agreement. Step-150 pass@1 is 5.35 points below B, 90\% $[-5.99,-4.74]$. No joint win.
+\item D32 against U32's trajectory: $-0.39$; against C05's: $+0.92$. Neither reaches the registered $+1$ threshold, so superiority of coverage weighting or seeding is not shown. Against S32's trajectory: insufficient overlap. Reported against B: U32 $+1.37$; C05 $+0.33$.
+\item At step 150, S32's three-seed mean pass@1 is 52.5 and pass@16 is 78.7. G32's mean pass@1 over available seeds is also 52.5; B's is 44.1. S32's pass@16 increase is concentrated on problems with no success in 32 base samples, from about 24 to 34 (\cref{fig:strata}).
+\item T32's evaluation is pending.
 \end{itemize}
 \end{found}
 
@@ -591,7 +591,7 @@ Pre-registration 12 showed the bottleneck is discovery: the policy rarely finds 
 At 512 tokens, 48\% of Dr.\ GRPO's sampled answers at step 150 are truncated (S32: 33\%; D32: 59\%). If hard problems need longer answers, part of S32's gain could be ``finishes within the budget''.
 \end{why}
 \begin{found}
-Re-evaluated at 1,024 tokens (partial): the base model reaches pass@1 21.6 and pass@16 79.3 (36.2\% truncated; 14.1 and 62.6 at 512); Dr.\ GRPO seed 10 at step 150 reaches 57.7 and 88.4 (15.5\% truncated; 44.6 and 75.2 at 512); S32 seed 9 reaches 63.8 and 89.7 (4.9\%). Absolute values depend strongly on the budget; the warm start's pass@1 advantage shrinks from about 8.7 to about 6.1 points (different seeds). Every comparison in this document is within one budget.
+Re-evaluated at 1,024 tokens (partial): the base model reaches pass@1 21.6 and pass@16 79.3 (36.2\% truncated; 14.1 and 62.6 at 512); Dr.\ GRPO seed 10 at step 150 reaches 57.7 and 88.4 (15.5\% truncated; 44.6 and 75.2 at 512); S32 seed 9 reaches 63.8 and 89.7 (4.9\%). Absolute scores depend strongly on the response budget. The cross-seed pass@1 contrast is about 8.7 points at 512 tokens and 6.1 at 1,024; this descriptive comparison does not establish a budget mechanism. The registered check depends on S32's step-0 gain at matched pass@1 at both budgets and its 90\% interval, which remain unreported. Frontier contrasts are computed separately within each budget.
 \end{found}
 
 %=====================================================================
@@ -609,7 +609,7 @@ Interim (training complete for most seeds, evaluation partial): BBG progresses m
 \begin{why}
 The PI asked for a method inside RL rather than a supervised stage. Replay delivered far less push than the warm start, so this pilot tests stronger mechanisms on rarely solved problems.
 \end{why}
-\textbf{Candidates} (seed 12, 255 validation problems): AR, annealed replay (seeded coverage replay at $\lambda=4$ falling to 0 by step 100, 16 problems replayed per step); GC, group completion (a stored success appended to a zero-success group as a ninth answer); PG, prefix-guided rollouts (for problems with at most 4 base successes in 32, two of eight rollouts continue from the first $f_t$ of a stored success, $f_t=0.5(1-t/100)$); MXGC, MaxRL with group completion. References: B, S32, SD (S32 plus seeded replay), MXR. Selection: the largest gain $\ge+1.5$ with step-150 pass@1 within 2 points of B.
+\textbf{Candidates} (seed 12, 255 validation problems): AR, annealed replay (seeded coverage replay at $\lambda=4$ falling to 0 by step 100, 16 problems replayed per step); GC, group completion (a stored success appended to a zero-success group as a ninth answer); PG, prefix-guided rollouts (for problems with at most 4 base successes in 32 and a stored success, two of eight rollouts continue from its first fraction $f_t=0.5(1-t/100)_+$); MXGC, MaxRL with group completion. References: B, S32, SD (S32 plus seeded coverage replay at $\lambda=0.5$), MXR. Eligibility requires every registered evaluation and at least two candidate checkpoints inside B's pass@1 range. Selection takes the largest matched-pass@1 gain $\ge+1.5$ among eligible candidates whose step-150 pass@1 is no more than 2 points below B. Candidates within 0.5 points of the largest gain are tied, with preference GC, PG, AR, then MXGC. This pilot ranks candidates; it does not establish an effect.
 \begin{found}
 Interim: AR $+1.30$ and MXGC $+1.12$ at matched pass@1, but with step-150 pass@1 6.6 and 6.5 points below B, so neither qualifies. S32 is 8.5 points above B in pass@1 (beyond B's range). GC and PG are being evaluated; SD and MXR are training.
 \end{found}
@@ -617,17 +617,17 @@ Interim: AR $+1.30$ and MXGC $+1.12$ at matched pass@1, but with step-150 pass@1
 %=====================================================================
 \section{Does training transfer to rarely solved problems? (Check 17)}
 \begin{why}
-An idea discussed with the PI: a problem the policy never solves contributes nothing itself and can only improve through the effect of updates on other problems. If Dr.\ GRPO transferred little to rare problems while the warm start transferred much, a transfer-targeted method would follow. (Codex found that transfer-driven curricula, TAC and GradAlign, already exist, so the method version was dropped; the measurement was kept.)
+Under Dr.\ GRPO, a problem's own sampled gradient contribution is zero when all its rollouts fail. Updates on other problems can still change its success probability through shared parameters. This probe measures changes on held-out problems at different base success rates.
 \end{why}
-\textbf{Probe.} For 395 held-out problems (149 with 1--4 base successes, 246 with 5--16), up to four correct and four incorrect base answers with a parseable final box. For each checkpoint, $\ell(y)=|y|^{-1}\log\pi(y\mid x)$; per problem the margin $m_x=\bar\ell_{\rm correct}-\bar\ell_{\rm incorrect}$; transfer $=\Delta m_x$ relative to the base model.
+\textbf{Probe.} A fixed collection of 2,913 base-model traces covers 395 held-out problems: 149 with 1--4 successes and 246 with 5--16 successes in 32 samples at a 1,024-token budget. Each problem contributes up to four correct and four incorrect answers with parseable final boxes. At each checkpoint, $s_\theta(y\mid x)=|y|^{-1}\log\pi_\theta(y\mid x)$ is measured in nats per response token. The per-problem margin is $m_x=\bar s_{\rm correct}-\bar s_{\rm incorrect}$. Its change from the base model is a likelihood-margin proxy for transfer.
 \begin{found}
-Four of six lanes: Dr.\ GRPO's margin rises by $+0.025$ on both rare and medium problems by step 150 (seed 8), and $+0.023$ and $+0.024$ (seed 10). S32: $+0.049$ and $+0.063$ (seed 9), $+0.058$ and $+0.070$ (seed 10), of which most comes from the supervised stage. The premise that Dr.\ GRPO transfers little to rare problems is \textbf{not supported}.
+Four of six arm--seed pairs are available. At step 150, Dr.\ GRPO's rare/medium margin changes are $+0.025/+0.025$ (seed 8) and $+0.023/+0.024$ (seed 10). S32's are $+0.049/+0.063$ (seed 9) and $+0.058/+0.070$ (seed 10), with most of the increase already present after supervised training. These point estimates do not support a smaller margin change on rare problems. The registered pooled 90\% intervals and length-matched analysis remain unreported.
 \end{found}
 
 %=====================================================================
 \section{A model of the frontier (Pre-registration 17)}\label{sec:p17}
 \begin{why}
-Looking across all per-problem counts, one regularity stood out: the observed frontier looks like what one gets if each problem's log-odds grow only with its own signal. If a frozen model of that kind predicts new methods, model families and budgets, the frontier is a property of the base model's difficulty distribution, and the reward rule only sets the progress.
+The observed trajectories motivate a phenomenological model of per-problem success. We test whether base success counts, a frozen coupling parameter and each checkpoint's observed pass@1 suffice to predict pass@$k$. A successful fit supports this conditional description in the tested regimes; it does not establish that reward rules affect only training speed.
 \end{why}
 \begin{idea}{Model}
 $\theta_x(0)=\log\frac{c_x+a}{n-c_x+b}$ from the base model's counts (Beta$(a,b)$ by moments), $\dot\theta_x=p_x(1-p_x)+\tau\,\overline{p(1-p)}$. A checkpoint is placed where the model's mean success equals its pass@1; the model then predicts pass@$k$ for $k>1$, strata and per-problem counts. $\tau=-0.20$ fitted once on Dr.\ GRPO's nine checkpoints, then frozen (code committed before any test).
@@ -653,20 +653,20 @@ Warm start, from its own step-0 counts & 9 & 3.56 / 9.04 / 7.99 & not met\\
 
 \begin{found}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-\item Within the trained range the model reproduces the frontier of rules it never saw, of a second family and of a second budget; a uniform log-odds shift would put never-solved problems at 70--80 pass@16, the data at 24. Diversity collapse is a state-dependent concentration of success.
-\item After the warm start it fails ($c=0$ stratum $-11.92$ points; refitted $\tau=-0.65$ to $-0.70$): the supervised stage changes the subsequent dynamics.
-\item Deep base sampling (256 more samples on 232 of the 309 problems with $c\le4$): 53\% of the never-solved problems are solved at least once, at a mean rate of 0.93\%; with these counts $\tau=+0.20$, 90\% $[+0.10,+0.35]$: weak positive transfer.
-\item \textbf{Extrapolation fails}: on the 450-step run the frozen model is 2.0 and 3.6 points too low at steps 200 and 250 (1.6 and 2.7 with the deep counts). It describes the frontier within the trained range; it is not a law that extrapolates.
+\item Conditional on observed pass@1, aggregate pass@16 RMSE meets the registered $\le2$-point criterion on T1, T4 and T5. The model also beats the affine alternative in per-problem log-likelihood on T1 and T4. Aggregate agreement masks OLMo stratum errors of $+6.0$ points for problems with no observed base success and $-6.8$ for rarely solved problems, measured as observed minus predicted pass@16.
+\item The warm-start test fails the registered RMSE criterion: 3.56 points. Its $c=0$ stratum is 11.9 points below the prediction; refitted $\tau$ ranges from $-0.65$ to $-0.70$. These results show that the frozen model does not transfer to this regime.
+\item Partial deep sampling (three of four shards; 256 additional samples on 232 of 309 problems with $c\le4$) solves 53\% of the previously never-solved problems at least once; their mean success rate is 0.93\%. The refitted coefficient is $\tau_{\rm deep}=+0.20$, 90\% $[+0.10,+0.35]$, from 200 problem-bootstrap draws. This is a positive fitted coupling term, not a direct measurement of gradient transfer.
+\item The registered longer-training test has no reported verdict in \texttt{RESULTS\_17\_interim.md}. The 450-step reference has checkpoint results through step 250; an extrapolation verdict awaits an archived model-error analysis.
 \end{itemize}
 \end{found}
 
 %=====================================================================
-\section{Faster, not better: the long Dr.\ GRPO run}\label{sec:long}
+\section{Larger groups: an interim comparison with longer training}\label{sec:long}
 \begin{why}
-S32 and G32 leave Dr.\ GRPO's 150-step range, so the registered comparison is undefined for them. A Dr.\ GRPO run to 450 steps (seed 13) supplies the missing reference.
+Late S32 and G32 checkpoints exceed Dr.\ GRPO's 150-step pass@1 range. A reference run planned for 450 steps extends the range for descriptive comparisons.
 \end{why}
 \begin{found}
-Dr.\ GRPO seed 13 reaches (pass@1, pass@16) = (36.6, 72.0), (40.3, 71.1), (43.5, 74.1), (48.3, 76.5), (51.7, 78.6) at steps 50--250. Against this single trajectory at matched pass@1: Dr.\ GRPO's seeds 8--10 $+0.47$ (the reference seed's own noise), \textbf{G32 $+0.60$}, \textbf{S32 $+2.38$}, CM $+1.73$, U32 $+1.74$, D32 $+1.06$, C05 $+0.82$. Four times as many rollouts buy speed, not a better trade-off; Dr.\ GRPO reaches the same point with fewer rollouts (32,000 against 76,800). The warm start is the only clear departure, about two points above. Steps 300--450 and seeds 14--15 are pending.
+Dr.\ GRPO seed 13 reaches (pass@1, pass@16) = (36.6, 72.0), (40.3, 71.1), (43.5, 74.1), (48.3, 76.5), (51.7, 78.6) at steps 50--250. Mean matched-pass@1 differences against this trajectory are: B seeds 8--10 $+0.47$, G32 $+0.60$, S32 $+2.38$, CM $+1.73$, U32 $+1.74$, D32 $+1.06$, C05 $+0.82$. Only 4 of 6 G32 checkpoints and 10 of 12 S32 checkpoints are in range; the four replay arms have 9 of 9 each. These exploratory contrasts use one reference seed and have no reported confidence intervals. At step 250, B uses 32,000 rollouts and reaches pass@1 51.7; at step 150, G32 uses 76,800 and reaches 52.5. The endpoints do not match accuracy exactly. Larger groups progress faster per optimizer step, but a frontier improvement or equivalence is not established. Steps 300--450 and reference seeds 14--15 are pending.
 \end{found}
 
 \begin{figure}[H]
@@ -677,31 +677,31 @@ Dr.\ GRPO seed 13 reaches (pass@1, pass@16) = (36.6, 72.0), (40.3, 71.1), (43.5,
 %=====================================================================
 \section{Allocating rollouts by frontier value (Pre-registration 18, running)}
 \begin{why}
-By \cref{lem:starve-story} below, a rarely solved problem moves only when a group contains a success, which happens with probability about $np$; the number of rollouts it receives is the one lever that reweighting cannot replace. The frozen model makes a quantitative forecast for three ways of spending the same rollout budget.
+A problem's own Dr.\ GRPO gradient contribution requires a mixed-reward group (\cref{lem:starve-story}); updates on other problems can still change its success probability. Allocating more rollouts increases the chance of observing a success on rarely solved problems. The frozen model forecasts three allocations of the same rollout budget.
 \end{why}
-\textbf{Arms} (seeds 8--10; exactly 128 rollouts per step as B: 4 per problem, then 64 extras, at most 32 per problem). AC: extras in proportion to the frontier value under the model, $\max\{0,\E[p^2(1-p)^2(16(1-p)^{15}-\lambda)]\}$, $\lambda=0.37$ (B's observed frontier slope); only problems with no pilot success have positive value. AV: extras in proportion to $\E[p(1-p)]$ (signal per rollout). HR: HORA's greedy hit utility with per-problem normalization. Forecasts (gain over B at matched pass@1, frozen model / deep-count variant): AC $+4.34$ / $+2.56$; HR $+0.15$ / $+0.07$; AV $-1.13$ / $-0.72$. Rules: AC $\ge+2$ against B; AC against AV and against HR each $\ge+1$; Holm over three. Status: AC and AV training on AWS; HR on Vulcan.
+\textbf{Arms} (seeds 8--10; 16 problems and exactly 128 rollouts per step): 4 pilot rollouts per problem, followed by 64 extras, with at most 32 rollouts per problem. AC allocates extras in proportion to $\max\{0,\E[p^2(1-p)^2(16(1-p)^{15}-\lambda)]\}$, with $\lambda=0.37$ from B's observed slope at steps 50--150. Only zero-success pilot groups have positive value. AV allocates by $\E[p(1-p)]$. HR adapts HORA's greedy posterior hit utility and per-problem normalization. Forecast means average matched pass@1 coordinates 0.37, 0.40 and 0.44: frozen model / deep-count variant, AC $+4.34$ / $+2.56$; HR $+0.15$ / $+0.07$; AV $-1.13$ / $-0.72$. AC against B's envelope requires a pooled gain $\ge+2$, a 95\% interval above 0 and positive gains in every seed. AC against AV and HR each requires $\ge+1$ with a 95\% interval above 0; Holm covers all three tests. A primary win triggers confirmation on 512 fresh problems. Forecast checks use only coordinates covered by both trajectories and a 1.5-point tolerance against the forecast mean at those same coordinates. Status: running.
 
 \section{External versus self-generated information (Pre-registration 19, running)}
 \begin{why}
-If interventions that reuse the policy's own information only add speed, information the base model does not have should move the frontier.
+This experiment tests human-written solutions on problems with no observed base-model success. Absence of a success in 32 samples does not establish that the base model lacks the relevant information.
 \end{why}
-\textbf{Data}: human-written MATH solutions for all 3,920 training problems (all verified). \textbf{Arms} (supervised stage as S32, then Dr.\ GRPO): HQ, 3,433 problems in which 487 randomly chosen problems with $c>0$ are replaced by the 487 never-solved problems; HP, the 3,433 problems with $c>0$; HS, the 3,235 problems of S32. Rule: HQ against HP's trajectory $\ge+1$ with the 95\% interval above 0 (same size and token budget; they differ only in whether 487 slots hold never-solved problems). Stated confounds: the never-solved problems' solutions are about twice as long (fewer epochs at the fixed token budget, about 12\%); ``never solved in 32 samples'' is not ``unsolvable''. Status: one run training on AWS, eight queued on Vulcan.
+\textbf{Data}: human-written MATH solutions for all 3,920 training problems; every final boxed answer verifies with our checker. \textbf{Arms} (supervised stage as S32, then Dr.\ GRPO): HP contains the 3,433 problems with $c>0$; HQ replaces 487 randomly selected HP problems (seed 1919) with the 487 problems having $c=0$; HS contains the 3,235 problems represented in S32. These are counts before trainer exclusions. The primary comparison is HQ against HP's trajectory, including HP's post-supervised step 0: gain $\ge+1$ with a 95\% interval above 0. It is uninterpretable if any seed has fewer than two HQ checkpoints in HP's pass@1 range, more than 10\% of bootstrap points are clamped, or fewer than 400 of the 487 $c=0$ solutions survive filtering. The swapped solutions are about twice as long, giving about 12\% fewer epochs at the fixed token budget. HS against S32 is descriptive; their human and base-model solutions average 374 and 1,110 characters, respectively. Status: running.
 
 \section{Early reference checkpoints (Check 20, running)}
-Dr.\ GRPO for 50 steps, seeds 8--10, checkpoints at 10, 20, 30, 40, 50, evaluated on the 511 problems (Nibi H100s), to replace the base-to-step-50 chord for slow arms; reported as a sensitivity analysis.
+Dr.\ GRPO for 50 steps, seeds 8--10, checkpoints at 10, 20, 30, 40, 50, evaluated on the 511 problems with 32 samples at $T=1$ (Nibi H100s). Gains with and without the early checkpoints are reported as a sensitivity analysis; registered verdicts remain unchanged. Step 50 is compared with the earlier L40S reference to check hardware agreement.
 
 \begin{lemma}[stated for reference]\label{lem:starve-story}
-Under Dr.\ GRPO with a group of $n$, the update on a problem is zero unless the group contains both a correct and an incorrect answer, probability $1-p^n-(1-p)^n\approx np$ for small $p$; reweighting by a function of the rewards does not change this.
+For $n$ independent rollouts with success probability $p$, the sampled Dr.\ GRPO gradient contribution of a problem is zero when all rewards are identical. A mixed-reward group occurs with probability $1-p^n-(1-p)^n$, approximately $np$ when $np\ll1$. Finite multiplicative reweighting of the centered advantages preserves this zero-gradient condition. Updates through shared parameters can still change the problem's success probability.
 \end{lemma}
 
 %=====================================================================
 \section{Where we stand, and the path to ICML}
 \subsection{What is established}
 \begin{enumerate}[leftmargin=*,itemsep=1pt]
-\item Per problem, every correctness-only advantage rule has expected update $c(p_x)\nabla p_x$; the second moment follows from four quantities; incorrect answers carry 2--3 times larger squared score norms.
-\item At matched pass@1, NSR, PSR, constant baselines, the NSR paper's implementation, a pass@4 objective and the unlikeliness reward lie within about $\pm2$ points of one trajectory on two families; trace-matched noise reproduces NSR's lag; a hotter late checkpoint does not exceed the trajectory.
-\item Interventions that add the policy's or the base model's own samples (replay, seeded replay, groups of 32) change the progress rate and move the frontier by at most about one point; the supervised warm start on base successes is the only clear departure (about two points, one reference seed).
-\item A frozen per-problem model predicts the frontier within the trained range across rules, families and budgets, but not after a warm start and not far beyond the trained range.
+\item For reward-adapted rules on independent on-policy rollouts, the expected raw gradient per problem is $c(p_x)\nabla p_x$, and its second moment follows from four quantities. At baseline, incorrect answers have roughly 2--3 times larger squared score norms.
+\item NSR--PSR equivalence within $\pm2$ points is supported on Qwen and OLMo. A mean-preserving random-sign noise intervention reproduces NSR's lag in the Qwen recipe. The other controls do not establish equivalence for every rule on both families; the temperature check's registered verdict is inconclusive.
+\item CM and D32 give pooled gains of $+1.19$ and $+1.02$ against their registered B references. Against the exploratory seed-13 trajectory, G32 gives $+0.60$, S32 $+2.38$, CM $+1.73$ and U32 $+1.74$. These longer-run contrasts have incomplete overlap and no reported confidence intervals.
+\item Conditional on observed pass@1, a frozen per-problem model fits aggregate pass@16 across several rules, families and budgets. It has substantial OLMo stratum errors and fails after the warm start. The longer-training test awaits a documented analysis.
 \end{enumerate}
 
 \subsection{Open questions}
@@ -713,20 +713,7 @@ Under Dr.\ GRPO with a group of $n$, the update on a problem is zero unless the 
 \end{itemize}
 
 \subsection{Independent review over time}
-\begin{center}\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-Stage & Score (Codex)\\
-\midrule
-Qwen experiments only & 4/10\\
-+ noise-injection test & 5/10\\
-+ OLMo replication & 6/10\\
-After the 2026 literature search & about 5/10\\
-Scenario: the frontier model passes its remaining tests & about 7/10\\
-Scenario: a method that improves the frontier across scales & about 8/10\\
-\bottomrule
-\end{tabular}
-\end{center}
+The reviews motivated the noise intervention, OLMo replication and comparison with close prior work. The next assessment depends on the allocation and human-solution experiments, their confirmation, and replication at a larger model scale.
 
 \subsection{Three months to ICML}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
@@ -755,17 +742,22 @@ Uniform memory (M) & as CM with uniform sampling & $\lambda=1$\\
 Seeded memory (D32, U32) & archive initialized with one base success per problem; retired at the first own success & $\lambda=0.5$\\
 Warm start (S32) & mean token NLL on base successes, then B & AdamW $10^{-5}$, batches of 8, 2.46M tokens, clip 1, optimizer reset\\
 Groups of 32 (G32) & B with $n=32$ & 512 rollouts per step\\
-TAR & $\lambda\,\mathrm{mean}_{\tau}\,\mathrm{sg}[g]\sum_t\mathrm{sg}[w_t](-\log\pi_t)/(\epsilon+\sum_t\mathrm{sg}[w_t])$, $g=\phi(\overline{\delta})$, $w_t=\phi(\delta_t)$, $\delta_t=\log\pi_{\rm base}-\log\pi$ & $\lambda=1$, 16 replayed per step\\
+T32 (TAR adaptation) & $\lambda\,\mathrm{mean}_{y}\,\mathrm{sg}[g]\sum_t\mathrm{sg}[w_t](-\log\pi_t)/(\epsilon+\sum_t\mathrm{sg}[w_t])$; $\phi(z)=\max(1-e^{-z},0)$, $g=\phi(\overline{\delta})$, $w_t=\phi(\delta_t)$, $\delta_t=\log\pi_{{\rm base},t}-\log\pi_t$; $\mathrm{sg}$ stops gradients and $\overline{\delta}$ averages response tokens & $\lambda=1$, $\epsilon=10^{-8}$; 16 uniformly sampled base traces per step, no retirement; shared discovery bank\\
 BBG & W-REINFORCE times $\alpha(m)=u(m;8,16)\mathbf 1[u\ge0.09]$, $u=16\prod_{j=1}^{15}\frac{8-m+j}{9+j}$, rescaled to mean 1 & $w=0.3$\\
 MaxRL & $A=(r-\bar r)/\bar r$; 0 if $\bar r=0$ & as B\\
 Annealed replay (AR) & seeded coverage replay, $\lambda_t=4(1-t/100)_+$ & 16 problems per step\\
-Group completion (GC) & stored success appended to zero-success groups ($n+1$ answers, Dr.\ GRPO advantages) & no importance weight\\
-Prefix-guided (PG) & 2 of 8 rollouts continue from $f_t$ of a stored success; prefix is context & $f_t=0.5(1-t/100)_+$, problems with $c\le4$ of 32\\
-Allocation (AC, AV, HR) & 4 pilot rollouts per problem, 64 extras by value (frontier value, signal, or HORA hit utility) & 128 rollouts per step, $\le32$ per problem\\
+Group completion (GC) & append a stored base or policy success to a zero-success group; center rewards over the resulting $n+1$ answers & off-policy likelihood contribution; no importance weight\\
+MXGC / SD / C05 & MXGC: MaxRL with group completion; SD: S32 followed by seeded coverage replay; C05: online CM without base seeding & SD and C05: $\lambda=0.5$\\
+Prefix-guided (PG) & 2 of 8 rollouts continue from fraction $f_t$ of a stored success; prefix tokens are context with no gradient; verify prefix plus continuation & $f_t=0.5(1-t/100)_+$; $c\le4$ of 32; prefix plus continuation $\le512$ tokens\\
+Allocation (AC, AV, HR) & pool 4 pilot rollouts per problem with 64 extras; AC/AV use posterior $\mathrm{Beta}(c+\frac12,4-c+\frac12)$, HR uses $\mathrm{Beta}(c+1,5-c)$, where $c$ counts pilot successes & 128 rollouts total, $\le32$ per problem; fixed loss denominator $16\cdot8\cdot512$; HR additionally scales each problem's terms by $8/N_i$; AC uses largest-remainder rounding and uniform fallback when no positive-value capacity remains\\
 \bottomrule
 \end{longtable}
 \normalsize
-\textbf{Evaluation.} 511 held-out MATH test problems (labels audited), 32 samples at $T=1$, unbiased pass@$k$; greedy accuracy on 3,382 problems; matched-pass@1 interpolation along B's trajectory and temperature envelope; 2,000 bootstrap draws over problems; Holm's correction within each registration.
+\textbf{Training and archived data.} The online RL component uses one update on fresh rollouts, without PPO clipping or a KL penalty; replay and group completion add off-policy terms. D32 priorities start from discovery counts $(c,32)$ and subsequently use the latest online group; U32 samples uniformly. Base traces retire when the first retained policy success is stored. S32's 2.46-million-response-token target may overshoot by one batch of 8 answers. Human-solution training withholds 16 calibration problems per seed and applies length and re-verification filters; retained counts, actual token totals and epochs must be reported. T32 and BBG are recipe adaptations: T32 uses the shared discovery bank, and BBG rescales coefficients over 16 problems without accumulating the paper's 512 active prompts.
+
+\textbf{Evaluation.} Main Qwen comparisons use 511 audited held-out MATH problems, 32 samples at $T=1$, and unbiased pass@$k$; the pilot uses 255 validation problems. Greedy accuracy uses 3,382 problems. The primary frontier metric is pass@16. Reference curves use linear interpolation after sorting by pass@1, with ties resolved by step or temperature. B's envelope takes the larger defined value of its training trajectory and its step-150 temperature trajectory ($T=1,1.15,1.3$). Gains average qualifying checkpoints within each seed, then average seeds; at least two checkpoints per seed must overlap the reference. Reference curves are recomputed in each of 2,000 paired problem-bootstrap draws, and endpoint-clamping frequencies are reported. Draws are comparison-specific in Pre-registration 12 and shared where specified in later registrations. Intervals condition on the training seeds and shared discovery archive. The reused test set's second half is not untouched confirmation; registered confirmation uses 512 fresh problems when triggered.
+
+\textbf{Frontier model.} The model in \cref{sec:p17} fits $\tau_{32}=-0.20$ and affine slope $\beta=2.10$ using only B's nine fitting checkpoints. Uniform-shift and affine comparators are $\theta'_x=\theta_x+\alpha$ and $\theta'_x=\alpha+\beta\theta_x$, with $\alpha$ matching observed pass@1. The model's evolution parameter also matches observed pass@1. Registered RMSE categories are supported at $\le2$ points, partial at 2--3, and falsified above 3; T1--T4 also require higher total per-problem log-likelihood than the affine comparator. The reported $\tau_{\rm deep}$ interval uses 200 problem-bootstrap draws with refitting.
 
 \section{Experiment tracker (Pre-registrations 13--20)}
 \small
@@ -780,8 +772,8 @@ Allocation (AC, AV, HR) & 4 pilot rollouts per problem, 64 extras by value (fron
 15 & 2026 methods at matched pass@1 & BBG, W-REINFORCE, MaxRL; 3 seeds & interim: BBG slow, apparent gains in the chord region\\
 16 & Push mechanisms inside RL (pilot) & AR, GC, PG, MXGC + refs; 1 seed & interim: AR, MXGC not eligible; GC, PG pending\\
 C16 & 512 vs 1,024 tokens & re-evaluation & partial: all values rise at 1,024\\
-C17 & Transfer to rare problems & likelihood margins of fixed base answers & 4/6 lanes: Dr.\ GRPO transfers to rare as to medium\\
-17 & Frontier model & frozen model, 5 test sets & met on 3, not met after warm start; extrapolation too low\\
+C17 & Transfer to rare problems & likelihood margins of fixed base answers & 4/6 arm--seed pairs: similar rare/medium point estimates for B; pooled intervals unreported\\
+17 & Frontier model & frozen model, 5 test sets & aggregate RMSE criterion met on 3; warm-start test fails; longer-training analysis unreported\\
 18 & Allocation by frontier value & AC, AV, HR; 3 seeds; registered forecasts & running\\
 19 & External vs self-generated information & HQ, HP, HS; 3 seeds & running\\
 C20 & Early reference checkpoints & B steps 10--50, 3 seeds & running\\
@@ -790,6 +782,6 @@ C20 & Early reference checkpoints & B steps 10--50, 3 seeds & running\\
 \normalsize
 
 \section{Compute and engineering}
-Training and evaluation ran on AWS SageMaker (L40S GPUs, g6e instances; launched in three regions, keeping the first copy to start), and from October 22 also on Alliance clusters: Tamia (H100; low scheduling priority), Vulcan (L40S, the same GPU as AWS) and Nibi (H100). Engineering issues fixed in this period: spot jobs expiring after 22 hours without capacity (relaunched on demand); a PyTorch 2.14 build producing non-finite gradients on H100 (environment rebuilt with 2.9.1; updates with non-finite gradient norms are now skipped and logged); SLURM jobs killed for host memory (whole-node memory requested). All code, registrations, results and figures: \texttt{github.com/mayman150/rlvr-adaptive}.
+The registered pilot uses Tamia H100s for every arm and reference. Check 20 uses Nibi H100s and compares step 50 with the earlier L40S reference. The longer-reference design places seed 13 on AWS and seeds 14--15 on Tamia. A reproducible compute comparison still needs per-run GPU-hours, software versions, optimizer and numerical settings, and attempted, completed and skipped optimizer-update counts. Accounting must include discovery, supervised training, rollout generation, replay and evaluation. All code, registrations, results and figures: \texttt{github.com/mayman150/rlvr-adaptive}.
 
 \end{document}
