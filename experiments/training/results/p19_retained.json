@@ -1,0 +1,128 @@
+{
+ "human_positive s8": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3418,
+   3365
+  ],
+  "tokens": 460996,
+  "too_long": 53,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.336271898237729
+ },
+ "human_positive s9": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3418,
+   3365
+  ],
+  "tokens": 460890,
+  "too_long": 53,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.3374991863568315
+ },
+ "human_positive s10": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3419,
+   3366
+  ],
+  "tokens": 460462,
+  "too_long": 53,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.342460398469363
+ },
+ "human_swap s8": {
+  "c0": [
+   486,
+   434
+  ],
+  "c>0": [
+   2934,
+   2886
+  ],
+  "tokens": 495070,
+  "too_long": 100,
+  "unverified": 0,
+  "epochs_at_2.46M": 4.968994283636658
+ },
+ "human_swap s9": {
+  "c0": [
+   486,
+   435
+  ],
+  "c>0": [
+   2934,
+   2886
+  ],
+  "tokens": 495191,
+  "too_long": 99,
+  "unverified": 0,
+  "epochs_at_2.46M": 4.96778010908922
+ },
+ "human_swap s10": {
+  "c0": [
+   485,
+   434
+  ],
+  "c>0": [
+   2936,
+   2888
+  ],
+  "tokens": 494473,
+  "too_long": 99,
+  "unverified": 0,
+  "epochs_at_2.46M": 4.974993579022515
+ },
+ "human_solvable s8": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3220,
+   3171
+  ],
+  "tokens": 427579,
+  "too_long": 49,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.753322777779077
+ },
+ "human_solvable s9": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3221,
+   3172
+  ],
+  "tokens": 427740,
+  "too_long": 49,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.751157245055407
+ },
+ "human_solvable s10": {
+  "c0": [
+   0,
+   0
+  ],
+  "c>0": [
+   3222,
+   3173
+  ],
+  "tokens": 427221,
+  "too_long": 49,
+  "unverified": 0,
+  "epochs_at_2.46M": 5.758143911465027
+ }
+}
