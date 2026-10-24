@@ -80,6 +80,13 @@ for a, lab, col, steps in (("B", "Dr. GRPO", "#1f77b4", A.STEPS), ("CM", "covera
         pts = [A.met(base, ones)] + pts
     pts = np.array(pts)
     ax.plot(pts[:, 0], pts[:, 1], "o-", ms=3, lw=1, color=col, label=lab)
+import glob, json
+long = {0: base}
+for f in glob.glob(str(A.RES / "worth-v17Le-*/B13/eval/step*_T1.00_eval.json")):
+    long[int(f.split("step")[-1].split("_")[0])] = np.array(json.load(open(f))["counts"])
+if len(long) > 1:
+    pts = np.array([A.met(c, ones) for st, c in sorted(long.items())])
+    ax.plot(pts[:, 0], pts[:, 1], "s--", ms=3, lw=1, color="#1f77b4", alpha=0.6, label="Dr. GRPO, long run (seed 13)")
 ax.set_xlabel("pass@1 (accuracy)"); ax.set_ylabel("pass@16 (diversity)")
 ax.legend(frameon=False, fontsize=7); fig.tight_layout(); fig.savefig(OUT / "frontier_qwen.pdf")
 print("figures written to", OUT, "tau", tau)
