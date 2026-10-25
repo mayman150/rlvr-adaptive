@@ -1,0 +1,113 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "B1k10",
+    "sub": "B1k10",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "192",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25,50,100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B1k10",
+    "sub": "B1k10",
+    "part": 2,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "192",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0,1.15,1.3",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR1k10",
+    "sub": "PSR1k10",
+    "part": 0,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "192",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25,50,100,150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "NSR1k10",
+    "sub": "NSR1k10",
+    "part": 0,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "192",
+     "--expect-steps",
+     "50,100,150",
+     "--sampled-steps",
+     "50,100,150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ]
+ ]
+}
