@@ -1,0 +1,55 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [
+  [
+   [
+    "HGm1k",
+    [
+     "--arms",
+     "baseline",
+     "--rescue-archive",
+     "human_prefix_train.json",
+     "--prefix-match-archive",
+     "discovery_qwen_train32.json",
+     "--prefix-rollouts",
+     "2",
+     "--prefix-frac",
+     "0.5",
+     "--prefix-anneal-steps",
+     "100",
+     "--prefix-max-c",
+     "4",
+     "--prefix-before-box",
+     "--prefix-fixed",
+     "--seed",
+     "10",
+     "--steps",
+     "150",
+     "--group",
+     "8",
+     "--prompts-per-step",
+     "16",
+     "--max-new",
+     "1024",
+     "--lr",
+     "1e-6",
+     "--gen-batch",
+     "192",
+     "--calib-prompts",
+     "16",
+     "--eval-steps",
+     "150",
+     "--entropy-every",
+     "5",
+     "--save-steps",
+     "50,100,150",
+     "--train",
+     "train.json"
+    ]
+   ]
+  ]
+ ]
+}

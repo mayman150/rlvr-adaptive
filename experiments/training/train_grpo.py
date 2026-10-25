@@ -624,8 +624,12 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
         bank = rescue.get(key)
         if not bank or disc_c.get(key, 0) > args.prefix_max_c:
             continue
-        seq = bank[step % len(bank)]
+        if (args.prefix_fixed or args.prefix_match_archive) and key not in runner._archive_keys:
+            continue
+        seq = bank[0] if args.prefix_fixed else bank[step % len(bank)]
         cut = int(f * (len(seq[1]) - 1))
+        if args.prefix_before_box:
+            cut = min(cut, box_start(runner, seq[1]))
         if cut < 1:
             continue
         pre = runner.tok.decode(seq[1][:cut])
@@ -640,6 +644,7 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
     # (generated to the largest cap, then cut, which is the same as stopping at its own cap).
     outs = runner.generate(items, 1, args.max_new - min(cuts), args.seed * 100003 + step + 7919)
     solved, capped, tokens = 0, 0, 0
+    prefix_only = sum(reward(pre, batch[slot // G]["answer"]) for slot, pre in zip(slots, prefixes))
     for (pi, ri), slot, pre, cut in zip(outs, slots, prefixes, cuts):
         cap = args.max_new - cut
         if len(ri) >= cap:
@@ -650,7 +655,28 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
         runner._prefixed.add(slot)
         solved += r
         tokens += len(pi) + len(ri)
-    return {"frac": f, "questions": len(items) // m, "rollouts": len(items), "solved": solved, "capped": capped, "tokens": tokens}
+    return {"frac": f, "questions": len(items) // m, "rollouts": len(items), "solved": solved, "capped": capped, "tokens": tokens,
+            "prefix_tokens": sum(cuts), "prefix_only_correct": prefix_only}
+
+
+def box_start(runner, ids):
+    """Number of leading response tokens before the first final-answer box (all of them if there is none), so that
+    a prefix never supplies the boxed answer. Cached per response."""
+    cache = runner.__dict__.setdefault("_box_start", {})
+    key = tuple(ids.tolist())
+    if key not in cache:
+        lo, hi = 0, len(ids)  # largest k with no "\\boxed" in the decoding of ids[:k]
+        if "\\boxed" not in runner.tok.decode(ids):
+            cache[key] = len(ids)
+        else:
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if "\\boxed" in runner.tok.decode(ids[:mid]):
+                    hi = mid - 1
+                else:
+                    lo = mid
+            cache[key] = lo
+    return cache[key]
 
 
 def bbg_utility(m, n, k):
@@ -1039,6 +1065,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             disc_c[i] = d["c"]
             if d["seq"] is not None:
                 rescue[i] = [d["seq"]]
+        if args.prefix_match_archive:
+            other = load_discovery(runner, args.prefix_match_archive, problems)
+            rescue = {i: v for i, v in rescue.items() if other[i]["seq"] is not None}
+            del other
+        runner._archive_keys = set(rescue)  # the stored solutions (bank[0]); own successes are appended later
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
     assert args.prefix_rollouts <= args.group and args.prefix_anneal_steps > 0, "prefix rollouts must fit in a group"
@@ -1431,6 +1462,11 @@ def main():
     parser.add_argument("--prefix-frac", type=float, default=0.5)
     parser.add_argument("--prefix-anneal-steps", type=int, default=100)
     parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
+    parser.add_argument("--prefix-before-box", action="store_true", help="cut every prefix before the stored answer's first box")
+    parser.add_argument("--prefix-fixed", action="store_true",
+                        help="prefixes only from the archive's stored solution (not from the policy's own later successes)")
+    parser.add_argument("--prefix-match-archive", default=None,
+                        help="discovery file: prefix only questions that also have a retained success there")
     parser.add_argument("--alloc-first", type=int, default=0, help="two-stage allocation: rollouts per problem in stage 1 (0: off)")
     parser.add_argument("--alloc-cap", type=int, default=32, help="maximum rollouts per problem under allocation")
     parser.add_argument("--alloc-value", default="coverage", choices=("coverage", "law", "variance", "hora"),
