@@ -101,3 +101,12 @@ query-projection deviation does not depend on the number of ranks, it is attribu
 under bf16 autocast; the reference's own batching noise floor (the same update with the answers batched in a
 different order) is measured before launch, and the check counts as passed if the FSDP deviation is within it
 (this criterion was amended after seeing the check results, before any primary 7B run).
+
+**Launch-check result and launch (October 25, 2026).** The reference's own batching noise floor (the same
+single-GPU update with the answers batched in reverse order): gradient cosine 0.9858 for layer 0's query
+projection (FSDP against the reference: 0.9837), 0.9997-1.0 elsewhere (FSDP: 0.9994-0.9998); AdamW-update cosine
+0.975-1.0 (FSDP: 0.966-0.997); gradient-norm difference 0.06% (FSDP: 0.29%). The query-projection deviation is the
+size of the reference's own batching noise and every other checked parameter exceeds 0.999, so the check is
+passed. Core menu launched: B7, PSR7, NSR7, AC7, seeds 8 and 9, two runs per ml.p4de.24xlarge (4 GPUs each),
+us-east-1. Evaluation as above with PSR7 also at step 25 (reference knots, as in Pre-registration 21); trained
+checkpoints are evaluated only after rule 3's forecast is committed.

@@ -1,0 +1,91 @@
+{
+ "world": 1,
+ "answers": 64,
+ "live": 64,
+ "param_dtype": "fp32",
+ "reference_floor": {
+  "grad_norm_rel_diff": 0.0005785959397887571,
+  "grad": {
+   "model.embed_tokens.weight": {
+    "cosine": 0.9997323397429362,
+    "rel_l2": 0.023145930684832075
+   },
+   "model.layers.0.self_attn.q_proj.weight": {
+    "cosine": 0.9858220144879378,
+    "rel_l2": 0.1689075982238475
+   },
+   "model.layers.0.mlp.down_proj.weight": {
+    "cosine": 0.9999381082956267,
+    "rel_l2": 0.011145220351331052
+   },
+   "model.norm.weight": {
+    "cosine": 0.9999999999999845,
+    "rel_l2": 1.8088262643552897e-07
+   }
+  },
+  "update": {
+   "model.embed_tokens.weight": {
+    "cosine": 0.9990954842257947,
+    "rel_l2": 0.04253272867415422
+   },
+   "model.layers.0.self_attn.q_proj.weight": {
+    "cosine": 0.9752332060280766,
+    "rel_l2": 0.22253697444314657
+   },
+   "model.layers.0.mlp.down_proj.weight": {
+    "cosine": 0.997956480323456,
+    "rel_l2": 0.0639296964453968
+   },
+   "model.norm.weight": {
+    "cosine": 1.0,
+    "rel_l2": 0.0
+   }
+  }
+ },
+ "grad_norm": {
+  "reference": 0.13595537841320038,
+  "fsdp": 0.13555772602558136,
+  "rel_diff": 0.0029248742658084434
+ },
+ "grad": {
+  "model.embed_tokens.weight": {
+   "cosine": 0.999353295090276,
+   "rel_l2": 0.036018021427090686
+  },
+  "model.layers.0.self_attn.q_proj.weight": {
+   "cosine": 0.9837397514837509,
+   "rel_l2": 0.1824549135719046
+  },
+  "model.layers.0.mlp.down_proj.weight": {
+   "cosine": 0.9994456726272539,
+   "rel_l2": 0.03370024587557636
+  },
+  "model.norm.weight": {
+   "cosine": 0.9998279677843191,
+   "rel_l2": 0.01863651620472059
+  }
+ },
+ "update": {
+  "model.embed_tokens.weight": {
+   "cosine": 0.9970256446724222,
+   "rel_l2": 0.07714615652285624
+  },
+  "model.layers.0.self_attn.q_proj.weight": {
+   "cosine": 0.9659971490560787,
+   "rel_l2": 0.26078939708661864
+  },
+  "model.layers.0.mlp.down_proj.weight": {
+   "cosine": 0.9884131212409988,
+   "rel_l2": 0.152220685832642
+  },
+  "model.norm.weight": {
+   "cosine": 0.9910505124398621,
+   "rel_l2": 0.13372155491808074
+  }
+ },
+ "gen_vs_train_logprob": {
+  "mean_abs_per_token": 0.005691035650670528,
+  "max_abs": 0.18863296508789062,
+  "tokens": 3544
+ }
+}

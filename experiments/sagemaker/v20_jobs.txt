@@ -1,1 +1,5 @@
 us-east-1:worth-v20-BASE7-s0-20261025-060015
+us-east-1:worth-v20-B7-s0-20261025-064445
+us-east-1:worth-v20-PSR7-s0-20261025-064450
+us-east-1:worth-v20-NSR7-s0-20261025-064454
+us-east-1:worth-v20-AC7-s0-20261025-064458
