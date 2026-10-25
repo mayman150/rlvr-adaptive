@@ -54,6 +54,7 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-6)
     ap.add_argument("--clip", type=float, default=1.0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--ref-repeat", action="store_true", help="also report the reference's own batching noise floor")
     args = ap.parse_args()
     dev = torch.device("cuda", int(os.environ.get("LOCAL_RANK", 0)))
     torch.cuda.set_device(dev)
@@ -73,23 +74,34 @@ def main():
     live = [k for k, a in enumerate(adv) if a != 0]
     report = {"world": world, "answers": len(answers), "live": len(live), "param_dtype": args.param_dtype}
 
-    ref = {}
-    if rank == 0:  # train_grpo.py's single-GPU update
+    def reference(order):
+        """train_grpo.py's single-GPU update with the live answers in the given order (fresh model)."""
         model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32).to(dev)
         model.gradient_checkpointing_enable()
         model.train()
         runner = view(args, tok, model, autocast=True)
-        backward_weighted(runner, args, [(a.to(dev), b.to(dev)) for a, b in answers], live, adv, norm)
+        backward_weighted(runner, args, [(a.to(dev), b.to(dev)) for a, b in answers], order, adv, norm)
         named = dict(model.named_parameters())
-        ref["grad"] = {n: named[n].grad.detach().float().cpu() for n in PICK if n in named}
+        out = {"grad": {n: named[n].grad.detach().float().cpu() for n in PICK if n in named}}
         params = [q for q in model.parameters() if q.requires_grad]
-        ref["norm"] = float(torch.nn.utils.clip_grad_norm_(params, args.clip))
-        before = {n: named[n].detach().float().cpu() for n in ref["grad"]}
+        out["norm"] = float(torch.nn.utils.clip_grad_norm_(params, args.clip))
+        before = {n: named[n].detach().float().cpu() for n in out["grad"]}
         opt = torch.optim.AdamW(params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)
         opt.step()
-        ref["update"] = {n: named[n].detach().float().cpu() - before[n] for n in before}
+        out["update"] = {n: named[n].detach().float().cpu() - before[n] for n in before}
         del model, opt, params, named, runner
         torch.cuda.empty_cache()
+        return out
+
+    ref = {}
+    if rank == 0:
+        ref = reference(live)
+        if args.ref_repeat:  # noise floor: the same update with the answers batched in reverse order
+            ref2 = reference(list(reversed(live)))
+            report["reference_floor"] = {"grad_norm_rel_diff": abs(ref2["norm"] - ref["norm"]) / ref["norm"],
+                                         "grad": {n: compare(ref["grad"][n], ref2["grad"][n]) for n in ref["grad"]},
+                                         "update": {n: compare(ref["update"][n], ref2["update"][n]) for n in ref["update"]}}
+            del ref2
     dist.barrier()
 
     train, gen_model = load_models(args, dev)  # train_dist.py's update

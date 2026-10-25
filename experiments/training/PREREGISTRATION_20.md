@@ -90,4 +90,13 @@ arm's.
 
 ## Cost
 
-To be filled in from the smoke test: GPU-hours per training run and per evaluated checkpoint.
+Measured on ml.p4de.24xlarge (8 A100 80 GB, $31.56 per hour, us-east-1) in the smoke test (October 25): with 4
+GPUs per run, 126-189 s of generation and 142-204 s per step (peak 68.5 GB), about 6.7 hours per 150-step run;
+with 8 GPUs about 100 s per step. Two runs share one instance (4 GPUs each): about $106 per run, $850 for the
+eight core runs; about 32 checkpoint evaluations (one A100 each, about 2 hours) about $260; total about $1,100.
+Launch check (dist_parity.py, 1.5B, 1-3 ranks): global gradient-norm difference 0.27-0.31% (threshold 2%);
+gradient cosine 0.999+ for embeddings, MLP and norm parameters but 0.985-0.989 for layer 0's query projection
+(threshold 0.99), identical at 1, 2 and 3 ranks; AdamW-update cosine 0.966-0.997 (threshold 0.95). Because the
+query-projection deviation does not depend on the number of ranks, it is attributed to micro-batch composition
+under bf16 autocast; the reference's own batching noise floor (the same update with the answers batched in a
+different order) is measured before launch, and the check counts as passed if the FSDP deviation is within it.

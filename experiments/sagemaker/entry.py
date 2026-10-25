@@ -88,15 +88,29 @@ def run_plan(plan):
             sys.exit(1)
         return
     if "torchrun" in plan:
-        # Multi-GPU runs in sequence (train_dist.py, dist_parity.py), each a torchrun over spec["nproc"] GPUs;
+        # Multi-GPU runs (train_dist.py, dist_parity.py), each a torchrun over spec["nproc"] GPUs: in sequence, or,
+        # with plan["parallel"], concurrently on the disjoint GPU lists spec["gpus"].
         # spec["out"] = "dir" passes --out /opt/ml/checkpoints/<name>, "file" passes --out .../<name>.json.
-        for spec in plan["torchrun"]:
-            n = int(spec["nproc"])
+        LIVE.mkdir(parents=True, exist_ok=True)
+
+        def launch(spec):
+            gpus = spec.get("gpus") or list(range(int(spec["nproc"])))
             out = {"dir": ["--out", str(LIVE / spec["name"])], "file": ["--out", str(LIVE / f"{spec['name']}.json")]}.get(spec.get("out"), [])
-            LIVE.mkdir(parents=True, exist_ok=True)
-            cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={n}",
+            cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={len(gpus)}",
                    str(HERE / "training" / spec["script"]), *spec["args"], *out, *local]
-            run_one(spec["name"], cmd, ",".join(str(g) for g in range(n)), status)
+            run_one(spec["name"], cmd, ",".join(str(g) for g in gpus), status)
+
+        if plan.get("parallel"):
+            used = [g for spec in plan["torchrun"] for g in spec["gpus"]]
+            assert len(used) == len(set(used)), "parallel torchrun specs need disjoint GPU lists"
+            threads = [threading.Thread(target=launch, args=(spec,)) for spec in plan["torchrun"]]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+        else:
+            for spec in plan["torchrun"]:
+                launch(spec)
         (LIVE / "status.json").write_text(json.dumps(status, indent=1))
         shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True, ignore=shutil.ignore_patterns("ckpt_step*"))
         if any(code != 0 for code in status.values()):

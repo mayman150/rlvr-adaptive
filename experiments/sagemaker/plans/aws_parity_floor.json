@@ -1,0 +1,16 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "torchrun": [
+  {
+   "name": "parity_floor_w1",
+   "script": "dist_parity.py",
+   "nproc": 1,
+   "out": "file",
+   "args": [
+    "--ref-repeat"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,82 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "parallel": true,
+ "torchrun": [
+  {
+   "name": "PSR7s8",
+   "script": "train_dist.py",
+   "gpus": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--steps",
+    "150",
+    "--max-new",
+    "2048",
+    "--gen-batch",
+    "32",
+    "--train-batch",
+    "2",
+    "--param-dtype",
+    "fp32",
+    "--save-steps",
+    "25,50,100,150",
+    "--arms",
+    "psr"
+   ]
+  },
+  {
+   "name": "PSR7s9",
+   "script": "train_dist.py",
+   "gpus": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "out": "dir",
+   "args": [
+    "--seed",
+    "9",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--steps",
+    "150",
+    "--max-new",
+    "2048",
+    "--gen-batch",
+    "32",
+    "--train-batch",
+    "2",
+    "--param-dtype",
+    "fp32",
+    "--save-steps",
+    "25,50,100,150",
+    "--arms",
+    "psr"
+   ]
+  }
+ ]
+}
