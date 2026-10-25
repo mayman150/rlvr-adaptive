@@ -99,4 +99,5 @@ gradient cosine 0.999+ for embeddings, MLP and norm parameters but 0.985-0.989 f
 (threshold 0.99), identical at 1, 2 and 3 ranks; AdamW-update cosine 0.966-0.997 (threshold 0.95). Because the
 query-projection deviation does not depend on the number of ranks, it is attributed to micro-batch composition
 under bf16 autocast; the reference's own batching noise floor (the same update with the answers batched in a
-different order) is measured before launch, and the check counts as passed if the FSDP deviation is within it.
+different order) is measured before launch, and the check counts as passed if the FSDP deviation is within it
+(this criterion was amended after seeing the check results, before any primary 7B run).
