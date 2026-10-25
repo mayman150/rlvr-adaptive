@@ -185,6 +185,9 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
         for part in gather(send, world):
             own.update(part[rank])
         assert set(own) == set(plan[rank]), "every live answer must reach its rank"
+        if args.offload_gen:  # 48 GB GPUs: the generation copy waits in host memory during the update
+            gen_model.to("cpu")
+            torch.cuda.empty_cache()
         train.train()
         opt.zero_grad(set_to_none=True)
         n_micro = max(math.ceil(len(p) / args.train_batch) for p in plan) if live else 0
@@ -206,6 +209,8 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
                 print(f"[{arm}] step {step}: non-finite gradient norm, update skipped", flush=True)
                 extra["nonfinite_grad"] = True
         opt.zero_grad(set_to_none=True)
+        if args.offload_gen:
+            gen_model.to(dev)
         if live and "nonfinite_grad" not in extra:
             sync_weights(train, gen_params)
         rewards = [stats[(j, s)][0] for j, n_j in enumerate(sizes) for s in range(n_j)]
@@ -244,6 +249,8 @@ def main():
     ap.add_argument("--prefill-tokens", type=int, default=256)
     ap.add_argument("--save-steps", default="")
     ap.add_argument("--w", type=float, default=None, help="failure weight of the scaled arm (required for it)")
+    ap.add_argument("--offload-gen", action="store_true",
+                    help="keep the bf16 generation copy in host memory during each update (for 48 GB GPUs)")
     ap.add_argument("--param-dtype", default="fp32", choices=("fp32", "bf16"),
                     help="fp32: bf16 autocast on fp32 weights (train_grpo.py); bf16: FSDP gathers bf16 weights")
     ap.add_argument("--pos-weight", type=float, default=0.1)

@@ -1,0 +1,49 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [
+  [
+   [
+    "AC1k",
+    [
+     "--arms",
+     "baseline",
+     "--alloc-first",
+     "4",
+     "--alloc-cap",
+     "32",
+     "--alloc-value",
+     "law",
+     "--alloc-lambda",
+     "0.37",
+     "--seed",
+     "10",
+     "--steps",
+     "150",
+     "--group",
+     "8",
+     "--prompts-per-step",
+     "16",
+     "--max-new",
+     "1024",
+     "--lr",
+     "1e-6",
+     "--gen-batch",
+     "192",
+     "--calib-prompts",
+     "16",
+     "--eval-steps",
+     "150",
+     "--entropy-every",
+     "5",
+     "--save-steps",
+     "50,100,150",
+     "--train",
+     "train.json"
+    ]
+   ]
+  ]
+ ]
+}

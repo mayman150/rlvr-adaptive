@@ -1,0 +1,3 @@
+us-west-2:worth-c20-B-s8-20261025-050411
+us-east-1:worth-c20-B-s9-20261025-050435
+us-east-2:worth-c20-B-s10-20261025-050502

@@ -73,3 +73,7 @@ of each arm minus B1k with its 90% interval; greedy accuracy.
 
 12 training runs (about 6 L40S-hours each at 1,024 tokens) and 48 checkpoint evaluations (about 2.4 L40S-hours
 each), about 190 L40S-hours on Vulcan.
+
+**Amendment 1 (October 25, 2026, before any training step).** At the user's request all runs moved from Vulcan
+to AWS SageMaker (one L40S GPU per run, the hardware of Pre-registration 12); evaluations are split into parts
+per arm (`plans/v21ke_*`). Nothing else changes.

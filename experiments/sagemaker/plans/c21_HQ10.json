@@ -1,0 +1,32 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "HQ10",
+    "sub": "HQ10",
+    "part": 0,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "256",
+     "--expect-steps",
+     "100,150",
+     "--sampled-steps",
+     "100,150",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}

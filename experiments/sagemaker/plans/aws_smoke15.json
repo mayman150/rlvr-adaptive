@@ -1,0 +1,92 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "torchrun": [
+  {
+   "name": "parity_w1",
+   "script": "dist_parity.py",
+   "nproc": 1,
+   "out": "file",
+   "args": []
+  },
+  {
+   "name": "parity_w2",
+   "script": "dist_parity.py",
+   "nproc": 2,
+   "out": "file",
+   "args": []
+  },
+  {
+   "name": "parity_w3",
+   "script": "dist_parity.py",
+   "nproc": 3,
+   "out": "file",
+   "args": []
+  },
+  {
+   "name": "smoke_B15",
+   "script": "train_dist.py",
+   "nproc": 4,
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--arms",
+    "baseline",
+    "--steps",
+    "10",
+    "--max-new",
+    "512",
+    "--gen-batch",
+    "64",
+    "--train-batch",
+    "4",
+    "--save-steps",
+    "10"
+   ]
+  },
+  {
+   "name": "smoke_AC15",
+   "script": "train_dist.py",
+   "nproc": 4,
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--arms",
+    "baseline",
+    "--steps",
+    "10",
+    "--max-new",
+    "512",
+    "--gen-batch",
+    "64",
+    "--train-batch",
+    "4",
+    "--alloc-first",
+    "4",
+    "--alloc-cap",
+    "32",
+    "--alloc-value",
+    "law"
+   ]
+  }
+ ]
+}

@@ -87,6 +87,21 @@ def run_plan(plan):
         if any(code != 0 for code in status.values()):
             sys.exit(1)
         return
+    if "torchrun" in plan:
+        # Multi-GPU runs in sequence (train_dist.py, dist_parity.py), each a torchrun over spec["nproc"] GPUs;
+        # spec["out"] = "dir" passes --out /opt/ml/checkpoints/<name>, "file" passes --out .../<name>.json.
+        for spec in plan["torchrun"]:
+            n = int(spec["nproc"])
+            out = {"dir": ["--out", str(LIVE / spec["name"])], "file": ["--out", str(LIVE / f"{spec['name']}.json")]}.get(spec.get("out"), [])
+            LIVE.mkdir(parents=True, exist_ok=True)
+            cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={n}",
+                   str(HERE / "training" / spec["script"]), *spec["args"], *out, *local]
+            run_one(spec["name"], cmd, ",".join(str(g) for g in range(n)), status)
+        (LIVE / "status.json").write_text(json.dumps(status, indent=1))
+        shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True, ignore=shutil.ignore_patterns("ckpt_step*"))
+        if any(code != 0 for code in status.values()):
+            sys.exit(1)
+        return
     if "eval" in plan:
         base = ["--base", local[1]] if plan["eval"].get("include_base") else []
         cmd = [sys.executable, str(EVAL), "--ckpts", str(CKPT_CHANNEL), *base, "--out", str(LIVE / "eval"), *plan["eval"]["args"]]

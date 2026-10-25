@@ -1,0 +1,38 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "torchrun": [
+  {
+   "name": "smoke_B7",
+   "script": "train_dist.py",
+   "nproc": 4,
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--arms",
+    "baseline",
+    "--steps",
+    "3",
+    "--max-new",
+    "2048",
+    "--gen-batch",
+    "32",
+    "--train-batch",
+    "2",
+    "--save-steps",
+    "3",
+    "--offload-gen"
+   ]
+  }
+ ]
+}

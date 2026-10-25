@@ -1,0 +1,32 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "PSR1k",
+    "sub": "PSR1k",
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--gen-batch",
+     "192",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25,50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}
