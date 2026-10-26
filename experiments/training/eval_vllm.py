@@ -45,21 +45,44 @@ def evaluate(job):
     problems = load_problems(a["problems"], a["limit"], a["offset"])
     tok = AutoTokenizer.from_pretrained(job["path"])
     stop = stop_token_ids(tok)
+    pad = tok.pad_token_id if tok.pad_token_id is not None else stop[0]
+    texts = [build_prompt(tok, q["question"]) for q in problems] if job["sampled"] else []
+    gp = load_problems(a["greedy_problems"], None) if job["greedy"] else []
+    gtexts = [build_prompt(tok, q["question"]) for q in gp]
+    longest = max([len(tok(t).input_ids) for t in texts + gtexts] or [0])
+    limit = json.loads((Path(job["path"]) / "config.json").read_text()).get("max_position_embeddings", 4096)
+    if longest + a["max_new"] > limit:
+        raise SystemExit(f"prompt {longest} + max_new {a['max_new']} exceeds the model's context {limit}")
     llm = LLM(model=job["path"], dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
-              max_model_len=a["max_model_len"], enable_prefix_caching=True)
+              max_model_len=longest + a["max_new"], enable_prefix_caching=a["prefix_caching"])
+
+    def decode(o):
+        """eval_ckpt.py's accounting on the generated token ids: cut after the first stop token, decode without
+        special tokens; an answer is complete iff it contains a stop token."""
+        ids = list(o.token_ids)
+        cut = next((i + 1 for i, t in enumerate(ids) if t in stop), None)
+        length = cut if cut is not None else len([t for t in ids if t != pad])
+        ended = cut is not None or (o.finish_reason == "stop" and o.stop_reason in stop)  # stop token not echoed
+        return tok.decode(ids[:cut or len(ids)], skip_special_tokens=True), length, ended
+
     res = {"tag": job["tag"], "model": job["path"], "n": a["n"], "problems": len(problems), "pass_at_k": {},
-           "temperature": job["temperature"], "engine": "vllm"}
+           "temperature": job["temperature"], "engine": f"vllm {vllm.__version__}"}
     if job["sampled"]:
-        texts = [build_prompt(tok, q["question"]) for q in problems]
-        sp = SamplingParams(n=a["n"], temperature=job["temperature"], top_p=1.0, top_k=-1, max_tokens=a["max_new"],
-                            stop_token_ids=stop, seed=a["seed"], skip_special_tokens=True)
-        gens = llm.generate(texts, sp)
+        if job["temperature"] < 0.01:
+            raise SystemExit("temperatures below 0.01 are clamped by vLLM; use the greedy path")
+        # one seed per problem (siblings get seed + i inside vLLM), distinct across problems and shards
+        sps = [SamplingParams(n=a["n"], temperature=job["temperature"], top_p=1.0, top_k=-1, max_tokens=a["max_new"],
+                              stop_token_ids=stop, ignore_eos=True, seed=a["seed"] * 1000003 + (a["offset"] + i) * a["n"],
+                              skip_special_tokens=True, detokenize=False)
+               for i in range(len(texts))]
+        gens = llm.generate(texts, sps)
         outs, meta = [], []
         for g in gens:
             assert len(g.outputs) == a["n"]
             for o in g.outputs:
-                outs.append(o.text)
-                meta.append((len(o.token_ids), o.finish_reason != "length"))
+                text, length, ended = decode(o)
+                outs.append(text)
+                meta.append((length, ended))
         res["mean_length_chars"] = sum(len(o) for o in outs) / len(outs)
         res["mean_length_tokens"] = sum(m[0] for m in meta) / len(meta)
         res["truncated_rate"] = sum(not m[1] for m in meta) / len(meta)
@@ -72,9 +95,9 @@ def evaluate(job):
             json.dump({"step": job["tag"], "n": a["n"], "problems": [{"question": q["question"], "answer": q["answer"]} for q in problems],
                        "samples": [{"problem": i // a["n"], "text": o, "reward": c} for i, (o, c) in enumerate(zip(outs, correct))]}, fh)
     if job["greedy"]:
-        gp = load_problems(a["greedy_problems"], None)
-        sp = SamplingParams(n=1, temperature=0.0, max_tokens=a["max_new"], stop_token_ids=stop, skip_special_tokens=True)
-        go = [g.outputs[0].text for g in llm.generate([build_prompt(tok, q["question"]) for q in gp], sp)]
+        sp = SamplingParams(n=1, temperature=0.0, max_tokens=a["max_new"], stop_token_ids=stop, ignore_eos=True,
+                            skip_special_tokens=True, detokenize=False)
+        go = [decode(g.outputs[0])[0] for g in llm.generate(gtexts, sp)]
         gc = [reward(o, q["answer"]) for o, q in zip(go, gp)]
         res["greedy"] = {"accuracy": sum(gc) / len(gc), "n": len(gc), "correct": gc}
     res["seconds"] = time.time() - t0
@@ -97,7 +120,8 @@ def main():
     ap.add_argument("--greedy-steps", default="")
     ap.add_argument("--sampled-steps", default="")
     ap.add_argument("--max-new", type=int, default=512)
-    ap.add_argument("--max-model-len", type=int, default=4096)
+    ap.add_argument("--no-prefix-caching", action="store_true", help="disable vLLM prefix caching (parity checks)")
+    ap.add_argument("--entropy-prefixes", default=None, help="not supported here (use eval_ckpt.py)")
     ap.add_argument("--gen-batch", type=int, default=0, help="ignored (vLLM schedules its own batches)")
     ap.add_argument("--prefill-tokens", type=int, default=0, help="ignored")
     ap.add_argument("--seed", type=int, default=7)
@@ -110,6 +134,11 @@ def main():
     if args.worker:
         evaluate(json.loads(Path(args.worker).read_text()))
         return
+    if not (args.ckpts and args.problems and args.out):
+        raise SystemExit("--ckpts, --problems and --out are required")
+    if args.entropy_prefixes:
+        raise SystemExit("--entropy-prefixes is not supported by eval_vllm.py")
+    args.prefix_caching = not args.no_prefix_caching
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     greedy_steps = {int(s) for s in args.greedy_steps.split(",") if s}
@@ -122,21 +151,22 @@ def main():
         raise SystemExit(f"missing checkpoints for steps {sorted(expected - {s for _, _, s in jobs})} under {args.ckpts}")
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
-    shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "max_model_len", "seed", "out")}
+    shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
             continue
         for t in (base_temps if (args.base and step == 0 and path == args.base) else temps):
             full = tag if t is None else f"{tag}_T{t:.2f}"
-            if (out_dir / f"{full}_eval.json").exists():
+            done = out_dir / f"{full}_eval.json"
+            if done.exists() and str(json.loads(done.read_text()).get("engine", "")).startswith("vllm"):
                 print(f"{full}: already done", flush=True)
                 continue
             job = {"path": str(path), "tag": full, "temperature": 1.0 if t is None else t, "sampled": sampled,
                    "greedy": bool(args.greedy_problems) and step in greedy_steps and (t is None or abs(t - 1.0) < 1e-9), "args": shared}
             spec = out_dir / f".{full}_job.json"
             spec.write_text(json.dumps(job))
-            code = subprocess.call([sys.executable, __file__, "--worker", str(spec)])
+            code = subprocess.call([sys.executable, "-I", __file__, "--worker", str(spec)])
             if code != 0:
                 raise SystemExit(f"{full}: worker exited with {code}")
     print("done", flush=True)

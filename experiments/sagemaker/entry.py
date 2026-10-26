@@ -24,20 +24,31 @@ VLLM_VERSION = "0.11.0"
 _vllm_lock = threading.Lock()
 
 
+def clean_env():
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
+    env["PYTHONNOUSERSITE"] = "1"
+    return env
+
+
 def vllm_python():
-    """A separate environment with vLLM (it pins its own torch and transformers); installed once per job."""
+    """A separate environment with vLLM (it pins its own torch and transformers); installed once per job, isolated
+    from the container's packages, and checked (versions, origins, CUDA) before use."""
     with _vllm_lock:
         py = VLLM_ENV / "bin" / "python"
         if not (VLLM_ENV / ".ready").exists():
-            subprocess.run([sys.executable, "-m", "venv", str(VLLM_ENV)], check=True)
-            subprocess.run([str(VLLM_ENV / "bin" / "pip"), "install", "-q", f"vllm=={VLLM_VERSION}", "transformers>=4.56,<5"], check=True)
+            env = clean_env()
+            subprocess.run([sys.executable, "-I", "-m", "venv", str(VLLM_ENV)], check=True, env=env)
+            subprocess.run([str(py), "-I", "-m", "pip", "install", "-q", f"vllm=={VLLM_VERSION}", "transformers>=4.56,<5"],
+                           check=True, env=env)
+            check = ("import torch, transformers, vllm; print('vllm', vllm.__version__, vllm.__file__); "
+                     "print('transformers', transformers.__version__, transformers.__file__); "
+                     "print('torch', torch.__version__, torch.version.cuda, torch.cuda.is_available()); "
+                     "assert transformers.__file__.startswith('%s') and torch.cuda.is_available()" % VLLM_ENV)
+            subprocess.run([str(py), "-I", "-c", check], check=True, env=env)
+            subprocess.run(["nvidia-smi", "--query-gpu=driver_version,name", "--format=csv,noheader"], env=env)
             (VLLM_ENV / ".ready").write_text(VLLM_VERSION)
             print(f"vLLM {VLLM_VERSION} installed in {VLLM_ENV}", flush=True)
         return str(py)
-CKPT_CHANNEL = Path("/opt/ml/input/data/ckpts")
-LIVE = Path("/opt/ml/checkpoints")
-MODEL_CHANNEL = Path("/opt/ml/input/data/model")
-FINAL = Path("/opt/ml/model")
 
 
 def local_model_args():
@@ -51,8 +62,7 @@ def local_model_args():
 def run_one(name, cmd, gpu, status, isolated=False):
     env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu)}
     if isolated:  # a separate virtual environment: do not let the container's site-packages shadow its own
-        env.pop("PYTHONPATH", None)
-        env["PYTHONNOUSERSITE"] = "1"
+        env = {**clean_env(), "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu)}
     print(f"[{name}] gpu {gpu}: {' '.join(cmd)}", flush=True)
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     for line in proc.stdout:
@@ -92,10 +102,18 @@ def run_plan(plan):
                     continue
                 base = ["--base", local[1]] if spec.get("include_base") else []
                 ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
-                engine = [vllm_python(), str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
+                if spec.get("engine", "hf") not in ("hf", "vllm"):
+                    raise ValueError(f"unknown engine {spec['engine']}")
+                engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                 cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
-                run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status, isolated=spec.get("engine") == "vllm")
-        threads = [threading.Thread(target=eval_lane, args=(g, specs)) for g, specs in enumerate(plan["eval_lanes"])]
+                run_one(f"{spec['name']}#{spec.get('part', 0)}#lane{gpu}", cmd, gpu, status, isolated=spec.get("engine") == "vllm")
+        def guarded_lane(g, specs):
+            try:
+                eval_lane(g, specs)
+            except Exception as e:  # a lane that crashes (e.g. the vLLM install) must not look successful
+                status[f"lane{g}"] = f"exception: {e!r}"
+                print(f"lane {g} exception: {e!r}", flush=True)
+        threads = [threading.Thread(target=guarded_lane, args=(g, specs)) for g, specs in enumerate(plan["eval_lanes"])]
         for t in threads:
             t.start()
         for t in threads:
