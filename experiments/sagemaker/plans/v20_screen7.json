@@ -1,0 +1,265 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "SCREEN7_0",
+    "sub": null,
+    "part": 0,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "0",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_1",
+    "sub": null,
+    "part": 1,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "144",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_2",
+    "sub": null,
+    "part": 2,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "288",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_3",
+    "sub": null,
+    "part": 3,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "432",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_4",
+    "sub": null,
+    "part": 4,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "576",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_5",
+    "sub": null,
+    "part": 5,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "720",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_6",
+    "sub": null,
+    "part": 6,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "864",
+     "--limit",
+     "144"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "SCREEN7_7",
+    "sub": null,
+    "part": 7,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "hard7_pool.json",
+     "--n",
+     "8",
+     "--max-new",
+     "2048",
+     "--gen-batch",
+     "256",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "2027",
+     "--offset",
+     "1008",
+     "--limit",
+     "144"
+    ]
+   }
+  ]
+ ]
+}

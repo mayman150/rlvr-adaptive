@@ -110,3 +110,16 @@ size of the reference's own batching noise and every other checked parameter exc
 passed. Core menu launched: B7, PSR7, NSR7, AC7, seeds 8 and 9, two runs per ml.p4de.24xlarge (4 GPUs each),
 us-east-1. Evaluation as above with PSR7 also at step 25 (reference knots, as in Pre-registration 21); trained
 checkpoints are evaluated only after rule 3's forecast is committed.
+
+**Base 7B evaluation and the harder cohort (October 26, 2026, before any trained 7B checkpoint is evaluated).**
+Base Qwen2.5-Math-7B on the 511 problems at 2,048 tokens: pass@1 29.9, pass@16 87.5, 15.8% truncated; successes of
+32: 37 problems with 0, 116 with 1-4, 254 with 5-16, 104 with 17-31, none with 32. Fewer than 128 problems have
+1-4 successes, so the harder cohort is triggered. Selection, fixed before screening: pool = the 1,145 Level 4-5
+problems of `eval_math_test_numeric.json` not in the 511 or in `confirm_fresh_512.json`
+(`data/hard7_pool.json`); screening = 8 base-7B samples per problem at 2,048 tokens, seed 2027 (not reused for
+evaluation); eligible = 0-2 successes of 8; cohort = the first 256 eligible problems in a random order (seed 2028),
+labels audited by an independent solver (disagreements removed, not replaced); frozen as
+`data/hard7_cohort.json` before any arm is evaluated on it. Every arm and B7's references are evaluated on it with
+the same protocol (32 samples, 2,048 tokens, the same steps and temperatures) and reported separately with the same
+rules. Rule 3's forecast (`FORECAST_20.json`, `forecast_20.py`) was committed in 5cbf692 before the trained
+evaluations started.
