@@ -72,3 +72,9 @@ truncation and answer length; step-150 pass@1 minus B1k; greedy accuracy.
 ## Cost
 
 9 training runs and 30 checkpoint evaluations on AWS L40S, about $250.
+
+**Known implementation detail (found October 26, 2026 by Codex while reviewing Pre-registration 23; all P22 runs use
+the same code).** `box_start` cuts a prefix at the last token whose decoding does not yet contain "\boxed"; when
+"\boxed" is split into a backslash token and "boxed", the prefix keeps the backslash. The answer itself is never in
+the prefix (prefix-only verification is 0 in every logged step), and the detail applies equally to HG1k, HGm1k and
+PG1k. Pre-registration 23 uses a new cut (`own_prefix_len`, `hint_text`) that stops wholly before the box.
