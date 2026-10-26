@@ -22,6 +22,10 @@ EVAL_VLLM = HERE / "training" / "eval_vllm.py"
 VLLM_ENV = Path("/opt/vllm-env")
 VLLM_VERSION = "0.11.0"
 _vllm_lock = threading.Lock()
+CKPT_CHANNEL = Path("/opt/ml/input/data/ckpts")
+LIVE = Path("/opt/ml/checkpoints")
+MODEL_CHANNEL = Path("/opt/ml/input/data/model")
+FINAL = Path("/opt/ml/model")
 
 
 def clean_env():

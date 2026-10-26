@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+EVALUATOR = "eval_vllm v2"  # bump when the generation or accounting changes
 sys.path.insert(0, str(HERE))
 
 
@@ -50,7 +51,8 @@ def evaluate(job):
     gp = load_problems(a["greedy_problems"], None) if job["greedy"] else []
     gtexts = [build_prompt(tok, q["question"]) for q in gp]
     longest = max([len(tok(t).input_ids) for t in texts + gtexts] or [0])
-    limit = json.loads((Path(job["path"]) / "config.json").read_text()).get("max_position_embeddings", 4096)
+    from transformers import AutoConfig
+    limit = getattr(AutoConfig.from_pretrained(job["path"]), "max_position_embeddings", 4096)
     if longest + a["max_new"] > limit:
         raise SystemExit(f"prompt {longest} + max_new {a['max_new']} exceeds the model's context {limit}")
     llm = LLM(model=job["path"], dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
@@ -66,7 +68,8 @@ def evaluate(job):
         return tok.decode(ids[:cut or len(ids)], skip_special_tokens=True), length, ended
 
     res = {"tag": job["tag"], "model": job["path"], "n": a["n"], "problems": len(problems), "pass_at_k": {},
-           "temperature": job["temperature"], "engine": f"vllm {vllm.__version__}"}
+           "temperature": job["temperature"], "engine": f"vllm {vllm.__version__}", "evaluator": EVALUATOR,
+           "fingerprint": job["fingerprint"]}
     if job["sampled"]:
         if job["temperature"] < 0.01:
             raise SystemExit("temperatures below 0.01 are clamped by vLLM; use the greedy path")
@@ -159,10 +162,13 @@ def main():
         for t in (base_temps if (args.base and step == 0 and path == args.base) else temps):
             full = tag if t is None else f"{tag}_T{t:.2f}"
             done = out_dir / f"{full}_eval.json"
-            if done.exists() and str(json.loads(done.read_text()).get("engine", "")).startswith("vllm"):
-                print(f"{full}: already done", flush=True)
-                continue
-            job = {"path": str(path), "tag": full, "temperature": 1.0 if t is None else t, "sampled": sampled,
+            fingerprint = {k: shared[k] for k in ("problems", "limit", "offset", "n", "max_new", "seed")}
+            if done.exists():
+                old = json.loads(done.read_text())
+                if old.get("fingerprint") == fingerprint and old.get("evaluator") == EVALUATOR:
+                    print(f"{full}: already done", flush=True)
+                    continue
+            job = {"path": str(path), "tag": full, "temperature": 1.0 if t is None else t, "sampled": sampled, "fingerprint": fingerprint,
                    "greedy": bool(args.greedy_problems) and step in greedy_steps and (t is None or abs(t - 1.0) < 1e-9), "args": shared}
             spec = out_dir / f".{full}_job.json"
             spec.write_text(json.dumps(job))
