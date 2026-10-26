@@ -20,6 +20,7 @@ import gzip
 import json
 import math
 import random
+import re
 import sys
 import time
 from contextlib import nullcontext
@@ -679,6 +680,159 @@ def box_start(runner, ids):
     return cache[key]
 
 
+HINT_OPEN, HINT_CLOSE = "\n\n(Hint: ", ")\n\n"
+
+
+def text_cut(runner, ids, marker_pos):
+    """Largest k such that the decoding of ids[:k] ends at or before character marker_pos of the full decoding."""
+    lo, hi = 0, len(ids)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if len(runner.tok.decode(ids[:mid])) <= marker_pos:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo
+
+
+def own_prefix_len(runner, ids, cap):
+    """Tokens of a policy answer usable as a prefix: before its first stop token and wholly before its first box."""
+    n = len(ids)
+    for t, tok in enumerate(ids.tolist()):
+        if tok in runner.stop_ids:
+            n = t
+            break
+    ids = ids[:n]
+    full = runner.tok.decode(ids)
+    pos = full.find("\\boxed")
+    k = n if pos < 0 else text_cut(runner, ids, pos)
+    return min(cap, k)
+
+
+def hint_text(runner, human, h, answer):
+    """The first h tokens of a human solution, cut wholly before its first box and before the first "= answer"."""
+    full = runner.tok.decode(human)
+    cuts = [len(full)]
+    if "\\boxed" in full:
+        cuts.append(full.find("\\boxed"))
+    ans = str(answer).strip().strip("$")
+    m = re.search(r"=\s*" + re.escape(ans) + r"(?![\w^/{(\\]|\.\d)", full) if ans else None
+    if m:
+        cuts.append(m.start())
+    k = min(h, text_cut(runner, human, min(cuts)))
+    return runner.tok.decode(human[:k]), k
+
+
+@torch.no_grad()
+def generate_ids(runner, prompts, max_new, seed):
+    """Sample one continuation per token-id prompt (left-padded batches of gen_batch), keeping the given ids exactly."""
+    runner.model.eval()
+    torch.manual_seed(seed)
+    outs = []
+    for s in range(0, len(prompts), runner.args.gen_batch):
+        chunk = prompts[s:s + runner.args.gen_batch]
+        width = max(len(x) for x in chunk)
+        ids = torch.full((len(chunk), width), runner.pad_id, dtype=torch.long)
+        mask = torch.zeros_like(ids)
+        for i, x in enumerate(chunk):
+            ids[i, width - len(x):] = x
+            mask[i, width - len(x):] = 1
+        ids, mask = ids.to(runner.device), mask.to(runner.device)
+        with runner.autocast:
+            gen = runner.model.generate(input_ids=ids, attention_mask=mask, max_new_tokens=max_new, eos_token_id=runner.stop_ids,
+                                        pad_token_id=runner.pad_id, do_sample=True, temperature=1.0, top_p=1.0, top_k=0)
+        for row, x in zip(gen, chunk):
+            outs.append((x, runner.trim(row[width:])))
+    return outs
+
+
+def mh_credit(runner, args, step, batch, texts, answers, rewards, keys, bank):
+    """Minimum-help credit (Pre-registration 23). For up to mh_groups problems with at most mh_max_success successes
+    among their 8 answers this step and a retained human solution, take mh_prefixes of the failed answers and cut each at L = min(mh_prefix_tokens,
+    the tokens before its first stop token and wholly before its first box); continue each prefix with hints of h
+    tokens (h in mh_hints, ascending from 0; the human solution cut before its box and before "= answer"),
+    mh_conts continuations per level, within max_new. Value of a prefix: "min" = 1 - i/len(hints) for the smallest
+    hint index i with a success (0 if none); "avg" = mean success over all its continuations. Values are centred
+    within each problem (problems whose values are all equal get no credit). Returns (answer index, L, centred
+    value) for the credited prefixes and statistics."""
+    G = args.group
+    hints = [int(h) for h in args.mh_hints.split(",")]
+    rng = random.Random(args.seed * 1009 + step)
+    groups = [j for j in range(len(batch)) if sum(rewards[j * G:(j + 1) * G]) <= args.mh_max_success and bank.get(keys[j])]
+    stats = {"eligible": len(groups)}
+    rng.shuffle(groups)
+    groups = groups[: args.mh_groups]
+    items, meta, hint_tokens, dup = [], [], [], 0
+    for j in groups:
+        human = bank[keys[j]][0][1]
+        levels = [hint_text(runner, human, h, batch[j]["answer"]) if h > 0 else ("", 0) for h in hints]
+        dup += sum(1 for a, b in zip(levels, levels[1:]) if a[1] == b[1])
+        hint_tokens.extend(k for _, k in levels)
+        failed = [i for i in range(G) if rewards[j * G + i] == 0]
+        for i in rng.sample(failed, min(args.mh_prefixes, len(failed))):
+            k = j * G + i
+            r = answers[k][1].cpu()
+            L = own_prefix_len(runner, r, args.mh_prefix_tokens)
+            if L < 8:
+                continue
+            pre = runner.tok.decode(r[:L])
+            for hi, (htxt, hk) in enumerate(levels):
+                hint = HINT_OPEN + htxt + HINT_CLOSE if hk > 0 else ""
+                hint_ids = runner.tok(hint, add_special_tokens=False).input_ids if hint else []
+                cap = args.max_new - L - len(hint_ids)
+                if cap < 16:
+                    continue
+                ids = torch.cat([answers[k][0].cpu(), r[:L], torch.tensor(hint_ids, dtype=r.dtype)])  # the credited ids
+                for _ in range(args.mh_conts):
+                    items.append(ids)
+                    meta.append((k, j, L, hi, pre + hint, cap))
+    stats.update({"groups": len(groups), "queries": len(items), "duplicate_levels": dup,
+                  "mean_hint_tokens": sum(hint_tokens) / max(len(hint_tokens), 1), "success_by_hint": [0] * len(hints),
+                  "query_tokens": 0, "query_truncated": 0, "credited": 0, "credited_tokens": 0, "contrast_groups": 0})
+    out = []
+    if not items:
+        return out, stats
+    conts = generate_ids(runner, items, max(m[5] for m in meta), args.seed * 100003 + step + 31337)
+    succ = {}
+    for (pi, ri), (k, j, L, hi, text, cap) in zip(conts, meta):
+        if len(ri) >= cap:
+            ri = ri[:cap]
+            stats["query_truncated"] += int(int(ri[-1]) not in runner.stop_ids)
+        r = reward(text + runner.tok.decode(ri), batch[j]["answer"])
+        succ.setdefault((j, k, L), [[] for _ in hints])[hi].append(r)
+        stats["success_by_hint"][hi] += r
+        stats["query_tokens"] += len(pi) + len(ri)
+    by_group = {}
+    for (j, k, L), per in succ.items():
+        if args.mh_mode == "min":
+            first = next((i for i, v in enumerate(per) if any(v)), None)
+            value = 0.0 if first is None else 1.0 - first / len(hints)
+        else:
+            flat = [x for v in per for x in v]
+            value = sum(flat) / len(flat)
+        by_group.setdefault(j, []).append((k, L, value))
+    for j, rows in by_group.items():
+        m = sum(v for _, _, v in rows) / len(rows)
+        if len(rows) < 2 or all(abs(v - m) <= 1e-9 for _, _, v in rows):
+            continue  # no contrast: no credit
+        stats["contrast_groups"] += 1
+        out.extend((k, L, v - m) for k, L, v in rows if abs(v - m) > 1e-9)
+    stats["credited"] = len(out)
+    stats["credited_tokens"] = sum(L for _, L, _ in out)
+    stats["credit_mass"] = sum(abs(a) * L for _, L, a in out)
+    return out, stats
+
+
+def mh_backward(runner, args, answers, items, coef, norm):
+    """Accumulate -coef * sum_i a_i * sum_{t < L_i} log pi(y_it) / norm (the prefix tokens of each credited answer)."""
+    live = [(k, L, a) for k, L, a in items if abs(a) > 1e-9]
+    for s in range(0, len(live), args.train_batch):
+        chunk = live[s:s + args.train_batch]
+        lps = runner.token_logprobs([answers[k] for k, _, _ in chunk])
+        loss = -sum(a * lp[:L].sum() for (k, L, a), lp in zip(chunk, lps)) * coef / norm
+        loss.backward()
+    return len(live)
+
 def bbg_utility(m, n, k):
     """Yuan et al. (2026), Bayesian boundary gating: E[k (1 - p)^(k-1)] under p ~ Beta(m + 1, n - m + 1)."""
     out = float(k)
@@ -1072,6 +1226,17 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         runner._archive_keys = set(rescue)  # the stored solutions (bank[0]); own successes are appended later
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
+    mh_bank = None
+    if args.mh_mode != "none":
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 \
+            and args.prefix_rollouts == 0 and not args.complete_groups and args.memory_lambda == 0 and not args.tar_archive \
+            and not args.seed_archive and not args.sft_archive and not args.rescue_archive and arm == "baseline", \
+            "minimum-help credit is implemented for plain on-policy Dr. GRPO"
+        hints = [int(h) for h in args.mh_hints.split(",")]
+        assert hints[0] == 0 and hints == sorted(set(hints)), "hint levels must ascend from 0"
+        assert args.mh_anneal_steps > 0 and args.mh_prefixes >= 2, "minimum-help credit needs an anneal and >= 2 prefixes"
+        mh_bank = {i: [d["seq"]] for i, d in load_discovery(runner, args.mh_archive, problems).items() if d["seq"] is not None}
+        print(f"[{arm}] minimum-help hints: {len(mh_bank)} problems with a retained human solution", flush=True)
     assert args.prefix_rollouts <= args.group and args.prefix_anneal_steps > 0, "prefix rollouts must fit in a group"
     assert not (args.alloc_first > 0 and (args.reuse > 1 or surrogate_flags(args) or args.diagnostics or args.prefix_rollouts or args.complete_groups
                                           or args.unlikely_beta > 0 or args.bbg_k > 0 or arm == "psrnoise")), "allocation is implemented for the plain on-policy loss"
@@ -1241,6 +1406,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             if args.prefix_rollouts > 0:
                 plain = [r for k, r in enumerate(rewards) if k not in getattr(runner, "_prefixed", set())]
                 extra["mean_reward_unassisted"] = sum(plain) / max(len(plain), 1)
+            mh_items = []
+            mh_coef = args.mh_coef * max(0.0, 1.0 - step / args.mh_anneal_steps) if mh_bank is not None else 0.0
+            if mh_bank is not None and mh_coef > 0:
+                mh_items, extra["mh"] = mh_credit(runner, args, step, batch, texts, answers, rewards, keys, mh_bank)
+                extra["mh"]["coef"] = mh_coef
         else:
             if arm == "optimal" and step % args.resolve_every == 0:
                 prior = policy_table.fit_beta(recent if recent else calib_groups)
@@ -1308,6 +1478,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             if arm in FIXED_ARMS and injected:
                 backward_weighted(runner, args, [a for a, _ in injected], list(range(len(injected))), [x for _, x in injected], norm)
                 n_live = max(n_live, len(injected))
+            if arm in FIXED_ARMS and mh_items:
+                n_live = max(n_live, mh_backward(runner, args, answers, mh_items, mh_coef, norm))
             if args.memory_lambda > 0 and arm in FIXED_ARMS:
                 base_lambda = args.memory_lambda
                 if args.memory_anneal_steps > 0:
@@ -1463,6 +1635,17 @@ def main():
     parser.add_argument("--prefix-anneal-steps", type=int, default=100)
     parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
     parser.add_argument("--prefix-before-box", action="store_true", help="cut every prefix before the stored answer's first box")
+    parser.add_argument("--mh-mode", default="none", choices=("none", "min", "avg"),
+                        help="minimum-help credit on the policy's own prefixes (min) or its averaged-value control (avg)")
+    parser.add_argument("--mh-archive", default="human_prefix_train.json", help="hints (human solutions) with base counts")
+    parser.add_argument("--mh-groups", type=int, default=4)
+    parser.add_argument("--mh-max-success", type=int, default=1, help="eligible groups have at most this many successes of 8")
+    parser.add_argument("--mh-prefixes", type=int, default=4)
+    parser.add_argument("--mh-prefix-tokens", type=int, default=256)
+    parser.add_argument("--mh-hints", default="0,32,64")
+    parser.add_argument("--mh-conts", type=int, default=2)
+    parser.add_argument("--mh-coef", type=float, default=2.0)
+    parser.add_argument("--mh-anneal-steps", type=int, default=100)
     parser.add_argument("--prefix-fixed", action="store_true",
                         help="prefixes only from the archive's stored solution (not from the policy's own later successes)")
     parser.add_argument("--prefix-match-archive", default=None,
