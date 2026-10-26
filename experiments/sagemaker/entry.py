@@ -30,7 +30,7 @@ def vllm_python():
         py = VLLM_ENV / "bin" / "python"
         if not (VLLM_ENV / ".ready").exists():
             subprocess.run([sys.executable, "-m", "venv", str(VLLM_ENV)], check=True)
-            subprocess.run([str(VLLM_ENV / "bin" / "pip"), "install", "-q", f"vllm=={VLLM_VERSION}"], check=True)
+            subprocess.run([str(VLLM_ENV / "bin" / "pip"), "install", "-q", f"vllm=={VLLM_VERSION}", "transformers>=4.56,<5"], check=True)
             (VLLM_ENV / ".ready").write_text(VLLM_VERSION)
             print(f"vLLM {VLLM_VERSION} installed in {VLLM_ENV}", flush=True)
         return str(py)

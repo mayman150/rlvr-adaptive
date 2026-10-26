@@ -1,0 +1,196 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "BASE7v",
+    "sub": null,
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "0",
+     "--sampled-steps",
+     "0",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0"
+    ],
+    "include_base": true
+   }
+  ],
+  [
+   {
+    "name": "B7s8",
+    "sub": "B7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B7s8",
+    "sub": "B7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B7s8",
+    "sub": "B7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B7s8",
+    "sub": "B7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B7s9",
+    "sub": "B7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B1k9v",
+    "sub": "B1k9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "50,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "B1k9v",
+    "sub": "B1k9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "50,150",
+     "--sampled-steps",
+     "50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}
