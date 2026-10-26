@@ -56,3 +56,18 @@ protocol; its checkpoint selection does not hold Pass@1 fixed. The earlier state
 paper compares at matched Pass@1 is therefore too strong: matched-Pass@1 comparison appears informally
 in DARS. DARS also allocates extra rollouts to low-accuracy problems (at a larger total budget), and HORA
 (2605.07114) allocates a fixed budget by posterior hit utility with per-problem normalization.
+
+## Added October 26, 2026 (found by Codex while ranking method ideas; abstracts not yet re-checked by hand)
+
+| arXiv | Paper (as cited by Codex) | Relation |
+|---|---|---|
+| 2602.21492 | GradAlign: RL data selection by gradient alignment with a validation policy gradient | Closest to transfer routing (idea 2); single mean target direction |
+| 2602.21189 | Cross-prompt interference in RLVR | Formalizes coupling between prompts; context for our transfer probe |
+| 2604.00698 | HiLL: hint-learning with explicit transferability | Hinted training that targets transfer to unhinted prompts; prior for P22 |
+| 2609.34975 | HATCH: updates concentrate on hinted solving | Diagnoses why hints may not transfer; prior for P22 |
+| 2609.07303 | Progressive Point Matching: reference-derived segment rewards | Closest to bottleneck subgoal credit (idea 3) |
+| 2605.22074 | SCRL: verifiable subproblems from reference solutions | Reference-derived intermediate rewards |
+| 2604.12627 | KnowRL: minimal sufficient guidance | Closest to minimum-help credit (P23); guidance, not credit on own prefixes |
+| 2410.08146 | Rewarding Progress (process advantage from a prover) | Process value from continuations; prior for P23 |
+| 2410.01679 | VinePPO: Monte Carlo continuation values | Continuation-based credit; the averaged-value control in P23 is of this kind |
+| 2211.15055 | AdaTask: task-specific adaptive optimizer statistics | Prior for separate optimizer moments (idea 5) |
