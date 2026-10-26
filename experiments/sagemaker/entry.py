@@ -18,6 +18,22 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TRAIN = HERE / "training" / "train_grpo.py"
 EVAL = HERE / "training" / "eval_ckpt.py"
+EVAL_VLLM = HERE / "training" / "eval_vllm.py"
+VLLM_ENV = Path("/opt/vllm-env")
+VLLM_VERSION = "0.11.0"
+_vllm_lock = threading.Lock()
+
+
+def vllm_python():
+    """A separate environment with vLLM (it pins its own torch and transformers); installed once per job."""
+    with _vllm_lock:
+        py = VLLM_ENV / "bin" / "python"
+        if not (VLLM_ENV / ".ready").exists():
+            subprocess.run([sys.executable, "-m", "venv", str(VLLM_ENV)], check=True)
+            subprocess.run([str(VLLM_ENV / "bin" / "pip"), "install", "-q", f"vllm=={VLLM_VERSION}"], check=True)
+            (VLLM_ENV / ".ready").write_text(VLLM_VERSION)
+            print(f"vLLM {VLLM_VERSION} installed in {VLLM_ENV}", flush=True)
+        return str(py)
 CKPT_CHANNEL = Path("/opt/ml/input/data/ckpts")
 LIVE = Path("/opt/ml/checkpoints")
 MODEL_CHANNEL = Path("/opt/ml/input/data/model")
@@ -73,8 +89,8 @@ def run_plan(plan):
                     continue
                 base = ["--base", local[1]] if spec.get("include_base") else []
                 ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
-                cmd = [sys.executable, str(EVAL), "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"),
-                       *spec["args"]]
+                engine = [vllm_python(), str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
+                cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
                 run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
         threads = [threading.Thread(target=eval_lane, args=(g, specs)) for g, specs in enumerate(plan["eval_lanes"])]
         for t in threads:
