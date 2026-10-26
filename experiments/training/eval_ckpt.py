@@ -24,9 +24,10 @@ from train_grpo import build_prompt, pass_at_k, stop_token_ids  # noqa: E402
 from verifier import last_boxed, reward  # noqa: E402
 
 
-def load_problems(path, limit):
+def load_problems(path, limit, offset=0):
     p = Path(path) if Path(path).exists() else HERE / "data" / path
-    return json.loads(p.read_text())[:limit]
+    rows = json.loads(p.read_text())[offset:]
+    return rows[:limit]
 
 
 @torch.no_grad()
@@ -142,6 +143,7 @@ def main():
     ap.add_argument("--base", default=None, help="also evaluate this model as step 0")
     ap.add_argument("--problems", required=True)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--offset", type=int, default=0, help="skip this many problems first (for sharded evaluation)")
     ap.add_argument("--n", type=int, default=32)
     ap.add_argument("--greedy-problems", default=None)
     ap.add_argument("--greedy-steps", default="", help="checkpoint steps that also get the greedy evaluation")
@@ -159,7 +161,7 @@ def main():
     args = ap.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    problems = load_problems(args.problems, args.limit)
+    problems = load_problems(args.problems, args.limit, args.offset)
     greedy_problems = load_problems(args.greedy_problems, None) if args.greedy_problems else None
     greedy_steps = {int(s) for s in args.greedy_steps.split(",") if s}
     sampled_steps = {int(s) for s in args.sampled_steps.split(",") if s}
