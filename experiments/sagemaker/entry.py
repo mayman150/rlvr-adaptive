@@ -48,8 +48,11 @@ def local_model_args():
     return []
 
 
-def run_one(name, cmd, gpu, status):
+def run_one(name, cmd, gpu, status, isolated=False):
     env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu)}
+    if isolated:  # a separate virtual environment: do not let the container's site-packages shadow its own
+        env.pop("PYTHONPATH", None)
+        env["PYTHONNOUSERSITE"] = "1"
     print(f"[{name}] gpu {gpu}: {' '.join(cmd)}", flush=True)
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     for line in proc.stdout:
@@ -91,7 +94,7 @@ def run_plan(plan):
                 ckpts = CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
                 engine = [vllm_python(), str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                 cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
-                run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status)
+                run_one(f"{spec['name']}#{spec.get('part', 0)}", cmd, gpu, status, isolated=spec.get("engine") == "vllm")
         threads = [threading.Thread(target=eval_lane, args=(g, specs)) for g, specs in enumerate(plan["eval_lanes"])]
         for t in threads:
             t.start()

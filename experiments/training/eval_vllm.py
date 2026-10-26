@@ -30,8 +30,12 @@ def load_problems(path, limit, offset=0):
 
 def evaluate(job):
     """One checkpoint (run in a subprocess): sampled pass@k and, optionally, greedy accuracy."""
+    import transformers
+    import vllm
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
+
+    print(f"vllm {vllm.__version__}, transformers {transformers.__version__} ({transformers.__file__})", flush=True)
 
     from train_grpo import build_prompt, pass_at_k, stop_token_ids
     from verifier import last_boxed, reward
