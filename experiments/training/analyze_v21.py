@@ -59,11 +59,36 @@ def trunc(res, name, seed, step=150, base=""):
     return None if d is None else d.get("truncated_rate")
 
 
+def qualifier(res, arms, seeds, limit=0.20):
+    """Pre-registration 21's budget qualifier for one comparison: any of its arms above 20% truncation at step 150."""
+    over = sorted({a for a in arms for s in seeds if (trunc(res, a, s) or 0) > limit})
+    return f"; qualified: truncation still substantial at 1,024 ({', '.join(over)})" if over else ""
+
+
+def verdict_eq(t, h, key):
+    if "estimate" not in t:
+        return t["verdict"]
+    if not M.clamped_ok(t):
+        return "not interpreted (more than 10% clamped)"
+    return "average equivalence" if M.equivalent(t) else "departure" if M.departure(t, h[key][1]) else "inconclusive"
+
+
+def verdict_sup(t, h, key, null="average equivalence"):
+    if "estimate" not in t:
+        return t["verdict"]
+    if not M.clamped_ok(t):
+        return "not interpreted (more than 10% clamped)"
+    return "moves the curve (fresh confirmation required)" if M.moves(t, h[key][1]) else null if M.equivalent(t) else "inconclusive"
+
+
+B_NEED = [("BASE15", 0, 1.0)] + [(f"B1k{s}", st, 1.0) for s in SEEDS for st in (25, 50, 100, 150)] + \
+         [(f"B1k{s}", 150, t) for s in SEEDS for t in (1.15, 1.3)]
+
+
 def p21(res, draws):
     print("Pre-registration 21 (1,024 tokens; vLLM evaluation)")
-    need = [("BASE15", 0, 1.0)] + [(f"{a}{s}", st, 1.0) for a, steps in (("B1k", (25, 50, 100, 150)), ("PSR1k", (25, 50, 100, 150)),
-                                                                          ("NSR1k", (50, 100, 150)), ("AC1k", (50, 100, 150))) for s in SEEDS for st in steps] + \
-           [(f"B1k{s}", 150, t) for s in SEEDS for t in (1.15, 1.3)]
+    need = B_NEED + [(f"{a}{s}", st, 1.0) for a, steps in (("PSR1k", (25, 50, 100, 150)), ("NSR1k", (50, 100, 150)), ("AC1k", (50, 100, 150)))
+                     for s in SEEDS for st in steps]
     miss = missing(res, need)
     if miss:
         print(f"   incomplete evaluation; missing {miss}")
@@ -73,28 +98,18 @@ def p21(res, draws):
     Benv = M.reference(traj(res, "B1k", (25, 50, 100, 150), ""), temps(res, "B1k", ""))
     PSR = M.reference(traj(res, "PSR1k", (25, 50, 100, 150), ""))
     S3 = (50, 100, 150)
-    tests = {"NSR1k vs PSR1k trajectory": M.compare(arm_points(res, "NSR1k", S3), PSR, SEEDS, n, draws),
-             "PSR1k vs B1k trajectory": M.compare(arm_points(res, "PSR1k", S3), B, SEEDS, n, draws),
-             "NSR1k vs B1k trajectory": M.compare(arm_points(res, "NSR1k", S3), B, SEEDS, n, draws),
-             "AC1k vs B1k envelope": M.compare(arm_points(res, "AC1k", S3), Benv, SEEDS, n, draws)}
+    spec = {"NSR1k vs PSR1k trajectory": ("NSR1k", PSR, ("NSR1k", "PSR1k")), "PSR1k vs B1k trajectory": ("PSR1k", B, ("PSR1k", "B1k")),
+            "NSR1k vs B1k trajectory": ("NSR1k", B, ("NSR1k", "B1k")), "AC1k vs B1k envelope": ("AC1k", Benv, ("AC1k", "B1k"))}
+    tests = {k: M.compare(arm_points(res, a, S3), r, SEEDS, n, draws) for k, (a, r, _) in spec.items()}
     h = M.holm(tests)
+    joint = True
     for k, t in tests.items():
-        if "estimate" not in t:
-            v = t["verdict"]
-        elif not M.clamped_ok(t):
-            v = "not interpreted (more than 10% clamped)"
-        elif k.startswith("AC1k"):
-            v = "moves the curve (fresh confirmation required)" if M.moves(t, h[k][1]) else \
-                "average equivalence (replicates Pre-registration 18's null)" if M.equivalent(t) else "inconclusive"
-        else:
-            v = "average equivalence" if M.equivalent(t) else "departure" if M.departure(t, h[k][1]) else "inconclusive"
-        print(M.show(k, t, v + f" (Holm-adjusted p {h[k][0]:.3f})"))
-    t = M.compare(arm_points(res, "AC1k", S3), B, SEEDS, n, draws)
-    print(M.show("AC1k vs B1k trajectory (reported)", t))
+        v = verdict_sup(t, h, k, "average equivalence (replicates Pre-registration 18's null)") if k.startswith("AC1k") else verdict_eq(t, h, k)
+        joint = joint and v.startswith("average equivalence")
+        print(M.show(k, t, v + f" (Holm-adjusted p {h[k][0]:.3f})" + qualifier(res, spec[k][2], SEEDS)))
+    print(f"   joint statement (all four at average equivalence): {'the core result replicates at 1,024 tokens' if joint else 'not established'}")
+    print(M.show("AC1k vs B1k trajectory (reported)", M.compare(arm_points(res, "AC1k", S3), B, SEEDS, n, draws)))
     print("   step-150 truncation: " + "; ".join(f"{a} " + ", ".join(f"{100 * trunc(res, a, s):.1f}%" for s in SEEDS) for a in ("B1k", "PSR1k", "NSR1k", "AC1k")))
-    over = [a for a in ("B1k", "PSR1k", "NSR1k", "AC1k") for s in SEEDS if trunc(res, a, s) > 0.20]
-    print("   budget qualifier: " + ("truncation still substantial at 1,024 for " + ", ".join(sorted(set(over))) if over else "no arm above 20% at step 150"))
-    # sensitivity: references without the step-25 knots
     B3 = M.reference(traj(res, "B1k", (50, 100, 150), ""))
     PSR3 = M.reference(traj(res, "PSR1k", (50, 100, 150), ""))
     for k, (a, r) in {"PSR1k vs B1k (no step-25 knot)": ("PSR1k", B3), "NSR1k vs B1k (no step-25 knot)": ("NSR1k", B3),
@@ -106,34 +121,40 @@ def p21(res, draws):
 
 def p22(res, draws):
     print("Pre-registration 22 (guidance; vLLM evaluation)")
-    seeds = tuple(s for s in SEEDS if all((f"{a}{s}", st, 1.0) in res for a in ("HG1k", "HGm1k") for st in (50, 100, 150))
-                  and all((f"PG1k{s}", st, 1.0) in res for st in (25, 50, 100, 150)))
-    if seeds != SEEDS:
-        print(f"   incomplete evaluation; complete seeds {seeds}")
-    if not seeds:
+    need = B_NEED + [(f"{a}{s}", st, 1.0) for a in ("HG1k", "HGm1k") for s in SEEDS for st in (50, 100, 150)] + \
+           [(f"PG1k{s}", st, 1.0) for s in SEEDS for st in (25, 50, 100, 150)]
+    miss = missing(res, need)
+    if miss:
+        print(f"   incomplete evaluation; missing {miss}")
         return
     n = len(counts(res, "BASE15", 0))
     Benv = M.reference(traj(res, "B1k", (25, 50, 100, 150), ""), temps(res, "B1k", ""))
     PG = M.reference(traj(res, "PG1k", (25, 50, 100, 150), ""))
     S3 = (50, 100, 150)
-    tests = {"HG1k vs B1k envelope": M.compare(arm_points(res, "HG1k", S3), Benv, seeds, n, draws),
-             "HGm1k vs PG1k trajectory": M.compare(arm_points(res, "HGm1k", S3), PG, seeds, n, draws)}
+    tests = {"HG1k vs B1k envelope": M.compare(arm_points(res, "HG1k", S3), Benv, SEEDS, n, draws),
+             "HGm1k vs PG1k trajectory": M.compare(arm_points(res, "HGm1k", S3), PG, SEEDS, n, draws)}
     h = M.holm(tests)
-    t = tests["HG1k vs B1k envelope"]
-    v = t.get("verdict") or ("moves the curve (fresh confirmation required)" if M.moves(t, h["HG1k vs B1k envelope"][1]) else
-                             "on the curve (average equivalence)" if M.equivalent(t) else "inconclusive")
-    print(M.show("rule 1: HG1k vs B1k envelope", t, v))
-    t = tests["HGm1k vs PG1k trajectory"]
-    ok = "estimate" in t and t["estimate"] >= 1 and t["ci95"][0] > 0 and len({np.sign(x) for x in t["per_seed"].values()}) == 1 and h["HGm1k vs PG1k trajectory"][1]
-    print(M.show("rule 2: HGm1k vs PG1k trajectory", t, t.get("verdict") or ("source matters" if ok else "not shown")))
+    k = "HG1k vs B1k envelope"
+    v = verdict_sup(tests[k], h, k, "on the curve (average equivalence)")
+    print(M.show("rule 1: " + k, tests[k], v + qualifier(res, ("HG1k", "B1k"), SEEDS)))
+    k = "HGm1k vs PG1k trajectory"
+    t = tests[k]
+    if "estimate" not in t:
+        v = t["verdict"]
+    elif not M.clamped_ok(t):
+        v = "not interpreted (more than 10% clamped)"
+    else:
+        ok = t["estimate"] >= 1 and t["ci95"][0] > 0 and len({np.sign(x) for x in t["per_seed"].values()}) == 1 and h[k][1]
+        v = "source matters (provisional until fresh confirmation)" if ok else "not shown"
+    print(M.show("rule 2: " + k, t, v + qualifier(res, ("HGm1k", "PG1k"), SEEDS)))
     for a, r in (("PG1k", Benv), ("HGm1k", Benv)):
-        print(M.show(f"{a} vs B1k envelope (reported)", M.compare(arm_points(res, a, S3), r, seeds, n, draws)))
+        print(M.show(f"{a} vs B1k envelope (reported)", M.compare(arm_points(res, a, S3), r, SEEDS, n, draws)))
     w = np.ones(n)
     for a in ("HG1k", "HGm1k", "PG1k"):  # during guidance (step 50) and 50 steps after it ends (step 150), point gaps
         row = []
         for st in (50, 150):
             g = []
-            for s in seeds:
+            for s in SEEDS:
                 value, lo, hi = Benv(s, w)
                 p1, p16 = A.met(counts(res, f"{a}{s}", st), w)
                 g.append(p16 - value(p1) if lo <= p1 <= hi else float("nan"))
@@ -153,24 +174,42 @@ def p23(res, draws):
     seeds = (8,)
     Benv = M.reference(traj(res, "B1k", (25, 50, 100, 150), "val"), temps(res, "B1k", "val"))
     w = np.ones(n)
+    gates = {}
     for arm in ("MH", "AVH"):
         t = M.compare(arm_points(res, arm, (50, 100, 150), "val"), Benv, seeds, n, draws)
         p1_150 = A.met(counts(res, f"{arm}8val", 150), w)[0] - A.met(counts(res, "B1k8val", 150), w)[0]
-        print(M.show(f"{arm} vs B1k envelope", t) + f"; step-150 pass@1 minus B1k {p1_150:+.2f}")
-    AVHtraj = M.reference(lambda s: [(counts(res, "BASE15val", 0), 0)] + [(counts(res, "AVH8val", st), st) for st in (50, 100, 150)])
-    print(M.show("MH vs AVH trajectory", M.compare(arm_points(res, "MH", (50, 100, 150), "val"), AVHtraj, seeds, n, draws)))
-    for arm in ("MH", "AVH"):
         f = glob.glob(f"results/worth-v23-{arm}-s8-*/{arm}/baseline_train.json")
-        if not f:
-            print(f"   {arm}: training log missing")
+        log = json.loads(open(f[0]).read()) if f else None
+        if log is None:
+            print(f"   {arm}: training log missing; selection blocked")
+            gates[arm] = None
             continue
-        mh = [r.get("mh", {}) for r in json.loads(open(f[0]).read())]
+        mh = [r.get("mh", {}) for r in log if r["step"] < 100]
         credited = sum(m.get("credited", 0) for m in mh)
-        probed = sum(m.get("groups", 0) for m in mh)
+        probed = sum(m.get("groups", 0) for m in mh)  # problem-steps whose prefixes were probed
         contrast = sum(m.get("contrast_groups", 0) for m in mh)
-        print(f"   {arm} training: credited prefixes {credited} (floor 150), contrast in {contrast} of {probed} probed problem-steps "
-              f"({100 * contrast / max(probed, 1):.0f}%; gate 30%), queries {sum(m.get('queries', 0) for m in mh)}")
-    print("   selection rule: gain >= +1.5, step-150 pass@1 >= B1k - 2, contrast >= 30%; MH is the candidate if also MH - AVH >= +0.5")
+        dose_ok = credited >= 150
+        share = contrast / max(probed, 1)
+        interp = "estimate" in t and M.clamped_ok(t)
+        q = interp and dose_ok and t["estimate"] >= 1.5 and p1_150 >= -2 and share >= 0.30
+        gates[arm] = q if dose_ok else "inconclusive: insufficient credit"
+        print(M.show(f"{arm} vs B1k envelope", t) + f"; step-150 pass@1 minus B1k {p1_150:+.2f}")
+        print(f"   {arm} gates: credited prefixes (steps 0-99) {credited} (floor 150: {'met' if dose_ok else 'not met'}); contrast in "
+              f"{contrast} of {probed} probed problem-steps ({100 * share:.0f}%; gate 30%; credit is given only where values differ, so "
+              f"the share of probed problem-steps is the operative reading); interpretable: {interp} -> qualifies: {gates[arm]}")
+    AVHtraj = M.reference(lambda s: [(counts(res, "BASE15val", 0), 0)] + [(counts(res, "AVH8val", st), st) for st in (50, 100, 150)])
+    d = M.compare(arm_points(res, "MH", (50, 100, 150), "val"), AVHtraj, seeds, n, draws)
+    print(M.show("MH vs AVH trajectory", d))
+    if None in gates.values():
+        print("   SELECTION: blocked (missing training log)")
+    elif isinstance(gates.get("MH"), str) or isinstance(gates.get("AVH"), str):
+        print(f"   SELECTION: {gates}")
+    elif gates["MH"] and "estimate" in d and d["estimate"] >= 0.5:
+        print("   SELECTION: MH goes to the registered three-seed test")
+    elif gates["AVH"]:
+        print("   SELECTION: AVH (the averaged-value control) is the candidate instead")
+    else:
+        print("   SELECTION: no candidate; the method is dropped and reported")
 
 
 def main():

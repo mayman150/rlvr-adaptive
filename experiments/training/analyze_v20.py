@@ -76,26 +76,38 @@ def run(res, suffix, draws, label):
 
 
 def rule3(res):
-    """Frozen frontier-model forecast (FORECAST_20.json) against B7's observed pass@16 at its observed pass@1, steps 25-150."""
+    """Frozen frontier-model forecast (FORECAST_20.json) against B7's observed pass@16 at its observed pass@1, steps 25-150.
+    Points outside the forecast grid's pass@1 range are unscorable. Strata are the frozen base counts' strata."""
     fc = json.loads(open("FORECAST_20.json").read())
     grid = np.array([r["pass@1"] for r in fc["grid"]])
+    base = np.array(json.loads(open(fc["base"]).read())["counts"])
+    strata = {"c=0": base == 0, "c=1-4": (base >= 1) & (base <= 4), "c=5-16": (base >= 5) & (base <= 16), "c>16": base > 16}
     err = {m: [] for m in ("law", "uniform", "affine")}
-    w = None
+    rows, unscorable = [], []
     for s in SEEDS:
         for st in ARMS["B7"]:
             cc = c(res, f"B7s{s}", st)
             if cc is None:
                 print(f"   rule 3: missing B7s{s} step {st}")
                 return
-            w = np.ones(len(cc))
-            p1, p16 = A.met(cc, w)
+            p1, p16 = A.met(cc, np.ones(len(cc)))
+            if not grid.min() <= p1 / 100 <= grid.max():
+                unscorable.append((s, st, p1))
+                continue
             for m in err:
-                pred = 100 * float(np.interp(p1 / 100, grid, [r[m]["pass@16"] for r in fc["grid"]]))
-                err[m].append(p16 - pred)
+                err[m].append(p16 - 100 * float(np.interp(p1 / 100, grid, [r[m]["pass@16"] for r in fc["grid"]])))
+            strat = {k: A.met(cc, mask.astype(float))[1] - 100 * float(np.interp(p1 / 100, grid, [r["law"][k] for r in fc["grid"]]))
+                     for k, mask in strata.items() if mask.any()}
+            rows.append((s, st, p1, err["law"][-1], strat))
+    if not rows:
+        print("   rule 3: no scorable point")
+        return
     rmse = {m: float(np.sqrt(np.mean(np.square(e)))) for m, e in err.items()}
     cat = "supported" if rmse["law"] <= 2 else "partial" if rmse["law"] <= 3 else "falsified"
-    print(f"Rule 3 (frontier model): RMSE over B7's seed-steps (25-150): law {rmse['law']:.2f} -> {cat}; "
-          f"uniform shift {rmse['uniform']:.2f}, affine {rmse['affine']:.2f}; law errors " + ", ".join(f"{e:+.1f}" for e in err["law"]))
+    print(f"Rule 3 (frontier model): RMSE over {len(rows)} scorable B7 seed-steps: law {rmse['law']:.2f} -> {cat}; "
+          f"comparators uniform shift {rmse['uniform']:.2f}, affine {rmse['affine']:.2f}; unscorable {unscorable}")
+    for s, st, p1, e, strat in rows:
+        print(f"   s{s} step {st} (pass@1 {p1:.1f}): law error {e:+.2f}; by stratum " + ", ".join(f"{k} {v:+.1f}" for k, v in strat.items()))
 
 
 def main():

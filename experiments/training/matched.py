@@ -44,8 +44,8 @@ def compare(arm_points, ref, seeds, n, draws=2000, rng=None):
     if any(len(v) < 2 for v in elig.values()):
         return {"verdict": "insufficient overlap", "eligible": {s: [st for st, _ in v] for s, v in elig.items()}}
 
-    def gaps(w, clamp=None):
-        out = {}
+    def gaps(w, clamp=None, points=None):
+        out, flat = {}, []
         for s in seeds:
             value, lo, hi = ref(s, w)
             g = []
@@ -58,29 +58,43 @@ def compare(arm_points, ref, seeds, n, draws=2000, rng=None):
                         clamp[s] = clamp.get(s, 0) + 1
                 g.append(p16 - v)
             out[s] = float(np.mean(g))
+            flat.extend(g)
+        if points is not None:
+            points.append(flat)
         return out
     full = gaps(ones)
-    clamp, boot = {}, []
+    clamp, boot, pts = {}, [], []
     for _ in range(draws):
         w = np.bincount(rng.integers(0, n, n), minlength=n).astype(float)
-        boot.append(gaps(w, clamp))
+        boot.append(gaps(w, clamp, pts))
     pooled = np.array([np.mean(list(b.values())) for b in boot])
+    # simultaneous 90% bands over the eligible checkpoints (Pre-registration 12: max standardized deviation)
+    flat_full = []
+    for s in seeds:
+        value, lo, hi = ref(s, ones)
+        flat_full += [A.met(cc, ones)[1] - value(A.met(cc, ones)[0]) for _, cc in elig[s]]
+    bp, flat_full = np.array(pts), np.array(flat_full)
+    se = bp.std(axis=0, ddof=1)
+    q = np.percentile(np.max(np.abs(bp - flat_full) / np.where(se > 0, se, np.inf), axis=1), 90)
+    labels = [(s, st) for s in seeds for st, _ in elig[s]]
+    bands = [(lab, float(x), (float(x - q * e), float(x + q * e))) for lab, x, e in zip(labels, flat_full, se)]
     per = {s: np.array([b[s] for b in boot]) for s in seeds}
     return {"estimate": float(np.mean(list(full.values()))), "per_seed": full,
             "ci90": np.percentile(pooled, [5, 95]), "ci95": np.percentile(pooled, [2.5, 97.5]),
             "per_seed_ci90": {s: np.percentile(per[s], [5, 95]) for s in seeds},
             "p_two_sided": float(min(1.0, 2 * min((pooled <= 0).mean(), (pooled >= 0).mean()))),
             "eligible": {s: [st for st, _ in v] for s, v in elig.items()},
-            "clamped_frac": {s: clamp.get(s, 0) / (draws * len(elig[s])) for s in seeds}}
+            "clamped_frac": {s: clamp.get(s, 0) / (draws * len(elig[s])) for s in seeds}, "bands": bands}
 
 
 def holm(tests, alpha=0.05):
     ps = sorted((t.get("p_two_sided", 1.0), k) for k, t in tests.items())
-    out, stop = {}, False
+    out, stop, prev = {}, False, 0.0
     for i, (p, k) in enumerate(ps):
         ok = not stop and p <= alpha / (len(ps) - i)
         stop = stop or not ok
-        out[k] = (min(1.0, p * (len(ps) - i)), ok)
+        prev = max(prev, min(1.0, p * (len(ps) - i)))  # step-down adjusted p (cumulative maximum)
+        out[k] = (prev, ok)
     return out
 
 
@@ -110,4 +124,5 @@ def show(name, t, verdict=""):
     ps = ", ".join(f"{s}: {v:+.2f} [{t['per_seed_ci90'][s][0]:+.2f}, {t['per_seed_ci90'][s][1]:+.2f}]" for s, v in t["per_seed"].items())
     cl = ", ".join(f"{s}: {100 * v:.1f}%" for s, v in t["clamped_frac"].items())
     return (f"   {name}: {t['estimate']:+.2f}, 90% [{t['ci90'][0]:+.2f}, {t['ci90'][1]:+.2f}], 95% [{t['ci95'][0]:+.2f}, "
-            f"{t['ci95'][1]:+.2f}]; per seed {ps}; clamped {cl}" + (f" -> {verdict}" if verdict else ""))
+            f"{t['ci95'][1]:+.2f}]; per seed {ps}; clamped {cl}" + (f" -> {verdict}" if verdict else "")
+            + "\n      bands: " + "; ".join(f"s{s} step {st}: {x:+.1f} [{lo:+.1f}, {hi:+.1f}]" for (s, st), x, (lo, hi) in t["bands"]))
