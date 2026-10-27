@@ -1,0 +1,47 @@
+# Pre-registration 20: registered result (October 27, 2026)
+
+Qwen2.5-Math-7B, 2,048 tokens, seeds 8 and 9, evaluated with eval_vllm.py (equivalence check in the amendment).
+Output of `python analyze_v20.py --draws 2000` (simultaneous bands omitted here; full output in RESULTS_20_output.txt):
+
+```
+Pre-registration 20, the 511 test problems (2,048 tokens, vLLM)
+   NSR7 vs PSR7 trajectory: +0.16, 90% [-0.29, +0.57], 95% [-0.39, +0.64]; per seed 8: +0.06 [-0.66, +0.67], 9: +0.26 [-0.22, +0.81]; clamped 8: 0.0%, 9: 13.7% -> not interpreted (more than 10% clamped) (Holm-adjusted p 1.000)
+   PSR7 vs B7 trajectory: -0.09, 90% [-0.48, +0.31], 95% [-0.55, +0.40]; per seed 8: +0.08 [-0.53, +0.73], 9: -0.26 [-0.73, +0.24]; clamped 8: 0.2%, 9: 1.2% -> average equivalence (Holm-adjusted p 1.000)
+   NSR7 vs B7 trajectory: -0.09, 90% [-0.45, +0.27], 95% [-0.52, +0.32]; per seed 8: -0.17 [-0.74, +0.34], 9: -0.00 [-0.44, +0.46]; clamped 8: 0.2%, 9: 0.9% -> average equivalence (Holm-adjusted p 1.000)
+   AC7 vs B7 envelope: -0.15, 90% [-0.57, +0.16], 95% [-0.64, +0.23]; per seed 8: -0.38 [-0.90, -0.01], 9: +0.08 [-0.48, +0.56]; clamped 8: 2.9%, 9: 0.2% -> replicates the null (average equivalence) (Holm-adjusted p 1.000)
+   AC7 vs B7 trajectory (reported): -0.15, 90% [-0.53, +0.22], 95% [-0.61, +0.28]; per seed 8: -0.38 [-0.86, +0.05], 9: +0.08 [-0.45, +0.63]; clamped 8: 2.9%, 9: 0.2%
+   B7: s8 25: 63.0/93.9, 50: 67.3/94.2, 100: 70.1/94.4, 150: 71.0/94.4 | s9 25: 61.6/93.6, 50: 66.1/93.8, 100: 69.6/94.4, 150: 71.3/95.0; trunc@150 2.1%, 2.1%
+   PSR7: s8 25: 60.4/93.0, 50: 67.1/94.4, 100: 70.2/94.8, 150: 70.0/93.9 | s9 25: 58.3/93.0, 50: 64.3/93.9, 100: 69.1/94.1, 150: 70.8/94.1; trunc@150 2.2%, 2.3%
+   NSR7: s8 50: 63.7/93.8, 100: 68.6/94.2, 150: 70.2/94.1 | s9 50: 64.4/94.4, 100: 69.2/94.2, 150: 70.7/94.2; trunc@150 2.5%, 2.4%
+   AC7: s8 50: 64.9/93.6, 100: 69.4/93.7, 150: 70.6/94.3 | s9 50: 66.3/93.9, 100: 69.5/95.0, 150: 70.6/94.3; trunc@150 2.3%, 2.1%
+Rule 3 (frontier model): RMSE over 8 scorable B7 seed-steps: law 0.23 -> supported; comparators uniform shift 5.53, affine 0.93; unscorable []
+   s8 step 25 (pass@1 63.0): law error -0.03; by stratum c=0 +13.4, c=1-4 -4.0, c=5-16 -0.2, c>16 -0.0
+   s8 step 50 (pass@1 67.3): law error -0.12; by stratum c=0 +18.6, c=1-4 -6.4, c=5-16 -0.0, c>16 -0.0
+   s8 step 100 (pass@1 70.1): law error -0.15; by stratum c=0 +19.4, c=1-4 -6.8, c=5-16 -0.0, c>16 +0.0
+   s8 step 150 (pass@1 71.0): law error -0.18; by stratum c=0 +11.6, c=1-4 -4.3, c=5-16 -0.1, c>16 +0.0
+   s9 step 25 (pass@1 61.6): law error -0.24; by stratum c=0 +7.0, c=1-4 -2.7, c=5-16 -0.3, c>16 -0.0
+   s9 step 50 (pass@1 66.1): law error -0.43; by stratum c=0 +11.6, c=1-4 -5.4, c=5-16 -0.1, c>16 -0.0
+   s9 step 100 (pass@1 69.6): law error -0.05; by stratum c=0 +15.4, c=1-4 -4.8, c=5-16 -0.1, c>16 +0.0
+   s9 step 150 (pass@1 71.3): law error +0.32; by stratum c=0 +22.9, c=1-4 -5.8, c=5-16 -0.1, c>16 +0.0
+Pre-registration 20, the hard cohort (253 problems; reported separately)
+   NSR7 vs PSR7 trajectory: -0.41, 90% [-1.34, +0.63], 95% [-1.57, +0.84]; per seed 8: -0.72 [-2.04, +0.72], 9: -0.10 [-1.27, +1.09]; clamped 8: 10.2%, 9: 9.5% -> not interpreted (more than 10% clamped) (Holm-adjusted p 1.000)
+   PSR7 vs B7 trajectory: +0.44, 90% [-0.63, +1.51], 95% [-0.86, +1.74]; per seed 8: +0.08 [-1.17, +1.37], 9: +0.80 [-0.53, +2.14]; clamped 8: 1.2%, 9: 7.8% -> inconclusive (Holm-adjusted p 1.000)
+   NSR7 vs B7 trajectory: +0.38, 90% [-0.34, +1.04], 95% [-0.45, +1.19]; per seed 8: -0.10 [-1.09, +0.87], 9: +0.86 [-0.13, +1.81]; clamped 8: 0.2%, 9: 2.6% -> average equivalence (Holm-adjusted p 1.000)
+   AC7 vs B7 envelope: -0.12, 90% [-0.92, +0.58], 95% [-1.06, +0.72]; per seed 8: -0.00 [-0.99, +0.94], 9: -0.23 [-1.68, +0.94]; clamped 8: 2.0%, 9: 11.6% -> not interpreted (more than 10% clamped) (Holm-adjusted p 1.000)
+   AC7 vs B7 trajectory (reported): +0.15, 90% [-0.54, +0.89], 95% [-0.67, +1.02]; per seed 8: -0.00 [-0.99, +0.96], 9: +0.30 [-0.83, +1.46]; clamped 8: 2.0%, 9: 11.6%
+   B7: s8 25: 41.2/81.6, 50: 44.3/84.5, 100: 46.7/83.1, 150: 48.1/82.1 | s9 25: 40.0/80.8, 50: 43.7/81.9, 100: 46.4/82.2, 150: 47.9/83.0; trunc@150 3.4%, 3.7%
+   PSR7: s8 25: 39.9/83.6, 50: 44.6/84.5, 100: 47.2/81.7, 150: 46.6/84.3 | s9 25: 37.0/83.4, 50: 41.9/83.3, 100: 45.4/83.6, 150: 47.5/81.7; trunc@150 3.8%, 3.8%
+   NSR7: s8 50: 42.2/83.1, 100: 45.3/83.5, 150: 46.9/82.5 | s9 50: 41.4/82.1, 100: 45.5/82.7, 150: 47.3/83.7; trunc@150 4.2%, 3.9%
+   AC7: s8 50: 43.4/83.0, 100: 45.6/83.7, 150: 47.3/83.4 | s9 50: 43.1/81.1, 100: 46.2/83.2, 150: 47.7/83.4; trunc@150 3.5%, 3.6%
+Greedy test accuracy at step 150: B7 75.4, 75.0; PSR7 74.2, 75.3; NSR7 75.6, 75.7; AC7 74.9, 76.0
+```
+
+**Reading.** On the 511 MATH test problems, PSR7 and NSR7 are each at average equivalence with B7's trajectory
+(-0.09 and -0.09, 90% intervals inside +-0.5), and AC7 replicates Pre-registration 18's null against B7's envelope
+(-0.15, 95% [-0.64, +0.23]). NSR7 against PSR7 (+0.16) is not interpreted: 13.7% of seed 9's bootstrap points are
+clamped (the guard is 10%). The joint statement "the 1.5B findings replicate" therefore holds for three of the four
+contrasts. The frozen frontier model's aggregate forecast is accurate (RMSE 0.23, supported; uniform shift 5.53, affine
+0.93), but its stratum errors are large and offsetting (c = 0: +7 to +23 points under-predicted; c = 1-4: -3 to -7).
+On the hard cohort every contrast lies within +-0.9 of zero; two are not interpreted (clamping) and one is
+inconclusive. Pass@16 on the test set is compressed near 94-95 at 7B, which limits sensitivity there; the hard
+cohort (pass@16 81-84) is the more sensitive set. Greedy test accuracy at step 150: 74.2-76.0 for all arms.
