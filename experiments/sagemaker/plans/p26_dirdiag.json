@@ -1,0 +1,27 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "torchrun": [
+  {
+   "name": "dirdiag",
+   "script": "direction_diag.py",
+   "nproc": 1,
+   "out": "dir",
+   "args": [
+    "--ckpts",
+    "/opt/ml/input/data/ckpts",
+    "--runs",
+    "B1k8,PSR1k8,NSR1k8,AC1k8,HG1k8,HGm1k8,PG1k8,MH8,AVH8",
+    "--ref",
+    "B1k8",
+    "--steps",
+    "25,50,100,150",
+    "--grad-ckpts",
+    "B1k8/ckpt_step50,B1k8/ckpt_step150",
+    "--problems",
+    "32"
+   ]
+  }
+ ]
+}
