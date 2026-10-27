@@ -29,6 +29,30 @@ def load_problems(path, limit, offset=0):
     return json.loads(p.read_text())[offset:][:limit]
 
 
+def compat_tokenizer(path):
+    """A copy of a checkpoint's tokenizer readable by transformers 4.x: checkpoints saved by transformers 5 store
+    extra special tokens as a list ("extra_special_tokens") and add 5.x-only keys; 4.x expects
+    additional_special_tokens. The vocabulary (tokenizer.json) and chat template are copied unchanged."""
+    import hashlib
+    import shutil
+    src = Path(path)
+    cfg = json.loads((src / "tokenizer_config.json").read_text())
+    if not isinstance(cfg.get("extra_special_tokens"), list) and "backend" not in cfg:
+        return str(src)
+    out = Path("/tmp") / ("tok_" + hashlib.sha1(str(src).encode()).hexdigest()[:12])
+    out.mkdir(parents=True, exist_ok=True)
+    for name in ("tokenizer.json", "chat_template.jinja", "vocab.json", "merges.txt", "special_tokens_map.json"):
+        if (src / name).exists():
+            shutil.copy(src / name, out / name)
+    extra = cfg.pop("extra_special_tokens", None)
+    if isinstance(extra, list):
+        cfg["additional_special_tokens"] = extra
+    for k in ("backend", "is_local", "local_files_only"):
+        cfg.pop(k, None)
+    (out / "tokenizer_config.json").write_text(json.dumps(cfg, indent=1))
+    return str(out)
+
+
 def evaluate(job):
     """One checkpoint (run in a subprocess): sampled pass@k and, optionally, greedy accuracy."""
     import transformers
@@ -44,7 +68,9 @@ def evaluate(job):
     t0 = time.time()
     a = job["args"]
     problems = load_problems(a["problems"], a["limit"], a["offset"])
-    tok = AutoTokenizer.from_pretrained(job["path"])
+    tok_dir = compat_tokenizer(job["path"])
+    tok = AutoTokenizer.from_pretrained(tok_dir)
+    assert tok.chat_template is not None, f"{job['path']}: no chat template (prompts would differ from eval_ckpt.py)"
     stop = stop_token_ids(tok)
     pad = tok.pad_token_id if tok.pad_token_id is not None else stop[0]
     texts = [build_prompt(tok, q["question"]) for q in problems] if job["sampled"] else []
@@ -55,7 +81,7 @@ def evaluate(job):
     limit = getattr(AutoConfig.from_pretrained(job["path"]), "max_position_embeddings", 4096)
     if longest + a["max_new"] > limit:
         raise SystemExit(f"prompt {longest} + max_new {a['max_new']} exceeds the model's context {limit}")
-    llm = LLM(model=job["path"], dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
+    llm = LLM(model=job["path"], tokenizer=tok_dir, dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
               max_model_len=longest + a["max_new"], enable_prefix_caching=a["prefix_caching"])
 
     def decode(o):
