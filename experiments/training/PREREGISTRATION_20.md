@@ -123,3 +123,13 @@ labels audited by an independent solver (disagreements removed, not replaced); f
 the same protocol (32 samples, 2,048 tokens, the same steps and temperatures) and reported separately with the same
 rules. Rule 3's forecast (`FORECAST_20.json`, `forecast_20.py`) was committed in 5cbf692 before the trained
 evaluations started.
+
+**Amendment (October 27, 2026, before any trained-checkpoint evaluation counted for a rule).** Evaluation engine:
+the Hugging Face generation used so far needs about 14 hours per 7B checkpoint at 2,048 tokens (the first evaluation
+jobs ran out of time without a result and were stopped). All 7B evaluations use `eval_vllm.py` (vLLM 0.11.0, same
+prompts, checker, sampling settings and accounting as `eval_ckpt.py`; per-problem seeds). Equivalence check before
+use (two independent vLLM runs against the Hugging Face results): base 7B at 2,048 tokens 30.5/88.0 and 30.1/86.8
+against 29.9/87.5 (pass@1/pass@16); 1.5B B1k seed 9 at 1,024 tokens, step 50: 52.2/87.5 and 51.9/86.4 against
+52.5/86.7; step 150: 58.1/86.7 twice against 58.0/86.8; truncation and lengths agree. The base model is re-evaluated
+with vLLM so that every point of a comparison comes from one engine; rule 3's frozen forecast (from the Hugging Face
+base counts) is unchanged.

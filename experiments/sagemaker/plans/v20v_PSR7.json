@@ -1,0 +1,233 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "PSR7s8",
+    "sub": "PSR7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "100",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "PSR7s8",
+    "sub": "PSR7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s9",
+    "sub": "PSR7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s9",
+    "sub": "PSR7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s9",
+    "sub": "PSR7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "100",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s9",
+    "sub": "PSR7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s8hard",
+    "sub": "PSR7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "hard7_cohort.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25,50,100,150",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s9hard",
+    "sub": "PSR7s9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "hard7_cohort.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25,50,100,150",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "PSR7s8",
+    "sub": "PSR7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "PSR7s8",
+    "sub": "PSR7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "50",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}

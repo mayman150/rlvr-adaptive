@@ -77,3 +77,8 @@ each), about 190 L40S-hours on Vulcan.
 **Amendment 1 (October 25, 2026, before any training step).** At the user's request all runs moved from Vulcan
 to AWS SageMaker (one L40S GPU per run, the hardware of Pre-registration 12); evaluations are split into parts
 per arm (`plans/v21ke_*`). Nothing else changes.
+
+**Amendment 2 (October 27, 2026).** L40S capacity ran out in all regions (many evaluation jobs expired before
+starting). Every evaluation of Pre-registrations 21, 22 and 23 (all arms, seeds and steps, and the base model) is
+re-run with `eval_vllm.py` on A100s, so that each comparison uses one engine; the equivalence check is recorded in
+Pre-registration 20's amendment. The Hugging Face results already obtained are kept as a reported robustness check.
