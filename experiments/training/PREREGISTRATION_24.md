@@ -46,5 +46,7 @@ sets, and pass@16 by base-count stratum on the fresh benchmark.
 
 ## Cost (estimate, to be confirmed by a 3-step timing run)
 
-7 training runs (about 1.7 times Dr. GRPO's step time for MH7 and AVH7 during steps 0-99): about 60-80 A100-machine
-hours for training, about 15 for evaluation; about $2,400-3,000. Approval by the user before launch.
+Two runs per ml.p4de.24xlarge ($31.56 per hour). MH7 and AVH7: about 1.7 times Dr. GRPO's step time during steps 0-99,
+about 10 hours each, 6 runs about $1,000; B7 seed 10 about $100; evaluation with vLLM (about 45 checkpoint
+evaluations on the fresh set, the 3,072-token checks, the secondary sets) about $200-300. Total about $1,300-1,500.
+Approval by the user before launch.

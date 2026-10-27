@@ -1,4 +1,4 @@
-us-west-2:worth-c21-HP8-s8-20261025-052052
-us-west-2:worth-c21-HP9-s9-20261025-052118
-us-west-2:worth-c21-HQ8-s8-20261025-052147
-us-west-2:worth-c21-HQ10-s10-20261025-052219
+us-west-2:worth-c21-HP8-s8-20261025-192046
+us-west-2:worth-c21-HP9-s9-20261025-192125
+us-west-2:worth-c21-HQ8-s8-20261025-192208
+us-east-2:worth-c21-HQ10-s10-20261025-193036

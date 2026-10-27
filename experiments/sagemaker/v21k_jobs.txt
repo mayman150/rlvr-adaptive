@@ -1,5 +1,4 @@
 us-west-2:worth-v21k-B1k-s8-20261025-045445
-us-west-2:worth-v21k-PSR1k-s8-20261025-045452
 us-west-2:worth-v21k-NSR1k-s8-20261025-045502
 us-west-2:worth-v21k-AC1k-s8-20261025-045515
 us-east-1:worth-v21k-B1k-s9-20261025-045522
@@ -10,3 +9,4 @@ us-east-2:worth-v21k-B1k-s10-20261025-045804
 us-east-2:worth-v21k-PSR1k-s10-20261025-045815
 us-east-2:worth-v21k-NSR1k-s10-20261025-045830
 us-east-2:worth-v21k-AC1k-s10-20261025-045851
+us-east-1:worth-v21k-PSR1k-s8-20261025-192008
