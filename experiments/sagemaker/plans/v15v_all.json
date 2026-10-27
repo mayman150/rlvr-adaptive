@@ -55,8 +55,8 @@
     ]
    },
    {
-    "name": "B1k8",
-    "sub": "B1k8",
+    "name": "NSR1k9",
+    "sub": "NSR1k9",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -67,34 +67,15 @@
      "--max-new",
      "1024",
      "--expect-steps",
-     "25,50,100,150",
+     "50,100,150",
      "--sampled-steps",
-     "150",
-     "--temperatures",
-     "1.15,1.3"
-    ]
-   },
-   {
-    "name": "BASE15",
-    "sub": null,
-    "part": 0,
-    "engine": "vllm",
-    "include_base": true,
-    "args": [
-     "--problems",
-     "eval_frontier_512.json",
-     "--n",
-     "32",
-     "--max-new",
-     "1024",
+     "50,100,150",
      "--temperatures",
      "1.0",
-     "--base-temperatures",
-     "1.0",
-     "--sampled-steps",
-     "0",
-     "--expect-steps",
-     "0"
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
     ]
    }
   ],
@@ -148,13 +129,13 @@
     ]
    },
    {
-    "name": "B1k8val",
-    "sub": "B1k8",
+    "name": "B1k10",
+    "sub": "B1k10",
     "part": 0,
     "engine": "vllm",
     "args": [
      "--problems",
-     "val_frontier_256.json",
+     "eval_frontier_512.json",
      "--n",
      "32",
      "--max-new",
@@ -168,26 +149,23 @@
     ]
    },
    {
-    "name": "BASE15val",
-    "sub": null,
+    "name": "B1k8",
+    "sub": "B1k8",
     "part": 0,
     "engine": "vllm",
-    "include_base": true,
     "args": [
      "--problems",
-     "val_frontier_256.json",
+     "eval_frontier_512.json",
      "--n",
      "32",
      "--max-new",
      "1024",
-     "--temperatures",
-     "1.0",
-     "--base-temperatures",
-     "1.0",
-     "--sampled-steps",
-     "0",
      "--expect-steps",
-     "0"
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.15,1.3"
     ]
    }
   ],
@@ -237,8 +215,8 @@
     ]
    },
    {
-    "name": "HGm1k8",
-    "sub": "HGm1k8",
+    "name": "HG1k9",
+    "sub": "HG1k9",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -258,6 +236,26 @@
      "eval_math_test_numeric.json",
      "--greedy-steps",
      "150"
+    ]
+   },
+   {
+    "name": "B1k8val",
+    "sub": "B1k8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.15,1.3"
     ]
    }
   ],
@@ -311,8 +309,8 @@
     ]
    },
    {
-    "name": "HGm1k9",
-    "sub": "HGm1k9",
+    "name": "HGm1k8",
+    "sub": "HGm1k8",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -332,6 +330,26 @@
      "eval_math_test_numeric.json",
      "--greedy-steps",
      "150"
+    ]
+   },
+   {
+    "name": "B1k9",
+    "sub": "B1k9",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.15,1.3"
     ]
    }
   ],
@@ -385,8 +403,8 @@
     ]
    },
    {
-    "name": "NSR1k10",
-    "sub": "NSR1k10",
+    "name": "HGm1k9",
+    "sub": "HGm1k9",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -406,6 +424,29 @@
      "eval_math_test_numeric.json",
      "--greedy-steps",
      "150"
+    ]
+   },
+   {
+    "name": "BASE15",
+    "sub": null,
+    "part": 0,
+    "engine": "vllm",
+    "include_base": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0"
     ]
    }
   ],
@@ -455,13 +496,13 @@
     ]
    },
    {
-    "name": "NSR1k8",
-    "sub": "NSR1k8",
+    "name": "MH8val",
+    "sub": "MH8",
     "part": 0,
     "engine": "vllm",
     "args": [
      "--problems",
-     "eval_frontier_512.json",
+     "val_frontier_256.json",
      "--n",
      "32",
      "--max-new",
@@ -471,11 +512,30 @@
      "--sampled-steps",
      "50,100,150",
      "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "name": "BASE15val",
+    "sub": null,
+    "part": 0,
+    "engine": "vllm",
+    "include_base": true,
+    "args": [
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--temperatures",
      "1.0",
-     "--greedy-problems",
-     "eval_math_test_numeric.json",
-     "--greedy-steps",
-     "150"
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0"
     ]
    }
   ],
@@ -505,8 +565,8 @@
     ]
    },
    {
-    "name": "HG1k8",
-    "sub": "HG1k8",
+    "name": "HG1k10",
+    "sub": "HG1k10",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -529,8 +589,8 @@
     ]
    },
    {
-    "name": "NSR1k9",
-    "sub": "NSR1k9",
+    "name": "NSR1k10",
+    "sub": "NSR1k10",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -579,8 +639,8 @@
     ]
    },
    {
-    "name": "HG1k9",
-    "sub": "HG1k9",
+    "name": "HG1k8",
+    "sub": "HG1k8",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -603,8 +663,8 @@
     ]
    },
    {
-    "name": "B1k10",
-    "sub": "B1k10",
+    "name": "NSR1k8",
+    "sub": "NSR1k8",
     "part": 0,
     "engine": "vllm",
     "args": [
@@ -615,31 +675,15 @@
      "--max-new",
      "1024",
      "--expect-steps",
-     "25,50,100,150",
+     "50,100,150",
      "--sampled-steps",
-     "150",
+     "50,100,150",
      "--temperatures",
-     "1.15,1.3"
-    ]
-   },
-   {
-    "name": "B1k9",
-    "sub": "B1k9",
-    "part": 0,
-    "engine": "vllm",
-    "args": [
-     "--problems",
-     "eval_frontier_512.json",
-     "--n",
-     "32",
-     "--max-new",
-     "1024",
-     "--expect-steps",
-     "25,50,100,150",
-     "--sampled-steps",
-     "150",
-     "--temperatures",
-     "1.15,1.3"
+     "1.0",
+     "--greedy-problems",
+     "eval_math_test_numeric.json",
+     "--greedy-steps",
+     "150"
     ]
    }
   ]
