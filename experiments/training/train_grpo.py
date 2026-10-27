@@ -833,6 +833,100 @@ def mh_backward(runner, args, answers, items, coef, norm):
         loss.backward()
     return len(live)
 
+class OffDirection:
+    """Off-direction updates (Pre-registration 26): for every 2-D weight matrix W (embeddings excluded), track the top
+    singular pair (u, v) of the cumulative update D = W_t - W_0 by warm-started power iteration, and after each
+    optimizer step replace the realized update Delta by Delta - (1 - beta) u (u^T Delta v) v^T, rescaled (renorm) to the
+    original update's norm. Active after `warmup` steps; logs the share of the update along the tracked directions."""
+
+    def __init__(self, runner, beta, warmup, renorm=True, iters=2):
+        self.beta, self.warmup, self.renorm, self.iters = beta, warmup, renorm, iters
+        self.mats = [(n, p) for n, p in runner.model.named_parameters() if p.ndim == 2 and "embed" not in n and "lm_head" not in n]
+        self.w0 = {n: p.detach().to(torch.bfloat16).clone() for n, p in self.mats}
+        self.v = {n: None for n, _ in self.mats}
+
+    def snapshot(self):
+        return {n: p.detach().clone() for n, p in self.mats}
+
+    @torch.no_grad()
+    def apply(self, before, step):
+        if step < self.warmup:
+            return {"active": False}
+        tot = par = 0.0
+        num = den = 0.0
+        for n, p in self.mats:
+            delta = p.data - before[n]
+            d = p.data - self.w0[n].float()  # cumulative update (includes this step)
+            v = self.v[n]
+            if v is None:
+                v = torch.randn(d.shape[1], device=d.device)
+            for _ in range(self.iters):
+                u = d @ v
+                u = u / (u.norm() + 1e-12)
+                v = d.T @ u
+                v = v / (v.norm() + 1e-12)
+            self.v[n] = v
+            c = u @ delta @ v
+            new = delta - (1 - self.beta) * c * torch.outer(u, v)
+            dn, nn = float(delta.norm()), float(new.norm())
+            if self.renorm and nn > 0:
+                new = new * (dn / nn)
+            p.data.copy_(before[n] + new)
+            tot += dn ** 2
+            par += float(c) ** 2
+        return {"active": True, "dominant_share_before": par / max(tot, 1e-30)}
+
+
+def problem_sketch_tables(runner, dim, seed=0):
+    """Fixed CountSketch hash (bucket, sign) per parameter of the 2-D non-embedding matrices."""
+    tables = []
+    for i, (n, p) in enumerate(runner.model.named_parameters()):
+        if p.ndim != 2 or "embed" in n or "lm_head" in n:
+            continue
+        gen = torch.Generator(device=p.device).manual_seed(seed * 100003 + i)
+        idx = torch.randint(0, dim, (p.numel(),), generator=gen, device=p.device, dtype=torch.int32)
+        sgn = (torch.randint(0, 2, (p.numel(),), generator=gen, device=p.device, dtype=torch.int8) * 2 - 1)
+        tables.append((p, idx, sgn))
+    return tables
+
+
+@torch.no_grad()
+def sketch_grads(tables, dim):
+    out = torch.zeros(dim, device=tables[0][0].device)
+    for p, idx, sgn in tables:
+        if p.grad is not None:
+            out.index_add_(0, idx, p.grad.reshape(-1).float() * sgn.float())
+    return out
+
+
+def whitening_weights(runner, args, answers, adv, owner, norm, tables):
+    """Problem-space whitening (Pre-registration 26): per-problem gradients of the Dr. GRPO loss (one backward pass per
+    problem with a nonzero advantage), compressed by CountSketch; G their Gram matrix; alpha = (G + lam tr(G)/m I)^-1 1,
+    negative entries set to 0, rescaled to mean 1 over those problems. Returns per-answer weight multipliers and stats."""
+    probs = sorted({owner[k] for k, a in enumerate(adv) if a != 0})
+    if len(probs) < 2:
+        return [1.0] * len(adv), {"problems": len(probs)}
+    sk = []
+    for j in probs:
+        runner.model.zero_grad(set_to_none=True)
+        idx = [k for k, o in enumerate(owner) if o == j and adv[k] != 0]
+        backward_weighted(runner, args, answers, idx, adv, norm)
+        sk.append(sketch_grads(tables, args.pw_dim))
+    runner.model.zero_grad(set_to_none=True)
+    S = torch.stack(sk).double()
+    G = S @ S.T
+    m = len(probs)
+    alpha = torch.linalg.solve(G + args.pw_lambda * torch.trace(G) / m * torch.eye(m, dtype=G.dtype, device=G.device),
+                               torch.ones(m, dtype=G.dtype, device=G.device))
+    alpha = torch.clamp(alpha, min=0)
+    alpha = alpha / alpha.mean() if alpha.sum() > 0 else torch.ones_like(alpha)
+    ev = torch.linalg.eigvalsh(G).flip(0)
+    w = {j: float(a) for j, a in zip(probs, alpha)}
+    mult = [w.get(o, 1.0) for o in owner]
+    return mult, {"problems": m, "top_eigen_share": float(ev[0] / ev.sum()), "alpha_min": float(alpha.min()),
+                  "alpha_max": float(alpha.max()), "alpha_zero": int((alpha == 0).sum())}
+
+
 def bbg_utility(m, n, k):
     """Yuan et al. (2026), Bayesian boundary gating: E[k (1 - p)^(k-1)] under p ~ Beta(m + 1, n - m + 1)."""
     out = float(k)
@@ -1226,6 +1320,12 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         runner._archive_keys = set(rescue)  # the stored solutions (bank[0]); own successes are appended later
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
+    od = OffDirection(runner, args.od_beta, args.od_warmup) if args.od_beta < 1.0 else None
+    pw_tables = problem_sketch_tables(runner, args.pw_dim) if args.pw_lambda > 0 else None
+    if od is not None or pw_tables is not None:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and args.memory_lambda == 0, \
+            "off-direction updates and problem-space whitening are implemented for plain on-policy Dr. GRPO"
     mh_bank = None
     if args.mh_mode != "none":
         assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 \
@@ -1473,6 +1573,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 extra["entropy_coef"] = ent_coef
                 n_live = len(answers) if ent_coef > 0 else len(live)
             else:
+                if pw_tables is not None and arm in FIXED_ARMS:
+                    mult, extra["pw"] = whitening_weights(runner, args, answers, adv, owner, norm, pw_tables)
+                    adv = [a * m_ for a, m_ in zip(adv, mult)]
+                    live = [k for k, a in enumerate(adv) if a != 0]
                 backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
             if arm in FIXED_ARMS and injected:
@@ -1507,7 +1611,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             extra["nonfinite_grad"] = True
             n_live = 0
         if n_live:
+            before = od.snapshot() if od is not None else None
             opt.step()
+            if od is not None:
+                extra["od"] = od.apply(before, step)
+                del before
             if args.diagnostics:
                 store_update(runner, opt)
             if floor is not None and not surrogate and not args.diagnostics and h_grad is not None:
@@ -1635,6 +1743,11 @@ def main():
     parser.add_argument("--prefix-anneal-steps", type=int, default=100)
     parser.add_argument("--prefix-max-c", type=int, default=4, help="rare = at most this many base successes of 32")
     parser.add_argument("--prefix-before-box", action="store_true", help="cut every prefix before the stored answer's first box")
+    parser.add_argument("--od-beta", type=float, default=1.0, help="off-direction updates: keep this fraction of the "
+                        "update along each matrix's dominant cumulative direction (1: off)")
+    parser.add_argument("--od-warmup", type=int, default=10)
+    parser.add_argument("--pw-lambda", type=float, default=0.0, help="problem-space whitening ridge, times tr(G)/m (0: off)")
+    parser.add_argument("--pw-dim", type=int, default=1 << 20, help="CountSketch dimension for problem-space whitening")
     parser.add_argument("--mh-mode", default="none", choices=("none", "min", "avg"),
                         help="minimum-help credit on the policy's own prefixes (min) or its averaged-value control (avg)")
     parser.add_argument("--mh-archive", default="human_prefix_train.json", help="hints (human solutions) with base counts")
