@@ -1,1 +1,2 @@
 us-east-1:worth-p29a-teacher-s0-20261028-170148
+us-west-2:worth-p29a-teacher-s0-20261028-180336
