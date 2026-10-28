@@ -60,3 +60,11 @@ Reported: step-150 pass@1 minus B7's; teacher solutions per step; pass@16 by bas
 
 P29a: one 8 x A100 machine, about 1.5 hours (two 145 GB downloads, two tensor-parallel shards, smoke test): about $50.
 P29b: one machine, about 6.5 hours of training and 30 minutes of evaluation: about $220. Total about $270.
+
+## Amendment 1 (October 28, before any teacher sample was produced)
+
+The two tensor-parallel-4 vLLM engines of job worth-p29a-teacher-s0-20261028-180336 failed at initialization
+(conflicting distributed ports); no samples were produced. The smoke test passed in that job (4 steps, 2-8 applied
+teacher solutions per step, finite gradients). Teacher generation reruns as one tensor-parallel-8 engine over all
+3,920 problems (job worth-p29a2-teacher-s0-20261028-183430); per-problem sampling seeds are unchanged (they depend on
+the global problem index), so the design is unchanged.
