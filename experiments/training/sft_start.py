@@ -11,7 +11,8 @@ clip 1 (Pre-registration 14's warm start). --tail: TailSFT (arXiv 2608.25756, Al
 initial-model mean NLL l0 is precomputed; at each encounter the margin m = l_t - l0 is computed and the fraction f of
 the batch with the most negative margins (most improved) is dropped, f rising linearly from 0 to 0.5 over training;
 the loss is the summed NLL of the retained examples divided by their token count. Adaptation: the selection batch is
-the optimizer batch of 8 (the paper uses 16 per forward pass); the dropped count is floor(f * 8); ties keep lower index.
+the optimizer batch of 8 (the paper uses 16 per forward pass); the dropped count is floor(f * 8), with f computed after counting the batch's tokens (it reaches 0.5 on the final
+batch); ties keep the lower index.
 Milestones count presented response tokens (retained tokens are also reported).
 Usage: python sft_start.py --model BASE --archive A.json --problems sel.json --milestones 500000,2000000 --out DIR [--tail]
 """
@@ -36,7 +37,15 @@ def examples(runner, archive, questions, max_new):
     tok = runner.tok
     im_end = tok.convert_tokens_to_ids("<|im_end|>")
     stop = im_end if isinstance(im_end, int) and im_end in runner.stop_ids else runner.stop_ids[0]
-    recs = {d["question"]: d for d in json.loads(Path(archive).read_text())}
+    raw = json.loads(Path(archive).read_text())
+    recs = {d["question"]: d for d in raw}
+    if len(recs) != len(raw):
+        raise SystemExit(f"{archive}: duplicate archive records")
+    if len(set(questions)) != len(questions):
+        raise SystemExit("duplicate questions in the selection")
+    missing = [q for q in questions if q not in recs]
+    if missing:
+        raise SystemExit(f"{len(missing)} selected questions are not in the archive")
     out, dropped = [], {"too_long": 0, "unverified": 0, "duplicate": 0, "no_solution": 0}
     for q in questions:
         d = recs[q]
@@ -57,6 +66,8 @@ def examples(runner, archive, questions, max_new):
             out.append((torch.tensor(tok(build_prompt(tok, q)).input_ids), sols))
         else:
             dropped["no_solution"] += 1
+    if dropped["no_solution"]:  # selections are built from problems with a surviving solution: a loss breaks matching
+        raise SystemExit(f"{dropped['no_solution']} selected problems have no surviving solution")
     return out, dropped
 
 
@@ -85,6 +96,8 @@ def main():
     p = Path(a.problems) if Path(a.problems).exists() else HERE / "data" / a.problems
     arch = Path(a.archive) if Path(a.archive).exists() else HERE / "data" / a.archive
     data, dropped = examples(runner, arch, json.loads(p.read_text()), a.max_new)
+    if not (a.batch >= 1 and a.lr > 0 and 0 <= a.tail_max_drop < 1 and data):
+        raise SystemExit("invalid settings or empty selection")
     milestones = sorted(int(x) for x in a.milestones.split(","))
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -105,7 +118,7 @@ def main():
     order, presented, retained, steps, log, mi = [], 0, 0, 0, [], 0
     total = milestones[-1]
     while mi < len(milestones):
-        if len(order) < a.batch:
+        while len(order) < a.batch:  # refill with shuffled passes (also for selections smaller than a batch)
             nxt = list(range(len(data)))
             rng.shuffle(nxt)
             order += nxt
@@ -118,10 +131,11 @@ def main():
         res = token_nll(runner, [(data[i][0].to("cuda"), data[i][1][j].to("cuda")) for i, j in items])
         keep = list(range(len(items)))
         if a.tail:
-            frac = a.tail_max_drop * min(1.0, presented / total)
-            n_drop = math.floor(frac * len(items))
+            # progress counts this batch's tokens, so the schedule reaches max_drop on the final batch
+            frac = a.tail_max_drop * min(1.0, (presented + sum(n for _, n in res)) / total)
+            n_drop = math.floor(frac * len(items) + 1e-9)
             margins = [float(nll) / n - l0[it] for (nll, n), it in zip(res, items)]
-            drop = sorted(range(len(items)), key=lambda k: (margins[k], k))[:n_drop]
+            drop = sorted(range(len(items)), key=lambda k: (margins[k], -k))[:n_drop]  # ties: the lower index is kept
             keep = [k for k in keep if k not in set(drop)]
             loss = sum(res[k][0] for k in keep) / max(sum(res[k][1] for k in keep), 1)
         else:
@@ -129,14 +143,16 @@ def main():
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gn = float(torch.nn.utils.clip_grad_norm_(runner.params, a.clip))
-        if math.isfinite(gn):
-            opt.step()
+        if not math.isfinite(gn):  # a skipped update must not count toward the milestones
+            raise SystemExit(f"non-finite gradient norm at SFT step {steps + 1}")
+        opt.step()
         opt.zero_grad(set_to_none=True)
         steps += 1
         presented += sum(n for _, n in res)
         retained += sum(res[k][1] for k in keep)
         if steps % 20 == 0:
-            log.append({"step": steps, "loss": float(loss), "presented": presented, "retained": retained, "grad_norm": gn})
+            log.append({"step": steps, "loss": float(loss), "presented": presented, "retained": retained, "grad_norm": gn,
+                        "peak_gb": torch.cuda.max_memory_allocated() / 1e9})
             print(f"sft step {steps} loss {float(loss):.4f} presented {presented} retained {retained}", flush=True)
         while mi < len(milestones) and presented >= milestones[mi]:
             path = out / f"start_{milestones[mi]}"

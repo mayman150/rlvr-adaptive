@@ -26,8 +26,11 @@ unfinished count, and final boxed answers grouped by the verifier's normalizatio
 - **R (random):** uniform without replacement from all training problems with at least one surviving teacher
   solution (seed 3030).
 - **Matching:** every selection uses the same number of unique problems, N = |W| (problems with a surviving teacher
-  solution); R and H draw N problems stratified by MATH subject to W's subject mix. H \ W (count-matched, subject
-  stratified) is also built so W can be compared with rarity alone. Arms remain composite interventions (difficulty,
+  solution); R and H draw N problems stratified by MATH subject to W's subject mix. H \ W is matched to W on subject
+  and on the success-count bins {0}, {1-2}, {3-4} (of 64), so W can be compared with rarity alone. Quotas: a
+  (subject, bin) cell that cannot be filled is filled from the same bin in any subject, then from the nearest bin;
+  the shortfall is reported. If fewer than 100 W problems have a surviving solution, W and H \ W are dropped and H is
+  the only targeted arm (reported). Arms remain composite interventions (difficulty,
   diversity, repetition, length); response-length and subject distributions are reported.
 
 ## Teacher pool
@@ -45,21 +48,25 @@ tokens along one trajectory (retained tokens, unique solutions seen and repetiti
 Starts: R, H, W, H \ W at 0.5M and 2M; TailSFT on R at 2M (Algorithm 1: margin of current minus initial mean NLL,
 the most-improved fraction dropped, rising linearly 0 -> 0.5; loss over retained tokens; adaptation: selection batch 8
 instead of 16).
-Each start is evaluated on the 255 validation and 511 test problems with 64 samples (T = 1, 1,024 tokens); the law
-uses the first 32 samples (its registered input depth); pass@64 uses all 64.
+Each start, and the base itself (so that changes in pass@64 have a 64-sample base reference), is evaluated on the 255
+validation and 511 test problems with 64 samples (T = 1, 1,024 tokens); the law uses the first 32 samples (its
+registered input depth); pass@64 uses all 64.
 **Frozen forecasts, written to a file before any Stage-2 run:** for each start X and the base B, the law's complete
 conditional curves f_X(u) and f_B(u) (pass@16 at pass@1 u; law.py, tau = -0.20, strict reachability), absolute and
 differenced, on validation and test; also uniform and affine comparators and a zero-shift predictor. Features for rank
 comparison only: the change in pass@1, pass@32, pass@64, mean NLL on the validation problems' human solutions (one
-frozen corpus, response tokens only, EOS included, token-averaged), and a frozen power-map (BOPTR-style) forecast from
+frozen corpus: our prompt plus the human solution text truncated to 1,023 tokens, response tokens only, EOS included,
+token-averaged over the corpus), and a frozen power-map (BOPTR-style) forecast from
 each start's 64-sample pass@N curve (calibrated on Pre-registration 21's Dr. GRPO checkpoints; unscorable cases
 reported; not full BOPTR).
 
 **Advancing to Stage 2 (validation forecasts only):** always R-2M (the dose-matched random-SFT control) and, if run in
 Stage 1, TailSFT-2M; plus the single start with the largest absolute validation-forecast shift at the 2M dose among
-H, W, H \ W (ties: W, then H), provided its forecast shift is at least 2 points over a common validation grid of
-pass@1 values reachable by every law involved and covered by B1k's empirical support; otherwise it advances as a weak
-test.
+H, W, H \ W (ties: W, then H), provided its forecast shift is at least 2 points on the validation grid; otherwise it
+advances as a weak test. **Validation grid:** pass@1 values 0.40, 0.42, ..., 0.56, kept if inside B1k8's validation
+trajectory range (Pre-registration 23's B1k8 validation evaluation) and inside both laws' reachable ranges with an
+explicit margin (at least 0.005 above each law's initial pass@1 and below its final recorded value); equal weights;
+an empty grid means "no common support" (the start cannot advance as the targeted start).
 
 ## Stage 2: RL from the saved starts
 
@@ -76,22 +83,29 @@ forecast gap; its interval comes from a joint problem bootstrap (2,000 draws) th
 the law's initial state and the reference interpolation with tau frozen. At least two eligible checkpoints per seed,
 otherwise "insufficient overlap". Intervals condition on the trained seeds.
 - **Registered mean forecast agrees:** the residual's 90% interval lies within +/-2.
-- **Forecast fails:** |residual| >= 2 with Holm-adjusted p <= 0.05 (over the advanced starts).
+- **Forecast fails (bias detected):** |residual| >= 2 and the two-sided test of residual = 0 has Holm-adjusted
+  p <= 0.05 over the advanced starts (an operational rule: it detects bias of at least the tolerance's size in the
+  estimate, not error confidently beyond +/-2; the one-sided test of |residual| > 2 is reported alongside).
+- Bootstrap draws in which a checkpoint leaves the reference's or a law's support drop that checkpoint for that draw;
+  if more than 10% of draws are affected for a seed, that seed's verdict is "not interpreted".
 - Otherwise inconclusive. Per-seed residuals and per-checkpoint bands are reported; a verdict is reported for every
   advanced start (no overall success from whichever start agrees).
 - **Curve raised / lowered (reported for each start):** the observed gap (and, secondarily, the gap against B1k's
-  temperature envelope) >= +2 with a Holm-adjusted 95% interval above 0 and positive in all seeds (raised), or the
-  mirror rule (lowered).
+  temperature envelope) >= +2 with a 95% interval above 0, positive in all seeds and Holm-adjusted p <= 0.05 (two-sided
+  test of zero gap; one Holm family over the advanced starts), or the mirror rule (lowered).
 - **Targeting claim:** only if the targeted start's observed gap exceeds R-2M's by >= 2 with a 95% interval above 0.
 - **Predictor comparison:** rank agreement of each predictor with the observed gaps (descriptive with three starts).
 Reported: absolute forecasts and observations for every start; finishing, boxed rate, truncation and length of every
 start and checkpoint; pass@16 by stratum of the base's test-set counts and by each start's own zero-count stratum;
-final accuracy at equal RL-generated tokens and total teacher, SFT and RL compute; the decisive pair's step-150
-checkpoints at 2,048 tokens (truncation sensitivity).
+final accuracy at equal RL-generated tokens and total teacher, SFT and RL compute; each predictor's rank agreement
+with step-150 pass@1 and pass@16 (descriptive). Truncation sensitivity: the decisive pair (the targeted start and R-2M,
+seed 8) at checkpoints 25, 50, 100, 150 and B1k8 at steps 25-150, all at 2,048 tokens, giving conditional gaps at that
+budget (descriptive, one seed).
 
 ## Cost (incremental estimate, assuming the P29a pool and good packing)
 
-Stage 1: nine SFT runs from one base (about 9.5M presented tokens in total) and eighteen 64-sample evaluations, about
-1.5 hours of one 8 x A100 machine (about $50). Stage 2: nine RL runs and 9 x 6 checkpoint evaluations (plus two
-temperature evaluations per run), about 60 GPU-hours, about 8 hours of one machine (about $250). Total about $300-350,
-plus setup and idle tails.
+Stage 1: five SFT trajectories (R, H, W, H \ W to 2M with the 0.5M checkpoint saved on the way; TailSFT-R to 2M),
+nine starts plus the base, about 10M presented tokens, initial TailSFT and human-NLL scoring, and twenty 64-sample
+evaluations: about 13 GPU-hours, about 2 hours of one 8 x A100 machine (about $65). Stage 2: nine RL runs, their 9 x 8
+evaluations, and the 2,048-token check (eight evaluations): about 65 GPU-hours, about 8 hours of one machine (about
+$260). Total about $330, plus setup and idle tails; timing is validated on the first SFT trajectory.
