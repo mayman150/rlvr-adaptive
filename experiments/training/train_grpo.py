@@ -842,39 +842,104 @@ class OffDirection:
     def __init__(self, runner, beta, warmup, renorm=True, iters=2):
         self.beta, self.warmup, self.renorm, self.iters = beta, warmup, renorm, iters
         self.mats = [(n, p) for n, p in runner.model.named_parameters() if p.ndim == 2 and "embed" not in n and "lm_head" not in n]
-        self.w0 = {n: p.detach().to(torch.bfloat16).clone() for n, p in self.mats}
+        self.w0 = {}
+        for n, p in self.mats:  # bf16 copy when exact (a bf16 starting checkpoint), fp32 otherwise
+            b = p.detach().to(torch.bfloat16)
+            self.w0[n] = b.clone() if torch.equal(b.float(), p.detach()) else p.detach().clone()
         self.v = {n: None for n, _ in self.mats}
 
     def snapshot(self):
         return {n: p.detach().clone() for n, p in self.mats}
 
     @torch.no_grad()
+    def top_pair(self, n, d):
+        """Top singular pair (u, v) of d by warm-started power iteration, with its relative residual; None if d = 0."""
+        dnorm = float(d.norm())
+        if dnorm == 0:
+            return None
+        v = self.v[n]
+        if v is None or float((d @ v).norm()) <= 1e-6 * dnorm:  # first use or a lost direction: restart
+            v = torch.randn(d.shape[1], device=d.device)
+            v = v / v.norm()
+            if float((d @ v).norm()) == 0:
+                return None
+        for _ in range(self.iters):
+            u = d @ v
+            u = u / u.norm()
+            v = d.T @ u
+            v = v / v.norm()
+        u = d @ v  # u consistent with the final v
+        s1 = float(u.norm())
+        u = u / s1
+        self.v[n] = v
+        return u, v, float((d.T @ u - s1 * v).norm()) / s1
+
+    @torch.no_grad()
+    def project_grads(self, step):
+        """Teacher arm (Pre-registration 26): replace each matrix's gradient G (the teacher term alone) by
+        (I - u u^T) G (I - v v^T), rescaled to the norm of G, where (u, v) is the top singular pair of the cumulative
+        update W_t - W_0; other parameters are unchanged. Inactive during the first `warmup` steps."""
+        if step < self.warmup:
+            return {"projected": False}
+        tot = kept = 0.0
+        for n, p in self.mats:
+            if p.grad is None:
+                continue
+            g = p.grad
+            gn = float(g.norm())
+            top = self.top_pair(n, p.data - self.w0[n].float()) if gn > 0 else None
+            tot += gn ** 2
+            if top is None:
+                kept += gn ** 2
+                continue
+            u, v, _ = top
+            gu = u @ g  # u^T G
+            gv = g @ v  # G v
+            new = g - torch.outer(u, gu) - torch.outer(gv, v) + float(gu @ v) * torch.outer(u, v)
+            nn = float(new.norm())
+            kept += nn ** 2
+            if nn > 0:
+                p.grad.copy_(new * (gn / nn))
+        return {"projected": True, "removed_share": 1.0 - kept / max(tot, 1e-30)}
+
+    @torch.no_grad()
     def apply(self, before, step):
         if step < self.warmup:
             return {"active": False}
-        tot = par = 0.0
-        num = den = 0.0
+        tot = par = dot = new_tot = res = 0.0
         for n, p in self.mats:
             delta = p.data - before[n]
             d = p.data - self.w0[n].float()  # cumulative update (includes this step)
-            v = self.v[n]
-            if v is None:
-                v = torch.randn(d.shape[1], device=d.device)
-            for _ in range(self.iters):
-                u = d @ v
-                u = u / (u.norm() + 1e-12)
-                v = d.T @ u
-                v = v / (v.norm() + 1e-12)
-            self.v[n] = v
+            dn, dnorm = float(delta.norm()), float(d.norm())
+            tot += dn ** 2
+            top = self.top_pair(n, d) if dn > 0 else None
+            if top is None:
+                dot += dn ** 2
+                new_tot += dn ** 2
+                continue  # nothing to project
+            u, v, r = top
+            res += r * dn ** 2  # power-iteration residual, update-weighted
             c = u @ delta @ v
             new = delta - (1 - self.beta) * c * torch.outer(u, v)
-            dn, nn = float(delta.norm()), float(new.norm())
+            nn = float(new.norm())
             if self.renorm and nn > 0:
                 new = new * (dn / nn)
+            dot += float((new * delta).sum())
+            new_tot += float(new.norm()) ** 2
             p.data.copy_(before[n] + new)
-            tot += dn ** 2
             par += float(c) ** 2
-        return {"active": True, "dominant_share_before": par / max(tot, 1e-30)}
+        return {"active": True, "dominant_share_before": par / max(tot, 1e-30),
+                "realized_cosine": dot / max(math.sqrt(tot * new_tot), 1e-30), "power_residual": res / max(tot, 1e-30)}
+
+
+def teacher_backward(runner, args, items, norm):
+    """Teacher distillation term (Pre-registration 26): the gradient of -teacher_lambda * sum log pi(y_T | x) / norm
+    over the step's teacher solutions (verified 7B solutions of base-rare problems), accumulated into .grad."""
+    for s in range(0, len(items), args.train_batch):
+        chunk = [(a.to(runner.device), b.to(runner.device)) for a, b in items[s:s + args.train_batch]]
+        lp = runner.logprob_sum(chunk)
+        (-(args.teacher_lambda * lp).sum() / norm).backward()
+    return {"solutions": len(items), "tokens": sum(len(b) for _, b in items)}
 
 
 def problem_sketch_tables(runner, dim, seed=0):
@@ -916,15 +981,21 @@ def whitening_weights(runner, args, answers, adv, owner, norm, tables):
     S = torch.stack(sk).double()
     G = S @ S.T
     m = len(probs)
+    tr = float(torch.trace(G))
+    if not math.isfinite(tr) or tr <= 0:
+        return [1.0] * len(adv), {"problems": m, "degenerate": True}
     alpha = torch.linalg.solve(G + args.pw_lambda * torch.trace(G) / m * torch.eye(m, dtype=G.dtype, device=G.device),
                                torch.ones(m, dtype=G.dtype, device=G.device))
     alpha = torch.clamp(alpha, min=0)
     alpha = alpha / alpha.mean() if alpha.sum() > 0 else torch.ones_like(alpha)
     ev = torch.linalg.eigvalsh(G).flip(0)
+    one = torch.ones_like(alpha)
+    # angle between the whitened and the plain combined gradient (in sketch space)
+    cos = float(alpha @ G @ one / torch.sqrt(torch.clamp((alpha @ G @ alpha) * (one @ G @ one), min=1e-300)))
     w = {j: float(a) for j, a in zip(probs, alpha)}
     mult = [w.get(o, 1.0) for o in owner]
     return mult, {"problems": m, "top_eigen_share": float(ev[0] / ev.sum()), "alpha_min": float(alpha.min()),
-                  "alpha_max": float(alpha.max()), "alpha_zero": int((alpha == 0).sum())}
+                  "alpha_max": float(alpha.max()), "alpha_zero": int((alpha == 0).sum()), "realized_cosine": cos}
 
 
 def bbg_utility(m, n, k):
@@ -1320,12 +1391,6 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         runner._archive_keys = set(rescue)  # the stored solutions (bank[0]); own successes are appended later
         print(f"[{arm}] rescue bank: {len(rescue)} questions with a stored success", flush=True)
     assert not ((args.complete_groups or args.prefix_rollouts > 0) and rescue is None), "group completion and prefix rollouts need --rescue-archive"
-    od = OffDirection(runner, args.od_beta, args.od_warmup) if args.od_beta < 1.0 else None
-    pw_tables = problem_sketch_tables(runner, args.pw_dim) if args.pw_lambda > 0 else None
-    if od is not None or pw_tables is not None:
-        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
-            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and args.memory_lambda == 0, \
-            "off-direction updates and problem-space whitening are implemented for plain on-policy Dr. GRPO"
     mh_bank = None
     if args.mh_mode != "none":
         assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 \
@@ -1377,6 +1442,27 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     assert not (args.floor_rho > 0 and args.early_floor_rho > 0), "choose one entropy floor"
     assert not (interventions and (surrogate or args.diagnostics)), "Pre-registration 12 options need the plain on-policy loss without diagnostics"
     assert not (interventions and arm != "baseline"), "Pre-registration 12 options are defined for Dr. GRPO (arm baseline)"
+    assert 0.0 <= args.od_beta <= 1.0 and args.od_warmup >= 0 and args.pw_lambda >= 0 and args.pw_dim > 0, \
+        "invalid off-direction or whitening settings"
+    if args.od_beta < 1.0 or args.pw_lambda > 0:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
+            and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
+            and not (args.od_beta < 1.0 and args.pw_lambda > 0), \
+            "off-direction updates and problem-space whitening are implemented, one at a time, for plain on-policy Dr. GRPO"
+    od = OffDirection(runner, args.od_beta, args.od_warmup) if args.od_beta < 1.0 else None  # after any SFT phase
+    pw_tables = problem_sketch_tables(runner, args.pw_dim) if args.pw_lambda > 0 else None
+    teacher, tproj = None, None
+    if args.teacher_archive:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
+            and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
+            and od is None and pw_tables is None and args.entropy_coef == 0 and args.teacher_lambda > 0, \
+            "teacher distillation is implemented for plain on-policy Dr. GRPO"
+        teacher = {i: d["seq"] for i, d in load_discovery(runner, args.teacher_archive, problems).items() if d["seq"] is not None}
+        tproj = OffDirection(runner, 1.0, args.od_warmup) if args.teacher_project else None
+        print(f"[{arm}] teacher solutions for {len(teacher)} problems; projection {'on' if tproj else 'off'}", flush=True)
+    assert not args.teacher_project or args.teacher_archive, "--teacher-project needs --teacher-archive"
     passk = []
     for step in range(args.steps + 1):
         if step in remeasure_steps:
@@ -1533,6 +1619,14 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                           "cumulative_answers": spent, "abandoned": abandoned})
         runner.model.train()
         opt.zero_grad(set_to_none=True)
+        n_teacher = 0
+        if teacher is not None and arm in FIXED_ARMS:
+            t_items = [teacher[keys[j]] for j in range(len(keys)) if keys[j] in teacher]
+            if t_items:
+                extra["teacher"] = teacher_backward(runner, args, t_items, norm)
+                if tproj is not None:
+                    extra["teacher"].update(tproj.project_grads(step))
+                n_teacher = len(t_items)
         h_grad = None
         owner = [j for j, (_, n) in enumerate(groups) for _ in range(n)]
         entropy = []
@@ -1579,6 +1673,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     live = [k for k, a in enumerate(adv) if a != 0]
                 backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
+            n_live = max(n_live, n_teacher)
             if arm in FIXED_ARMS and injected:
                 backward_weighted(runner, args, [a for a, _ in injected], list(range(len(injected))), [x for _, x in injected], norm)
                 n_live = max(n_live, len(injected))
@@ -1748,6 +1843,10 @@ def main():
     parser.add_argument("--od-warmup", type=int, default=10)
     parser.add_argument("--pw-lambda", type=float, default=0.0, help="problem-space whitening ridge, times tr(G)/m (0: off)")
     parser.add_argument("--pw-dim", type=int, default=1 << 20, help="CountSketch dimension for problem-space whitening")
+    parser.add_argument("--teacher-archive", default="", help="teacher solutions (discovery format) for teacher distillation")
+    parser.add_argument("--teacher-lambda", type=float, default=1.0, help="weight of each teacher solution's log-likelihood")
+    parser.add_argument("--teacher-project", action="store_true", help="project the teacher gradient off each matrix's "
+                        "dominant cumulative update direction (rescaled to its norm)")
     parser.add_argument("--mh-mode", default="none", choices=("none", "min", "avg"),
                         help="minimum-help credit on the policy's own prefixes (min) or its averaged-value control (avg)")
     parser.add_argument("--mh-archive", default="human_prefix_train.json", help="hints (human solutions) with base counts")

@@ -1,0 +1,233 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "TEACH_0",
+    "sub": "B7s8",
+    "part": 0,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "0",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_1",
+    "sub": "B7s8",
+    "part": 1,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "209",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_2",
+    "sub": "B7s8",
+    "part": 2,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "418",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_3",
+    "sub": "B7s8",
+    "part": 3,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "627",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_4",
+    "sub": "B7s8",
+    "part": 4,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "836",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_5",
+    "sub": "B7s8",
+    "part": 5,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "1045",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_6",
+    "sub": "B7s8",
+    "part": 6,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "1254",
+     "--limit",
+     "209"
+    ]
+   }
+  ],
+  [
+   {
+    "name": "TEACH_7",
+    "sub": "B7s8",
+    "part": 7,
+    "engine": "vllm",
+    "args": [
+     "--problems",
+     "rare_train.json",
+     "--n",
+     "8",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.0",
+     "--seed",
+     "2030",
+     "--offset",
+     "1463",
+     "--limit",
+     "209"
+    ]
+   }
+  ]
+ ]
+}

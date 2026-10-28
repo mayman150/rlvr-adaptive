@@ -12,7 +12,7 @@
     "--ckpts",
     "/opt/ml/input/data/ckpts",
     "--runs",
-    "B1k8,PSR1k8,NSR1k8,AC1k8,HG1k8,HGm1k8,PG1k8,MH8,AVH8",
+    "B1k8,B1k9,B1k10,PSR1k8,NSR1k8,AC1k8,HG1k8,HGm1k8,PG1k8,MH8,AVH8",
     "--ref",
     "B1k8",
     "--steps",

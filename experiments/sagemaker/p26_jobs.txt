@@ -1,1 +1,2 @@
-us-west-2:worth-p26-dirdiag-s8-20261027-225837
+us-west-2:worth-p26-dirdiag-s8-20261028-003444
+us-east-1:worth-p26-teacher-s0-20261027-231111
