@@ -1,0 +1,263 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_ExGRPO-Qwen25-Math-7B-Zero_2k",
+    "hub_model": "rzzhan/ExGRPO-Qwen2.5-Math-7B-Zero",
+    "revision": "8ae957c4e881dcba895d40f6748a3c47dc3dfe8a",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "rzzhan/ExGRPO-Qwen2.5-Math-7B-Zero@8ae957c4e881dcba895d40f6748a3c47dc3dfe8a"
+    ],
+    "tokenizer_from": "Qwen/Qwen2.5-Math-7B"
+   },
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-15B-DeepMath-1024samples-GRPO_3k",
+    "hub_model": "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-GRPO",
+    "revision": "2e03e6845504540be303bd48d1bc323cf2157d45",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "3072",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-GRPO@2e03e6845504540be303bd48d1bc323cf2157d45"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_ReLIFT-Qwen25-Math-7B-Zero_2k",
+    "hub_model": "RoadQAQ/ReLIFT-Qwen2.5-Math-7B-Zero",
+    "revision": "6d06289176b18ba93cc514eded1934ae11282893",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "RoadQAQ/ReLIFT-Qwen2.5-Math-7B-Zero@6d06289176b18ba93cc514eded1934ae11282893"
+    ],
+    "tokenizer_from": "Qwen/Qwen2.5-Math-7B"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_ExGRPO-LUFFY-7B-Continual_2k",
+    "hub_model": "rzzhan/ExGRPO-LUFFY-7B-Continual",
+    "revision": "e64ce26b9eaea555226692afc9e9ef0fb1a4ff6f",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "rzzhan/ExGRPO-LUFFY-7B-Continual@e64ce26b9eaea555226692afc9e9ef0fb1a4ff6f"
+    ],
+    "tokenizer_from": "Qwen/Qwen2.5-Math-7B"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-7B-DeepMath-1024samples-RePO_2k",
+    "hub_model": "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-RePO",
+    "revision": "2f37559575eeee988c9e9952219793ec6c584e00",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-RePO@2f37559575eeee988c9e9952219793ec6c584e00"
+    ],
+    "tokenizer_from": "Qwen/Qwen2.5-Math-7B"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-7B-DeepMath-1024samples-GRPO_2k",
+    "hub_model": "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-GRPO",
+    "revision": "596f54e6c38642985031b053be8e09b5c791736e",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-GRPO@596f54e6c38642985031b053be8e09b5c791736e"
+    ],
+    "tokenizer_from": "Qwen/Qwen2.5-Math-7B"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-15B-DeepMath-1024samples-RePO_1k",
+    "hub_model": "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-RePO",
+    "revision": "5b600ebcb1a5d7f1ccac14d4ce8b284dfbd8f2a0",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-RePO@5b600ebcb1a5d7f1ccac14d4ce8b284dfbd8f2a0"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-15B-DeepMath-1024samples-RePO_3k",
+    "hub_model": "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-RePO",
+    "revision": "5b600ebcb1a5d7f1ccac14d4ce8b284dfbd8f2a0",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "3072",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-RePO@5b600ebcb1a5d7f1ccac14d4ce8b284dfbd8f2a0"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "PUB_Qwen25-Math-15B-DeepMath-1024samples-GRPO_1k",
+    "hub_model": "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-GRPO",
+    "revision": "2e03e6845504540be303bd48d1bc323cf2157d45",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--identity",
+     "Siheng99/Qwen2.5-Math-1.5B-DeepMath-1024samples-GRPO@2e03e6845504540be303bd48d1bc323cf2157d45"
+    ]
+   }
+  ]
+ ]
+}

@@ -78,3 +78,15 @@ improvement caused by learning to finish.
 Estimate: one 8 x A100 machine for about 2.5-3 hours (39 evaluation specifications, 44 evaluation points: B1k8
 contributes four checkpoints and the low-temperature specification three temperatures; longest-first over 8 lanes;
 downloads included): about $80-100.
+
+## Amendment 1 (October 28, before any of these additions is evaluated): off-policy-data checkpoints
+
+Added after Codex's off-policy review (paper/codex_offpolicy.md), same protocol, references and readings (each addition
+joins its size/budget family for Holm): rzzhan/ExGRPO-Qwen2.5-Math-7B-Zero (self-generated replay);
+RoadQAQ/ReLIFT-Qwen2.5-Math-7B-Zero (interleaved SFT on stronger-model solutions); rzzhan/ExGRPO-LUFFY-7B-Continual
+(continual from LUFFY, external-supervision lineage; its starting point is not the base model, reported separately);
+Siheng99/Qwen2.5-Math-1.5B- and -7B-DeepMath-1024samples-RePO (replay) with the same authors'
+-DeepMath-1024samples-GRPO controls (a paired same-recipe comparison: RePO minus its GRPO control at matched pass@1 is
+reported). Revisions pinned in plans/p28b_public.json. Data provenance is labelled for every checkpoint
+(self-generated replay vs external demonstrations vs supervised steps). Not evaluable without released weights:
+ARMOR, EAPO, BAPO, TOPR, Asymmetric REINFORCE, LSPO (reimplementation would be a separate registration; ARMOR first).
