@@ -1,0 +1,159 @@
+"""Starting models for Pre-registration 30: supervised fine-tuning of the base on a selection's teacher solutions,
+saved at token milestones along one trajectory (fixed SFT seed, independent of any RL seed).
+
+Data: a discovery-format archive (question, answer, responses) restricted to the selection's problems (--problems, a
+JSON list of questions). Every distinct response that survives Pre-registration 14's canonicalization (retokenized
+without special tokens, at most max_new - 1 tokens, verifies, final box; stop token appended) is kept. Order: problems
+are visited uniformly in shuffled passes; each visit uses the problem's next solution in rotation (so problems with
+more teacher successes are not overweighted).
+Loss: mean token NLL of the response (prompt masked), AdamW (lr 1e-5, betas 0.9/0.99, no weight decay), batches of 8,
+clip 1 (Pre-registration 14's warm start). --tail: TailSFT (arXiv 2608.25756, Algorithm 1): each example's
+initial-model mean NLL l0 is precomputed; at each encounter the margin m = l_t - l0 is computed and the fraction f of
+the batch with the most negative margins (most improved) is dropped, f rising linearly from 0 to 0.5 over training;
+the loss is the summed NLL of the retained examples divided by their token count. Adaptation: the selection batch is
+the optimizer batch of 8 (the paper uses 16 per forward pass); the dropped count is floor(f * 8); ties keep lower index.
+Milestones count presented response tokens (retained tokens are also reported).
+Usage: python sft_start.py --model BASE --archive A.json --problems sel.json --milestones 500000,2000000 --out DIR [--tail]
+"""
+
+import argparse
+import hashlib
+import json
+import math
+import random
+import sys
+from pathlib import Path
+
+import torch
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from train_grpo import Runner, build_prompt, save_bf16, stop_token_ids  # noqa: E402
+from verifier import last_boxed, reward  # noqa: E402
+
+
+def examples(runner, archive, questions, max_new):
+    tok = runner.tok
+    im_end = tok.convert_tokens_to_ids("<|im_end|>")
+    stop = im_end if isinstance(im_end, int) and im_end in runner.stop_ids else runner.stop_ids[0]
+    recs = {d["question"]: d for d in json.loads(Path(archive).read_text())}
+    out, dropped = [], {"too_long": 0, "unverified": 0, "duplicate": 0, "no_solution": 0}
+    for q in questions:
+        d = recs[q]
+        sols, seen = [], set()
+        for resp in d.get("responses") or ([d["response"]] if d.get("response") else []):
+            ids = tok(resp, add_special_tokens=False).input_ids
+            text = tok.decode(ids, skip_special_tokens=True)
+            if len(ids) > max_new - 1:
+                dropped["too_long"] += 1
+            elif not (reward(text, d["answer"]) and last_boxed(text) is not None):
+                dropped["unverified"] += 1
+            elif tuple(ids) in seen:
+                dropped["duplicate"] += 1
+            else:
+                seen.add(tuple(ids))
+                sols.append(torch.tensor(ids + [stop]))
+        if sols:
+            out.append((torch.tensor(tok(build_prompt(tok, q)).input_ids), sols))
+        else:
+            dropped["no_solution"] += 1
+    return out, dropped
+
+
+def token_nll(runner, pairs):
+    """Per-example (summed NLL, token count) of the responses."""
+    lps = runner.token_logprobs(pairs)
+    return [(-lp.sum(), lp.numel()) for lp in lps]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True)
+    ap.add_argument("--archive", required=True)
+    ap.add_argument("--problems", required=True, help="JSON list of the selection's questions")
+    ap.add_argument("--milestones", default="500000,2000000")
+    ap.add_argument("--max-new", type=int, default=1024)
+    ap.add_argument("--lr", type=float, default=1e-5)
+    ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--clip", type=float, default=1.0)
+    ap.add_argument("--seed", type=int, default=3030)
+    ap.add_argument("--tail", action="store_true", help="TailSFT filtering")
+    ap.add_argument("--tail-max-drop", type=float, default=0.5)
+    ap.add_argument("--out", required=True)
+    a = ap.parse_args()
+    runner = Runner(argparse.Namespace(model=a.model, device="cuda", gen_batch=8, prefill_tokens=256, max_new=a.max_new, train_batch=a.batch))
+    p = Path(a.problems) if Path(a.problems).exists() else HERE / "data" / a.problems
+    arch = Path(a.archive) if Path(a.archive).exists() else HERE / "data" / a.archive
+    data, dropped = examples(runner, arch, json.loads(p.read_text()), a.max_new)
+    milestones = sorted(int(x) for x in a.milestones.split(","))
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(a.seed)
+    torch.manual_seed(a.seed)
+    opt = torch.optim.AdamW(runner.params, lr=a.lr, betas=(0.9, 0.99), weight_decay=0.0)
+    runner.model.train()
+    l0 = {}
+    if a.tail:  # initial-model mean NLL of every (problem, solution) pair
+        with torch.no_grad():
+            pairs = [(i, j) for i, (_, sols) in enumerate(data) for j in range(len(sols))]
+            for s in range(0, len(pairs), a.batch):
+                chunk = pairs[s:s + a.batch]
+                res = token_nll(runner, [(data[i][0].to("cuda"), data[i][1][j].to("cuda")) for i, j in chunk])
+                for (i, j), (nll, n) in zip(chunk, res):
+                    l0[(i, j)] = float(nll) / n
+    rot = [0] * len(data)
+    order, presented, retained, steps, log, mi = [], 0, 0, 0, [], 0
+    total = milestones[-1]
+    while mi < len(milestones):
+        if len(order) < a.batch:
+            nxt = list(range(len(data)))
+            rng.shuffle(nxt)
+            order += nxt
+        batch = [order.pop(0) for _ in range(a.batch)]
+        items = []
+        for i in batch:
+            j = rot[i] % len(data[i][1])
+            rot[i] += 1
+            items.append((i, j))
+        res = token_nll(runner, [(data[i][0].to("cuda"), data[i][1][j].to("cuda")) for i, j in items])
+        keep = list(range(len(items)))
+        if a.tail:
+            frac = a.tail_max_drop * min(1.0, presented / total)
+            n_drop = math.floor(frac * len(items))
+            margins = [float(nll) / n - l0[it] for (nll, n), it in zip(res, items)]
+            drop = sorted(range(len(items)), key=lambda k: (margins[k], k))[:n_drop]
+            keep = [k for k in keep if k not in set(drop)]
+            loss = sum(res[k][0] for k in keep) / max(sum(res[k][1] for k in keep), 1)
+        else:
+            loss = sum(nll for nll, _ in res) / sum(n for _, n in res)
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        gn = float(torch.nn.utils.clip_grad_norm_(runner.params, a.clip))
+        if math.isfinite(gn):
+            opt.step()
+        opt.zero_grad(set_to_none=True)
+        steps += 1
+        presented += sum(n for _, n in res)
+        retained += sum(res[k][1] for k in keep)
+        if steps % 20 == 0:
+            log.append({"step": steps, "loss": float(loss), "presented": presented, "retained": retained, "grad_norm": gn})
+            print(f"sft step {steps} loss {float(loss):.4f} presented {presented} retained {retained}", flush=True)
+        while mi < len(milestones) and presented >= milestones[mi]:
+            path = out / f"start_{milestones[mi]}"
+            save_bf16(runner, path)
+            runner.tok.save_pretrained(path)
+            h = hashlib.sha256()
+            for f in sorted(path.glob("*.safetensors")):
+                h.update(f.read_bytes())
+            uniq = sum(min(rot[i], len(data[i][1])) for i in range(len(data)))
+            meta = {"milestone": milestones[mi], "presented_tokens": presented, "retained_tokens": retained, "steps": steps,
+                    "problems": len(data), "solutions": sum(len(s) for _, s in data), "unique_solutions_seen": uniq,
+                    "problem_visits": sum(rot), "dropped_at_load": dropped, "tail": a.tail, "sha256": h.hexdigest()}
+            (path / "start_meta.json").write_text(json.dumps(meta, indent=1))
+            print(f"saved {path}: {meta}", flush=True)
+            mi += 1
+    (out / "sft_log.json").write_text(json.dumps(log, indent=1))
+
+
+if __name__ == "__main__":
+    main()
