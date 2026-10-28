@@ -111,6 +111,7 @@ def evaluate(job):
                               skip_special_tokens=True, detokenize=False)
                for i in range(len(texts))]
         gens = llm.generate(texts, sps)
+        pids = [list(g.prompt_token_ids) for g in gens]  # the prompt ids vLLM actually used
         outs, meta, raw = [], [], []
         for g in gens:
             assert len(g.outputs) == a["n"]
@@ -120,7 +121,7 @@ def evaluate(job):
                 meta.append((length, ended))
                 ids = list(o.token_ids)
                 cut = next((i for i, t in enumerate(ids) if t in stop), None)
-                raw.append(ids[:cut] if cut is not None else [t for t in ids if t != pad])
+                raw.append(ids[:cut] if cut is not None else ids)
         res["mean_length_chars"] = sum(len(o) for o in outs) / len(outs)
         res["mean_length_tokens"] = sum(m[0] for m in meta) / len(meta)
         res["truncated_rate"] = sum(not m[1] for m in meta) / len(meta)
@@ -132,20 +133,32 @@ def evaluate(job):
         if force:
             # forced answer (Pre-registration 28): every sample without a final box (truncated, or ended without one)
             # is continued greedily for `force` tokens after FORCE_SUFFIX, then scored by the same verifier
+            # control: the same samples continued greedily for the same number of tokens without the answer cue
             from vllm.inputs import TokensPrompt
-            pids = [tok(t).input_ids for t in texts]
             todo = [k for k, o in enumerate(outs) if last_boxed(o) is None]
             spf = SamplingParams(n=1, temperature=0.0, max_tokens=force, stop_token_ids=stop, ignore_eos=True,
                                  skip_special_tokens=True, detokenize=False)
+            spc = SamplingParams(n=1, temperature=0.0, max_tokens=force + len(suffix), stop_token_ids=stop, ignore_eos=True,
+                                 skip_special_tokens=True, detokenize=False)
             conts = llm.generate([TokensPrompt(prompt_token_ids=pids[k // a["n"]] + raw[k] + suffix) for k in todo], spf)
-            fouts = list(outs)
-            for k, g in zip(todo, conts):
-                fouts[k] = tok.decode(raw[k] + suffix + list(g.outputs[0].token_ids), skip_special_tokens=True)
-            fcorrect = [reward(o, problems[i // a["n"]]["answer"]) for i, o in enumerate(fouts)]
-            fcounts = [sum(fcorrect[i * a["n"]:(i + 1) * a["n"]]) for i in range(len(problems))]
-            res["forced"] = {"tokens": force, "suffix": FORCE_SUFFIX, "forced_samples": len(todo),
-                             "newly_right": sum(fcorrect[k] for k in todo), "counts": fcounts,
-                             "pass_at_k": {k: sum(pass_at_k(a["n"], c, k) for c in fcounts) / len(fcounts) for k in ks}}
+            ctrls = llm.generate([TokensPrompt(prompt_token_ids=pids[k // a["n"]] + raw[k]) for k in todo], spc)
+            res["forced"] = {"tokens": force, "suffix": FORCE_SUFFIX, "suffix_tokens": len(suffix), "forced_samples": len(todo)}
+            ftexts = {}
+            for label, gens2, extra in (("forced", conts, suffix), ("extended", ctrls, [])):
+                fouts = list(outs)
+                for k, g in zip(todo, gens2):
+                    fouts[k] = tok.decode(raw[k] + extra + list(g.outputs[0].token_ids), skip_special_tokens=True)
+                    ftexts.setdefault(k, {})[label] = fouts[k][-600:]
+                fcorrect = [reward(o, problems[i // a["n"]]["answer"]) for i, o in enumerate(fouts)]
+                fcounts = [sum(fcorrect[i * a["n"]:(i + 1) * a["n"]]) for i in range(len(problems))]
+                block = {"newly_right": sum(fcorrect[k] for k in todo), "counts": fcounts,
+                         "pass_at_k": {k: sum(pass_at_k(a["n"], c, k) for c in fcounts) / len(fcounts) for k in ks}}
+                if label == "forced":
+                    res["forced"].update(block)
+                else:
+                    res["forced"]["equal_budget_control"] = block
+            with gzip.open(Path(a["out"]) / f"{job['tag']}_forced_texts.json.gz", "wt") as fh:
+                json.dump({"todo": todo, "tails": [ftexts[k] for k in todo]}, fh)
         with gzip.open(Path(a["out"]) / f"{job['tag']}_texts.json.gz", "wt") as fh:
             json.dump({"step": job["tag"], "n": a["n"], "problems": [{"question": q["question"], "answer": q["answer"]} for q in problems],
                        "samples": [{"problem": i // a["n"], "text": o, "reward": c} for i, (o, c) in enumerate(zip(outs, correct))]}, fh)
@@ -185,6 +198,7 @@ def main():
     ap.add_argument("--expect-steps", default="")
     ap.add_argument("--temperatures", default="")
     ap.add_argument("--base-temperatures", default="")
+    ap.add_argument("--identity", default="", help="model identity (e.g. repo@revision), part of the resume fingerprint")
     ap.add_argument("--force-answer", type=int, default=0, help="also score samples without a final box after a forced "
                     "answer of this many greedy tokens (0: off)")
     args = ap.parse_args()
@@ -220,6 +234,8 @@ def main():
             fingerprint = {k: shared[k] for k in ("problems", "limit", "offset", "n", "max_new", "seed")}
             if shared["force_answer"]:
                 fingerprint["force_answer"] = shared["force_answer"]
+            if args.identity:
+                fingerprint["identity"] = args.identity
             if done.exists():
                 old = json.loads(done.read_text())
                 if old.get("fingerprint") == fingerprint and old.get("evaluator") == EVALUATOR:

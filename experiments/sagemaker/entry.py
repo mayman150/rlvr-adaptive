@@ -80,20 +80,43 @@ TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "mer
 _hub_lock = threading.Lock()
 
 
-def hub_download(model_id, dest, patterns):
+def hub_download(model_id, dest, patterns, revision=None):
     """snapshot_download in a subprocess with Hub access (HF_HUB_OFFLINE is set for the local model channel and is read
     at import time). No remote code is fetched."""
     env = {k: v for k, v in os.environ.items() if k != "HF_HUB_OFFLINE"}
     code = ("import sys; from huggingface_hub import snapshot_download; "
-            "snapshot_download(sys.argv[1], local_dir=sys.argv[2], allow_patterns=sys.argv[3].split(','))")
-    subprocess.run([sys.executable, "-c", code, model_id, str(dest), ",".join(patterns)], env=env, check=True)
+            "snapshot_download(sys.argv[1], local_dir=sys.argv[2], allow_patterns=sys.argv[3].split(','), "
+            "revision=sys.argv[4] or None)")
+    subprocess.run([sys.executable, "-c", code, model_id, str(dest), ",".join(patterns), revision or ""], env=env, check=True)
 
 
-def fetch_hub_model(model_id, tokenizer_dir):
-    """A public checkpoint for evaluation under our prompt: weights and config from the Hub; tokenizer files (and chat
-    template) replaced by those of `tokenizer_dir`, so every model sees the identical prompt."""
-    dest = Path("/opt/ml/hub") / model_id.replace("/", "__")
-    hub_download(model_id, dest, ["*.json", "*.safetensors", "*.txt", "*.jinja"])
+def vocab_of(d):
+    """(token -> id map, added tokens as (id, content) pairs) from tokenizer.json, else vocab.json."""
+    d = Path(d)
+    if (d / "tokenizer.json").exists():
+        t = json.loads((d / "tokenizer.json").read_text())
+        return t["model"]["vocab"], sorted((a["id"], a["content"]) for a in t.get("added_tokens", []))
+    if (d / "vocab.json").exists():
+        return json.loads((d / "vocab.json").read_text()), []
+    raise SystemExit(f"{d}: no tokenizer.json or vocab.json to check against our tokenizer")
+
+
+def fetch_hub_model(model_id, tokenizer_dir, tag, revision=None):
+    """A public checkpoint for evaluation under our prompt, in a directory of its own (`tag`: one per evaluation, so
+    lanes never share or delete each other's files): weights and config from the Hub at a pinned revision; after
+    checking that its vocabulary and added tokens are identical to ours and fit its embedding table, its tokenizer
+    files (and chat template) are replaced by those of `tokenizer_dir`, so every model sees the identical prompt."""
+    dest = Path("/opt/ml/hub") / tag
+    shutil.rmtree(dest, ignore_errors=True)
+    hub_download(model_id, dest, ["*.json", "*.safetensors", "*.txt", "*.jinja"], revision)
+    mine, theirs = vocab_of(tokenizer_dir), vocab_of(dest)
+    if mine[0] != theirs[0] or (theirs[1] and mine[1] != theirs[1]):
+        raise SystemExit(f"{model_id}: tokenizer differs from ours; refusing to substitute")
+    top = max(list(mine[0].values()) + [i for i, _ in mine[1]])
+    vocab_size = json.loads((dest / "config.json").read_text()).get("vocab_size", 0)
+    if vocab_size <= top:
+        raise SystemExit(f"{model_id}: embedding table ({vocab_size}) smaller than our largest token id ({top})")
+    os.system(f"df -h {dest} | tail -1")
     for f in TOKENIZER_FILES:
         (dest / f).unlink(missing_ok=True)
         if (Path(tokenizer_dir) / f).exists():
@@ -119,8 +142,7 @@ def run_plan(plan):
         print(f"model channel: {found}", flush=True)
     else:
         from huggingface_hub import snapshot_download
-        snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
-        local = ["--model", plan.get("model", "Qwen/Qwen2.5-Math-1.5B")]
+        local = ["--model", snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))]  # a local path
     status = {}
     if "lanes" in plan:
         # Mixed lanes, one per GPU, each a sequence of steps run in order (a step after a failed one is skipped):
@@ -131,12 +153,23 @@ def run_plan(plan):
         LIVE.mkdir(parents=True, exist_ok=True)
 
         def mixed_lane(gpu, steps):
+            blocked = False  # set when a step that later steps may depend on fails ("independent" steps never block)
             for spec in steps:
                 key = f"{spec['name']}#{spec['kind']}#{spec.get('part', 0)}#lane{gpu}"
-                if any(code != 0 for k, code in status.items() if k.endswith(f"#lane{gpu}")):
+                if blocked:
                     status[key] = "skipped"
                     print(f"[{key}] skipped (an earlier step of lane {gpu} failed)", flush=True)
                     continue
+                try:
+                    run_step(spec, key, gpu)
+                except (Exception, SystemExit) as e:  # e.g. a refused tokenizer: record it, keep the lane going
+                    status[key] = f"failed: {e!r}"
+                    print(f"[{key}] failed: {e!r}", flush=True)
+                if status.get(key) != 0 and not spec.get("independent"):
+                    blocked = True
+
+        def run_step(spec, key, gpu):
+            if True:
                 if spec["kind"] == "train":
                     cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(LIVE / spec["name"]),
                            *plan["common"], *spec["args"], *local]
@@ -153,7 +186,7 @@ def run_plan(plan):
                     hub_dir = None
                     if spec.get("hub_model"):  # a public checkpoint, evaluated as "step 0" under our prompt
                         tok_src = hub_tokenizer(spec["tokenizer_from"]) if spec.get("tokenizer_from") else Path(local[1])
-                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src)
+                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src, f"{spec['name']}__lane{gpu}", spec.get("revision"))
                         base = ["--base", str(hub_dir)]
                     engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                     cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]

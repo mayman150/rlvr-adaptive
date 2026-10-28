@@ -25,7 +25,8 @@
      "0",
      "--expect-steps",
      "0"
-    ]
+    ],
+    "independent": true
    },
    {
     "kind": "eval",
@@ -46,8 +47,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "Elliott/LUFFY-Qwen-Math-1.5B-Zero@e252461d3d11b2cb9d71664200685afcecd936ea"
+    ],
+    "independent": true,
+    "revision": "e252461d3d11b2cb9d71664200685afcecd936ea"
    },
    {
     "kind": "eval",
@@ -68,8 +73,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "relex-rlvr/RLVR-Qwen2.5-Math-1.5B@814b33f36afddb9e620bbddbcaef501c23f8ceb0"
+    ],
+    "independent": true,
+    "revision": "814b33f36afddb9e620bbddbcaef501c23f8ceb0"
    }
   ],
   [
@@ -93,7 +102,8 @@
      "25,50,100,150",
      "--force-answer",
      "32"
-    ]
+    ],
+    "independent": true
    },
    {
     "kind": "eval",
@@ -114,8 +124,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "Elliott/LUFFY-Qwen-Math-1.5B-Zero@e252461d3d11b2cb9d71664200685afcecd936ea"
+    ],
+    "independent": true,
+    "revision": "e252461d3d11b2cb9d71664200685afcecd936ea"
    },
    {
     "kind": "eval",
@@ -136,8 +150,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RLHFlow/Qwen2.5-Math-1.5B-GRPO-n8-easy@e2f4ee925bb0f3119d1a0f41214ca765b7370257"
+    ],
+    "independent": true,
+    "revision": "e2f4ee925bb0f3119d1a0f41214ca765b7370257"
    },
    {
     "kind": "eval",
@@ -158,8 +176,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "relex-rlvr/RELEX-Qwen2.5-Math-1.5B@458878c19dd5abbdbf89de91f7267ad249fca00a"
+    ],
+    "independent": true,
+    "revision": "458878c19dd5abbdbf89de91f7267ad249fca00a"
    }
   ],
   [
@@ -183,7 +205,8 @@
      "0",
      "--expect-steps",
      "0"
-    ]
+    ],
+    "independent": true
    },
    {
     "kind": "eval",
@@ -204,8 +227,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "sail/Qwen2.5-Math-1.5B-Oat-Zero@a98e477854071157a450e57dd45fd0684b6fa38a"
+    ],
+    "independent": true,
+    "revision": "a98e477854071157a450e57dd45fd0684b6fa38a"
    },
    {
     "kind": "eval",
@@ -226,8 +253,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "ypwang61/One-Shot-RLVR-Qwen2.5-Math-1.5B-7.5k-MATH@26cb10cc5a247d931c1305c3d5dd98b550184515"
+    ],
+    "independent": true,
+    "revision": "26cb10cc5a247d931c1305c3d5dd98b550184515"
    },
    {
     "kind": "eval",
@@ -248,8 +279,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "sail/Qwen2.5-Math-1.5B-Oat-Zero@a98e477854071157a450e57dd45fd0684b6fa38a"
+    ],
+    "independent": true,
+    "revision": "a98e477854071157a450e57dd45fd0684b6fa38a"
    },
    {
     "kind": "eval",
@@ -270,8 +305,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RoadQAQ/ReLIFT-Qwen2.5-Math-1.5B-Zero@6594ea29ef8e9ddd8cc6e40c57b8e773f4e91235"
+    ],
+    "independent": true,
+    "revision": "6594ea29ef8e9ddd8cc6e40c57b8e773f4e91235"
    },
    {
     "kind": "eval",
@@ -292,8 +331,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "zbeeb/Qwen2.5-Math-1.5B-Base-GRPO@469270c15f850be024c0dccf08813c77ebc8bfa7"
+    ],
+    "independent": true,
+    "revision": "469270c15f850be024c0dccf08813c77ebc8bfa7"
    }
   ],
   [
@@ -319,8 +362,12 @@
      "--expect-steps",
      "0",
      "--force-answer",
-     "32"
-    ]
+     "32",
+     "--identity",
+     "Qwen/Qwen2.5-Math-7B@b101308fe89651ea5ce025f25317fea6fc07e96e"
+    ],
+    "independent": true,
+    "revision": "b101308fe89651ea5ce025f25317fea6fc07e96e"
    },
    {
     "kind": "eval",
@@ -342,8 +389,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "stellalisy/rethink_rlvr_reproduce-random-qwen2.5_math_7b-lr5e-7-kl0.00-step150@b1586243edcd4c6770a9db8ba4aee9235370eb22"
+    ],
+    "independent": true,
+    "revision": "b1586243edcd4c6770a9db8ba4aee9235370eb22"
    },
    {
     "kind": "eval",
@@ -364,8 +415,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "ypwang61/One-Shot-RLVR-Qwen2.5-Math-1.5B-pi1@776538c8f719ab2f40085ad6839a02e861eee796"
+    ],
+    "independent": true,
+    "revision": "776538c8f719ab2f40085ad6839a02e861eee796"
    },
    {
     "kind": "eval",
@@ -389,7 +444,8 @@
      "0",
      "--force-answer",
      "32"
-    ]
+    ],
+    "independent": true
    },
    {
     "kind": "eval",
@@ -410,8 +466,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "rzzhan/ExGRPO-Qwen2.5-Math-1.5B-Zero@29a1ffc7da843841397af6b1336b60a3708412a8"
+    ],
+    "independent": true,
+    "revision": "29a1ffc7da843841397af6b1336b60a3708412a8"
    },
    {
     "kind": "eval",
@@ -432,8 +492,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "yangzhch6/Zero-Solver-Qwen2.5-Math-1.5B-L@f310e3d74101dbcd353b2a515fa74385a79fafb0"
+    ],
+    "independent": true,
+    "revision": "f310e3d74101dbcd353b2a515fa74385a79fafb0"
    }
   ],
   [
@@ -457,8 +521,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "sail/Qwen2.5-Math-7B-Oat-Zero@9830f56c4b418de8c11cb809d3cc3c483a03afd3"
+    ],
+    "independent": true,
+    "revision": "9830f56c4b418de8c11cb809d3cc3c483a03afd3"
    },
    {
     "kind": "eval",
@@ -480,8 +548,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "Elliott/LUFFY-Qwen-Math-7B-Zero-On-Policy@912dbdf781570f8888cb9348c4eff75da8d64324"
+    ],
+    "independent": true,
+    "revision": "912dbdf781570f8888cb9348c4eff75da8d64324"
    },
    {
     "kind": "eval",
@@ -502,8 +574,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "rzzhan/ExGRPO-Qwen2.5-Math-1.5B-Zero@29a1ffc7da843841397af6b1336b60a3708412a8"
+    ],
+    "independent": true,
+    "revision": "29a1ffc7da843841397af6b1336b60a3708412a8"
    },
    {
     "kind": "eval",
@@ -524,8 +600,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RLHFlow/Qwen2.5-Math-1.5B-DAPO-easy@ec7b675841814985ad6ba99cff04fa588340ce39"
+    ],
+    "independent": true,
+    "revision": "ec7b675841814985ad6ba99cff04fa588340ce39"
    },
    {
     "kind": "eval",
@@ -546,8 +626,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "ypwang61/One-Shot-RLVR-Qwen2.5-Math-1.5B-pi1@776538c8f719ab2f40085ad6839a02e861eee796"
+    ],
+    "independent": true,
+    "revision": "776538c8f719ab2f40085ad6839a02e861eee796"
    }
   ],
   [
@@ -571,8 +655,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zoo@c9e929d486f51408b17ff4ab778036903a37e8a7"
+    ],
+    "independent": true,
+    "revision": "c9e929d486f51408b17ff4ab778036903a37e8a7"
    },
    {
     "kind": "eval",
@@ -594,8 +682,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RLHFlow/Qwen2.5-Math-7B-Zero-RAFTpp@14f6172f62fab2ea18aa65ac8ae8d2fb0daeaa0d"
+    ],
+    "independent": true,
+    "revision": "14f6172f62fab2ea18aa65ac8ae8d2fb0daeaa0d"
    },
    {
     "kind": "eval",
@@ -616,8 +708,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RoadQAQ/ReLIFT-Qwen2.5-Math-1.5B-Zero@6594ea29ef8e9ddd8cc6e40c57b8e773f4e91235"
+    ],
+    "independent": true,
+    "revision": "6594ea29ef8e9ddd8cc6e40c57b8e773f4e91235"
    },
    {
     "kind": "eval",
@@ -638,8 +734,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "yangzhch6/Zero-Solver-Qwen2.5-Math-1.5B-L@f310e3d74101dbcd353b2a515fa74385a79fafb0"
+    ],
+    "independent": true,
+    "revision": "f310e3d74101dbcd353b2a515fa74385a79fafb0"
    },
    {
     "kind": "eval",
@@ -660,8 +760,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "ypwang61/One-Shot-RLVR-Qwen2.5-Math-1.5B-7.5k-MATH@26cb10cc5a247d931c1305c3d5dd98b550184515"
+    ],
+    "independent": true,
+    "revision": "26cb10cc5a247d931c1305c3d5dd98b550184515"
    }
   ],
   [
@@ -685,8 +789,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zero@9e4c08e5fcb43d0ce86b020d2229b33f08098a0a"
+    ],
+    "independent": true,
+    "revision": "9e4c08e5fcb43d0ce86b020d2229b33f08098a0a"
    },
    {
     "kind": "eval",
@@ -708,8 +816,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "ypwang61/One-Shot-RLVR-Qwen2.5-Math-7B-pi1@f48a66bd642bdf46e000520acf690bf4d2419b73"
+    ],
+    "independent": true,
+    "revision": "f48a66bd642bdf46e000520acf690bf4d2419b73"
    },
    {
     "kind": "eval",
@@ -730,8 +842,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "relex-rlvr/RLVR-Qwen2.5-Math-1.5B@814b33f36afddb9e620bbddbcaef501c23f8ceb0"
+    ],
+    "independent": true,
+    "revision": "814b33f36afddb9e620bbddbcaef501c23f8ceb0"
    },
    {
     "kind": "eval",
@@ -752,8 +868,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "zbeeb/Qwen2.5-Math-1.5B-Base-GRPO@469270c15f850be024c0dccf08813c77ebc8bfa7"
+    ],
+    "independent": true,
+    "revision": "469270c15f850be024c0dccf08813c77ebc8bfa7"
    },
    {
     "kind": "eval",
@@ -774,8 +894,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RLHFlow/Qwen2.5-Math-1.5B-GRPO-n8-easy@e2f4ee925bb0f3119d1a0f41214ca765b7370257"
+    ],
+    "independent": true,
+    "revision": "e2f4ee925bb0f3119d1a0f41214ca765b7370257"
    }
   ],
   [
@@ -799,8 +923,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "Elliott/LUFFY-Qwen-Math-7B-Zero@22278332d2eab6b0e6df139be0ec5bb7ec12ebea"
+    ],
+    "independent": true,
+    "revision": "22278332d2eab6b0e6df139be0ec5bb7ec12ebea"
    },
    {
     "kind": "eval",
@@ -822,8 +950,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "stellalisy/rethink_rlvr_reproduce-ground_truth-qwen2.5_math_7b-lr5e-7-kl0.00-step150@1665099c4baa52d51b0daedb687d622b8b584a0d"
+    ],
+    "independent": true,
+    "revision": "1665099c4baa52d51b0daedb687d622b8b584a0d"
    },
    {
     "kind": "eval",
@@ -844,8 +976,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "relex-rlvr/RELEX-Qwen2.5-Math-1.5B@458878c19dd5abbdbf89de91f7267ad249fca00a"
+    ],
+    "independent": true,
+    "revision": "458878c19dd5abbdbf89de91f7267ad249fca00a"
    },
    {
     "kind": "eval",
@@ -867,7 +1003,8 @@
      "0",
      "--expect-steps",
      "0"
-    ]
+    ],
+    "independent": true
    },
    {
     "kind": "eval",
@@ -888,8 +1025,12 @@
      "--sampled-steps",
      "0",
      "--expect-steps",
-     "0"
-    ]
+     "0",
+     "--identity",
+     "RLHFlow/Qwen2.5-Math-1.5B-DAPO-easy@ec7b675841814985ad6ba99cff04fa588340ce39"
+    ],
+    "independent": true,
+    "revision": "ec7b675841814985ad6ba99cff04fa588340ce39"
    }
   ]
  ]
