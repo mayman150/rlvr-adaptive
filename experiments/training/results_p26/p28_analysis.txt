@@ -1,0 +1,86 @@
+
+== 1.5B at 1k tokens: 14 checkpoints (base pass@1 21.6)
+   reference A:
+      ExGRPO-Qwen25-Math-15B-Zero_1k                             pass@1  47.2 pass@16  83.6 ref  85.7 gain -2.05 90% [-3.29, -0.92] dropped 0% -> departure down [correctness-only]
+      LUFFY-Qwen-Math-15B-Zero_1k                                pass@1  38.0 pass@16  80.7 ref  84.5 gain -3.77 90% [-5.25, -2.33] dropped 0% -> departure down [external]
+      One-Shot-RLVR-Qwen25-Math-15B-75k-MATH_1k                  insufficient overlap
+      One-Shot-RLVR-Qwen25-Math-15B-pi1_1k                       pass@1  57.4 pass@16  83.7 ref  86.8 gain -3.09 90% [-4.45, -1.73] dropped 11% -> not interpreted (support) [correctness-only]
+      Qwen25-Math-15B-Base-GRPO_1k                               pass@1  38.8 pass@16  86.3 ref  84.6 gain +1.70 90% [+0.56, +2.84] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-DAPO-easy_1k                               insufficient overlap
+      Qwen25-Math-15B-GRPO-n8-easy_1k                            insufficient overlap
+      Qwen25-Math-15B-Oat-Zero_1k                                insufficient overlap
+      RELEX-Qwen25-Math-15B_1k                                   insufficient overlap
+      RLVR-Qwen25-Math-15B_1k                                    insufficient overlap
+      ReLIFT-Qwen25-Math-15B-Zero_1k                             pass@1  28.7 pass@16  80.5 ref  80.9 gain -0.42 90% [-1.76, +0.95] dropped 0% -> equivalent [external]
+      Zero-Solver-Qwen25-Math-15B-L_1k                           insufficient overlap
+      Qwen25-Math-15B-DeepMath-1024samples-GRPO_1k               protocol failure (truncation 95%)
+      Qwen25-Math-15B-DeepMath-1024samples-RePO_1k               protocol failure (truncation 94%)
+      tally: {'departure down': 2, 'insufficient overlap': 7, 'not interpreted (support)': 1, 'inconclusive': 1, 'equivalent': 1, 'protocol failure': 2}
+   reference B:
+      ExGRPO-Qwen25-Math-15B-Zero_1k                             pass@1  47.2 pass@16  83.6 ref  86.4 gain -2.81 90% [-4.68, -0.99] dropped 0% -> inconclusive [correctness-only]
+      LUFFY-Qwen-Math-15B-Zero_1k                                pass@1  38.0 pass@16  80.7 ref  85.3 gain -4.63 90% [-6.59, -2.77] dropped 0% -> departure down [external]
+      One-Shot-RLVR-Qwen25-Math-15B-75k-MATH_1k                  pass@1  68.2 pass@16  87.9 ref  88.9 gain -1.01 90% [-2.68, +0.71] dropped 0% -> inconclusive [correctness-only]
+      One-Shot-RLVR-Qwen25-Math-15B-pi1_1k                       pass@1  57.4 pass@16  83.7 ref  87.6 gain -3.83 90% [-5.56, -2.13] dropped 0% -> departure down [correctness-only]
+      Qwen25-Math-15B-Base-GRPO_1k                               pass@1  38.8 pass@16  86.3 ref  85.4 gain +0.89 90% [-0.82, +2.57] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-DAPO-easy_1k                               pass@1  71.8 pass@16  88.6 ref  89.6 gain -0.99 90% [-2.68, +0.74] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-GRPO-n8-easy_1k                            pass@1  64.7 pass@16  86.6 ref  88.4 gain -1.72 90% [-3.63, +0.25] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-Oat-Zero_1k                                pass@1  72.4 pass@16  88.8 ref  89.7 gain -0.88 90% [-2.63, +0.97] dropped 0% -> inconclusive [correctness-only]
+      RELEX-Qwen25-Math-15B_1k                                   pass@1  67.6 pass@16  89.4 ref  88.8 gain +0.64 90% [-0.98, +2.33] dropped 0% -> inconclusive [correctness-only]
+      RLVR-Qwen25-Math-15B_1k                                    pass@1  67.3 pass@16  88.6 ref  88.7 gain -0.12 90% [-1.79, +1.44] dropped 0% -> equivalent [correctness-only]
+      ReLIFT-Qwen25-Math-15B-Zero_1k                             pass@1  28.7 pass@16  80.5 ref  83.8 gain -3.28 90% [-4.99, -1.59] dropped 0% -> departure down [external]
+      Zero-Solver-Qwen25-Math-15B-L_1k                           pass@1  68.1 pass@16  87.4 ref  88.9 gain -1.49 90% [-3.14, +0.15] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-DeepMath-1024samples-GRPO_1k               protocol failure (truncation 95%)
+      Qwen25-Math-15B-DeepMath-1024samples-RePO_1k               protocol failure (truncation 94%)
+      tally: {'inconclusive': 8, 'departure down': 3, 'equivalent': 1, 'protocol failure': 2}
+
+== 1.5B at 3k tokens: 14 checkpoints (base pass@1 20.8)
+   reference B:
+      ExGRPO-Qwen25-Math-15B-Zero_3k                             pass@1  50.5 pass@16  89.0 ref  88.5 gain +0.45 90% [-1.25, +2.11] dropped 0% -> inconclusive [correctness-only]
+      LUFFY-Qwen-Math-15B-Zero_3k                                pass@1  41.8 pass@16  88.1 ref  87.4 gain +0.72 90% [-0.97, +2.48] dropped 0% -> inconclusive [external]
+      One-Shot-RLVR-Qwen25-Math-15B-75k-MATH_3k                  pass@1  71.2 pass@16  90.9 ref  91.9 gain -0.97 90% [-2.56, +0.65] dropped 0% -> inconclusive [correctness-only]
+      One-Shot-RLVR-Qwen25-Math-15B-pi1_3k                       pass@1  59.9 pass@16  86.7 ref  89.8 gain -3.10 90% [-4.69, -1.55] dropped 0% -> departure down [correctness-only]
+      Qwen25-Math-15B-Base-GRPO_3k                               pass@1  40.2 pass@16  87.9 ref  87.2 gain +0.70 90% [-0.86, +2.26] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-DAPO-easy_3k                               pass@1  74.7 pass@16  92.2 ref  92.4 gain -0.24 90% [-1.96, +1.49] dropped 0% -> equivalent [correctness-only]
+      Qwen25-Math-15B-GRPO-n8-easy_3k                            pass@1  68.2 pass@16  90.4 ref  91.2 gain -0.83 90% [-2.44, +0.81] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-15B-Oat-Zero_3k                                pass@1  75.8 pass@16  92.7 ref  92.5 gain +0.22 90% [-1.37, +1.94] dropped 0% -> equivalent [correctness-only]
+      RELEX-Qwen25-Math-15B_3k                                   pass@1  70.2 pass@16  91.0 ref  91.7 gain -0.66 90% [-2.08, +0.76] dropped 0% -> inconclusive [correctness-only]
+      RLVR-Qwen25-Math-15B_3k                                    pass@1  69.6 pass@16  90.7 ref  91.5 gain -0.80 90% [-2.38, +0.76] dropped 0% -> inconclusive [correctness-only]
+      ReLIFT-Qwen25-Math-15B-Zero_3k                             pass@1  29.2 pass@16  83.8 ref  85.4 gain -1.57 90% [-3.28, +0.13] dropped 0% -> inconclusive [external]
+      Zero-Solver-Qwen25-Math-15B-L_3k                           pass@1  71.5 pass@16  91.4 ref  91.9 gain -0.52 90% [-1.98, +1.02] dropped 0% -> equivalent [correctness-only]
+      Qwen25-Math-15B-DeepMath-1024samples-GRPO_3k               outside the law's range
+      Qwen25-Math-15B-DeepMath-1024samples-RePO_3k               outside the law's range
+      tally: {'inconclusive': 8, 'departure down': 1, 'equivalent': 3, "outside the law's range": 2}
+
+== 7B at 2k tokens: 14 checkpoints (base pass@1 29.9)
+   reference A:
+      LUFFY-Qwen-Math-7B-Zero-On-Policy_2k                       pass@1  46.9 pass@16  91.7 ref  91.0 gain +0.71 90% [-0.54, +1.91] dropped 0% -> equivalent [correctness-only (LUFFY's on-policy baseline)]
+      LUFFY-Qwen-Math-7B-Zero_2k                                 pass@1  56.4 pass@16  92.4 ref  92.7 gain -0.30 90% [-1.52, +0.89] dropped 0% -> equivalent [external]
+      One-Shot-RLVR-Qwen25-Math-7B-pi1_2k                        pass@1  48.4 pass@16  93.1 ref  91.2 gain +1.82 90% [+0.95, +2.69] dropped 0% -> inconclusive [correctness-only]
+      Qwen-25-Math-7B-SimpleRL-Zero_2k                           pass@1  68.8 pass@16  86.8 ref  94.3 gain -7.46 90% [-9.26, -5.89] dropped 1% -> departure down [correctness-only]
+      Qwen-25-Math-7B-SimpleRL-Zoo_2k                            pass@1  70.3 pass@16  93.6 ref  94.5 gain -0.89 90% [-1.73, -0.23] dropped 3% -> equivalent [correctness-only]
+      Qwen25-Math-7B-Oat-Zero_2k                                 insufficient overlap
+      Qwen25-Math-7B-Zero-RAFTpp_2k                              insufficient overlap
+      rethink_rlvr_reproduce-ground_truth-qwen25_math__2k        insufficient overlap
+      rethink_rlvr_reproduce-random-qwen25_math_7b-lr5_2k        pass@1  57.3 pass@16  93.6 ref  92.9 gain +0.71 90% [-0.07, +1.53] dropped 0% -> equivalent [random reward]
+      ExGRPO-LUFFY-7B-Continual_2k                               pass@1  62.8 pass@16  94.3 ref  93.8 gain +0.51 90% [-0.50, +1.57] dropped 0% -> equivalent [external lineage (start is not the base)]
+      ExGRPO-Qwen25-Math-7B-Zero_2k                              pass@1  49.5 pass@16  92.5 ref  91.4 gain +1.09 90% [-0.01, +2.15] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-7B-DeepMath-1024samples-GRPO_2k                insufficient overlap
+      Qwen25-Math-7B-DeepMath-1024samples-RePO_2k                insufficient overlap
+      ReLIFT-Qwen25-Math-7B-Zero_2k                              insufficient overlap
+      tally: {'equivalent': 5, 'inconclusive': 2, 'departure down': 1, 'insufficient overlap': 6}
+   reference B:
+      LUFFY-Qwen-Math-7B-Zero-On-Policy_2k                       pass@1  46.9 pass@16  91.7 ref  92.6 gain -0.90 90% [-2.32, +0.49] dropped 0% -> inconclusive [correctness-only (LUFFY's on-policy baseline)]
+      LUFFY-Qwen-Math-7B-Zero_2k                                 pass@1  56.4 pass@16  92.4 ref  93.4 gain -1.01 90% [-2.55, +0.45] dropped 0% -> inconclusive [external]
+      One-Shot-RLVR-Qwen25-Math-7B-pi1_2k                        pass@1  48.4 pass@16  93.1 ref  92.7 gain +0.33 90% [-0.87, +1.54] dropped 0% -> equivalent [correctness-only]
+      Qwen-25-Math-7B-SimpleRL-Zero_2k                           pass@1  68.8 pass@16  86.8 ref  94.4 gain -7.59 90% [-9.52, -5.81] dropped 0% -> departure down [correctness-only]
+      Qwen-25-Math-7B-SimpleRL-Zoo_2k                            pass@1  70.3 pass@16  93.6 ref  94.6 gain -0.91 90% [-2.18, +0.37] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-7B-Oat-Zero_2k                                 pass@1  86.3 pass@16  95.0 ref  96.1 gain -1.07 90% [-2.44, +0.13] dropped 0% -> inconclusive [correctness-only]
+      Qwen25-Math-7B-Zero-RAFTpp_2k                              pass@1  80.1 pass@16  95.1 ref  95.6 gain -0.46 90% [-1.67, +0.82] dropped 0% -> equivalent [correctness-only]
+      rethink_rlvr_reproduce-ground_truth-qwen25_math__2k        pass@1  77.0 pass@16  93.8 ref  95.2 gain -1.39 90% [-2.77, -0.09] dropped 0% -> inconclusive [correctness-only]
+      rethink_rlvr_reproduce-random-qwen25_math_7b-lr5_2k        pass@1  57.3 pass@16  93.6 ref  93.5 gain +0.08 90% [-1.15, +1.33] dropped 0% -> equivalent [random reward]
+      ExGRPO-LUFFY-7B-Continual_2k                               pass@1  62.8 pass@16  94.3 ref  93.9 gain +0.34 90% [-1.00, +1.66] dropped 0% -> equivalent [external lineage (start is not the base)]
+      ExGRPO-Qwen25-Math-7B-Zero_2k                              pass@1  49.5 pass@16  92.5 ref  92.8 gain -0.29 90% [-1.64, +1.07] dropped 0% -> equivalent [correctness-only]
+      Qwen25-Math-7B-DeepMath-1024samples-GRPO_2k                pass@1  72.9 pass@16  95.1 ref  94.8 gain +0.28 90% [-0.94, +1.53] dropped 0% -> equivalent [correctness-only]
+      Qwen25-Math-7B-DeepMath-1024samples-RePO_2k                pass@1  74.1 pass@16  94.8 ref  94.9 gain -0.07 90% [-1.29, +1.18] dropped 0% -> equivalent [correctness-only]
+      ReLIFT-Qwen25-Math-7B-Zero_2k                              pass@1  79.1 pass@16  93.7 ref  95.5 gain -1.73 90% [-3.30, -0.31] dropped 0% -> inconclusive [external]
+      tally: {'inconclusive': 6, 'equivalent': 7, 'departure down': 1}
