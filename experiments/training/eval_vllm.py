@@ -120,7 +120,7 @@ def evaluate(job):
         res["boxed_rate"] = sum(last_boxed(o) is not None for o in outs) / len(outs)
         correct = [reward(o, problems[i // a["n"]]["answer"]) for i, o in enumerate(outs)]
         counts = [sum(correct[i * a["n"]:(i + 1) * a["n"]]) for i in range(len(problems))]
-        ks = [k for k in (1, 2, 4, 8, 16, 32, 64) if k <= a["n"]]
+        ks = [k for k in (1, 2, 4, 8, 16, 32, 64, 128, 256) if k <= a["n"]]
         res.update({"counts": counts, "pass_at_k": {k: sum(pass_at_k(a["n"], c, k) for c in counts) / len(counts) for k in ks}})
         with gzip.open(Path(a["out"]) / f"{job['tag']}_texts.json.gz", "wt") as fh:
             json.dump({"step": job["tag"], "n": a["n"], "problems": [{"question": q["question"], "answer": q["answer"]} for q in problems],

@@ -51,9 +51,14 @@ def trajectory(theta0, tau):
     return out, np.array(means)
 
 
-def at_pass1(traj, target):
+def at_pass1(traj, target, strict=False, tol=0.005):
+    """The law's state at the given pass@1 (nearest recorded state). strict=True (Pre-registration 27) rejects
+    targets the trajectory does not reach instead of returning the nearest end; the frozen fits keep the default."""
     states, means = traj
-    return states[int(np.argmin(np.abs(means - target)))]
+    j = int(np.argmin(np.abs(means - target)))
+    if strict and abs(means[j] - target) > tol:
+        raise ValueError(f"pass@1 {target:.4f} not reached by the law's trajectory (nearest {means[j]:.4f})")
+    return states[j]
 
 
 def uniform_shift(theta0, target, beta=1.0):

@@ -197,13 +197,29 @@ def run_plan(plan):
                     cmd = [vllm_python(), "-I", str(EVAL_VLLM), "--ckpts", str(LIVE / ev["live"]),
                            "--out", str(LIVE / ev["name"] / "eval"), *ev["args"], "--sampled-steps", ",".join(str(x) for x in steps)]
                     key = f"{ev['name']}#eval#{'-'.join(str(x) for x in steps)}#gpu{gpu}"
-                    threads.append(threading.Thread(target=run_one, args=(key, cmd, gpu, status, True)))
+                    status[key] = "not finished"  # every expected evaluation must report
+
+                    def guarded(key=key, cmd=cmd, gpu=gpu):
+                        try:
+                            run_one(key, cmd, gpu, status, True)
+                        except Exception as e:
+                            status[key] = f"exception: {e!r}"
+                            print(f"[{key}] exception: {e!r}", flush=True)
+                    threads.append(threading.Thread(target=guarded))
                 for t in threads:
                     t.start()
                 for t in threads:
                     t.join()
 
         def launch(spec):
+            status[spec["name"]] = "not finished"  # every expected run must report
+            try:
+                launch_one(spec)
+            except Exception as e:
+                status[spec["name"]] = f"exception: {e!r}"
+                print(f"[{spec['name']}] exception: {e!r}", flush=True)
+
+        def launch_one(spec):
             gpus = spec.get("gpus") or list(range(int(spec["nproc"])))
             out = {"dir": ["--out", str(LIVE / spec["name"])], "file": ["--out", str(LIVE / f"{spec['name']}.json")]}.get(spec.get("out"), [])
             cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={len(gpus)}",

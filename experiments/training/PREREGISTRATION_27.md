@@ -1,10 +1,11 @@
-# Pre-registration 27: does longer or stronger training leave the base model's curve? (reason 3)
+# Pre-registration 27: does longer or stronger training leave the short-run Dr. GRPO frontier? (reason 3)
 
 Declared October 28, 2026, before any run of this design; reviewed by Codex before launch.
 
 ## Why
 
-Every tested intervention lies on Dr. GRPO's pass@16-vs-pass@1 curve, and at matched pass@1 different methods solve
+Every evaluated arm lies, over its observed pass@1 support, on Dr. GRPO's pass@16-vs-pass@1 curve, and at matched
+pass@1 different methods solve
 nearly the same problems at nearly the same rates (Investigation 27), a profile that a per-problem law from base counts
 predicts (law.py, 0.82 pp RMSE on 65 checkpoints). Three explanations were proposed: (1) on-policy learning has no
 signal on problems the model never solves; (2) the gains are shared skills that lift all problems in base order;
@@ -26,22 +27,37 @@ Pre-registration 20). Checkpoints at steps 50, 100, 150, 300, 500, 700, 1,000. N
 - The base model with 256 samples (job worth-p27-base) and at T = 0.4, 0.6, 0.8 with 32 samples (Investigation 27).
 Reported for every checkpoint: pass@1, pass@16, truncation, mean length, boxed rate; training reward and length.
 
-## Readings fixed in advance (problem bootstrap, 2,000 draws, all checkpoints resampled together)
+## Readings fixed in advance (training seed 8; intervals condition on it; problem bootstrap, 2,000 draws, all
+## evaluations resampled together; Holm correction over the two arms within each reading)
 
-1. **Curve (the frontier law as the reference).** For each checkpoint, the frozen frontier law (law.py, tau = -0.20,
-   fitted before this study) predicts pass@16 from the base counts and the checkpoint's pass@1. Reason 3 is supported on
-   this reading if, at step 500 or 1,000, an arm's pass@16 exceeds the law's prediction by at least 2 points with a 95%
-   interval above 0. Where a checkpoint's pass@1 lies within B1k's 150-step support, Pre-registration 21's matched
-   comparison against B1k's trajectory and temperature envelope is also reported.
-2. **Coverage beyond the base (Yue et al.'s crossover).** At step 1,000, pass@256 of the arm minus pass@256 of the
-   base. Short training leaves the base ahead at large k; reason 3 is supported on this reading if the arm's pass@256
-   exceeds the base's by at least 1 point with a 95% interval above 0. Reported: the number of problems solved at least
-   once in 256 samples by the arm but never by the base, and the reverse.
-3. **Difficulty order (reported).** Spearman correlation across problems between the base success rate (256 samples)
-   and the checkpoint's success rate, at steps 150 and 1,000; success on problems the base never solved in 256 samples.
-**Overall:** reason 3 is supported if reading 1 or reading 2 is met by either arm; it is not supported if neither is
-met and both arms reach a step-1,000 pass@1 at least 3 points above B1k's step 150 (the policy did move further); if
-neither arm moves that far, the test is inconclusive.
+Notation: base counts are the base model's successes on each test problem from the 256-sample evaluation
+(worth-p27-base, T = 1, 1,024 tokens); a checkpoint's counts come from its 256-sample evaluation where available
+(steps 150, 500, 1,000) and its 32-sample evaluation otherwise. The reference "B1k8 step 150" is Dr. GRPO seed 8 at step
+150 (32 samples; pass@1 58.15).
+
+A. **Coverage (primary).** For each arm, pass@256 at step 1,000 minus the base's pass@256 (both 256 samples, the
+   fraction of problems with at least one success). Met if the point estimate is at least +1 point and the
+   Holm-adjusted 95% interval lies above 0 (the +1 floor applies to the estimate; the interval only establishes
+   positivity). Reported: the same contrast at step 150; the arm's change from step 150 to step 1,000; the numbers of
+   problems with zero successes in 256 base samples but at least one in 256 arm samples, and the reverse. Equal
+   finite-budget coverage does not establish new support: a problem with zero successes in 256 samples is not
+   impossible for the base.
+B. **Short-run law (prediction test, reported).** The frozen frontier law (law.py, tau = -0.20 as frozen for
+   Pre-registration 20; theta_0 from law.initial_theta on the 32-sample base counts of the original base evaluation
+   (BASE15), the prior from law.fit_prior on them) predicts pass@16 at each checkpoint's 32-sample pass@1
+   (strict: no prediction outside the law's reachable range). A departure is a checkpoint at step 500 or 1,000 with
+   pass@16 at least 2 points above the prediction and a Holm-adjusted 95% interval above 0. Beyond the pass@1 range on
+   which the law was validated, a departure may reflect extrapolation error; it is reported, not counted as support.
+   Where a checkpoint's pass@1 lies within B1k's 150-step support, Pre-registration 21's matched comparison against
+   B1k's trajectory and temperature envelope is also reported.
+C. **Difficulty order (reported).** Spearman correlation across problems between the base's 256-sample success rate and
+   the arm's 256-sample success rate, at steps 150 and 1,000; mean success on problems with zero successes in 256 base
+   samples.
+
+**Verdict per arm:** "supported" if reading A is met; "not supported" if A is not met and the arm's step-1,000 pass@1
+exceeds B1k8 step 150's by at least 3 points (measured gain reported); "inconclusive" otherwise. **Overall:** reason 3
+is supported (for this regime) if either arm is supported; not supported if neither arm is supported and at least one
+is "not supported"; otherwise inconclusive. Non-significance does not establish equivalence.
 
 ## Scope
 
@@ -50,5 +66,6 @@ the claim to this regime; it does not rule out ProRL-style training.
 
 ## Cost
 
-One 8 x A100 machine (ml.p4de.24xlarge, $31.56 per hour): training about 8 hours (about 20-30 s per step at 4 GPUs),
-evaluation about 2 hours on the same GPUs: about $300-400. Base evaluations on one L40S: about $5.
+One 8 x A100 machine (ml.p4de.24xlarge, $31.56 per hour): training about 9-12 hours (the 512-token smoke run took
+18-19 s per step at 4 GPUs; 1,024 tokens is slower), evaluation 2-3 hours on the same GPUs: 12-15 hours, about
+$380-475 plus setup; maximum runtime set to 20 hours. Base evaluations on one L40S: about $5.
