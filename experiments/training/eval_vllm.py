@@ -12,6 +12,7 @@ Usage: python eval_vllm.py --ckpts DIR [--base MODEL] --problems FILE --n 32 --o
 import argparse
 import gzip
 import json
+import os
 import math
 import re
 import subprocess
@@ -39,7 +40,8 @@ def compat_tokenizer(path):
     cfg = json.loads((src / "tokenizer_config.json").read_text())
     if not isinstance(cfg.get("extra_special_tokens"), list) and "backend" not in cfg:
         return str(src)
-    out = Path("/tmp") / ("tok_" + hashlib.sha1(str(src).encode()).hexdigest()[:12])
+    # one copy per process: lanes evaluating the same checkpoint would otherwise race on the files
+    out = Path("/tmp") / ("tok_" + hashlib.sha1(str(src).encode()).hexdigest()[:12] + f"_{os.getpid()}")
     out.mkdir(parents=True, exist_ok=True)
     for name in ("tokenizer.json", "chat_template.jinja", "vocab.json", "merges.txt", "special_tokens_map.json"):
         if (src / name).exists():

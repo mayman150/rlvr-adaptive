@@ -62,10 +62,19 @@ def is_matrix(name, shape):
     return len(shape) == 2 and "embed" not in name and "lm_head" not in name
 
 
+def ratio(a, b):
+    """a / b, or None when b is not a finite positive number."""
+    return a / b if b > 0 and math.isfinite(b) and math.isfinite(a) else None
+
+
 def shares(ev):
+    """Top-5 eigenvalues (descending) over the sum of their absolute values, and the negative share of that sum
+    (nonzero only for indefinite estimates such as the cross-group Gram matrix)."""
     ev = ev.flip(0)
-    tot = float(ev.clamp(min=0).sum())
-    return [float(x) / tot for x in ev[:5]] if tot > 0 else []
+    tot = float(ev.abs().sum())
+    if not (tot > 0 and math.isfinite(tot)):
+        return {"top5": [], "negative_mass": None}
+    return {"top5": [float(x) / tot for x in ev[:5]], "negative_mass": float(-ev.clamp(max=0).sum()) / tot}
 
 
 def weight_part(args, dev):
@@ -110,17 +119,18 @@ def weight_part(args, dev):
             traj_r1 += float(torch.linalg.eigvalsh(gk)[-1])
             traj_e += float(gk.trace())
         del D, w0
-    rep = {"matrices": len(keys), "rank1_share": {r: num[r] / den[r] for r in runs},
-           "cosine_full": {f"{a}|{b}": dot[(a, b)] / math.sqrt(den[a] * den[b]) for a, b in pairs},
-           "top_direction_alignment": {f"{a}|{b}": al[(a, b)] / wsum[(a, b)] for a, b in pairs},
+    rep = {"matrices": len(keys), "rank1_share": {r: ratio(num[r], den[r]) for r in runs},
+           "cosine_full": {f"{a}|{b}": ratio(dot[(a, b)], math.sqrt(den[a] * den[b])) for a, b in pairs},
+           "top_direction_alignment": {f"{a}|{b}": ratio(al[(a, b)], wsum[(a, b)]) for a, b in pairs},
            "trajectory_cosine": {}, "trajectory_norm_ratio": {},
            "trajectory_gram_shares": shares(torch.linalg.eigvalsh(gram)),
            "trajectory_rank1_share_per_matrix": traj_r1 / traj_e if traj_e > 0 else None}
     for i, s in enumerate(steps):
         for j in range(i + 1, len(steps)):
             t = steps[j]
-            rep["trajectory_cosine"][f"{s}|{t}"] = float(gram[i, j] / math.sqrt(gram[i, i] * gram[j, j]))
-            rep["trajectory_norm_ratio"][f"{t}/{s}"] = float(math.sqrt(gram[j, j] / gram[i, i]))
+            rep["trajectory_cosine"][f"{s}|{t}"] = ratio(float(gram[i, j]), math.sqrt(float(gram[i, i] * gram[j, j])))
+            nr = ratio(float(gram[j, j]), float(gram[i, i]))
+            rep["trajectory_norm_ratio"][f"{t}/{s}"] = math.sqrt(nr) if nr is not None else None
     # rank-1 part, remainder and neither, of the reference run's final update, as loadable checkpoints
     ref_final = Ckpt(Path(args.ckpts) / args.ref / f"ckpt_step{args.final}")
     src = Path(args.ckpts) / args.ref / f"ckpt_step{args.final}"
@@ -145,7 +155,8 @@ def weight_part(args, dev):
             else:  # embeddings, norms, biases: trained values in all three
                 sd[k] = w.clone()
         if name != "other":
-            rep["bf16_retention"][name] = {"cosine": dt / math.sqrt(max(rr * ii, 1e-300)), "norm_ratio": math.sqrt(rr / ii)}
+            nr = ratio(rr, ii)  # aggregate over matrices
+            rep["bf16_retention"][name] = {"cosine": ratio(dt, math.sqrt(rr * ii)), "norm_ratio": math.sqrt(nr) if nr is not None else None}
         out = Path(args.out) / f"{args.ref}_{name}" / f"ckpt_step{args.final}"
         out.mkdir(parents=True, exist_ok=True)
         save_file({k: v.contiguous() for k, v in sd.items()}, str(out / "model.safetensors"), metadata={"format": "pt"})
@@ -164,8 +175,9 @@ def gram_report(S):
     G = S @ S.T
     off = C[~torch.eye(len(S), dtype=bool, device=C.device)]
     mean_dir = S.mean(0)
-    return {"gram_shares_top5": shares(torch.linalg.eigvalsh(G)), "cosine_shares_top5": shares(torch.linalg.eigvalsh(C)),
-            "mean_direction_share": float(((S @ mean_dir) ** 2).sum() / (mean_dir @ mean_dir).clamp(min=1e-300) / G.trace()),
+    md = float(mean_dir @ mean_dir)
+    return {"gram_shares": shares(torch.linalg.eigvalsh(G)), "cosine_shares": shares(torch.linalg.eigvalsh(C)),
+            "mean_direction_share": ratio(float(((S @ mean_dir) ** 2).sum()) / md, float(G.trace())) if md > 0 else None,
             "mean_pairwise_cosine": float(off.mean()),
             "pairwise_cosine_quartiles": [float(x) for x in torch.quantile(off, torch.tensor([0.25, 0.5, 0.75], dtype=off.dtype, device=off.device))]}
 
@@ -201,6 +213,7 @@ def grad_part(args, dev):
                 for s in range(0, 8, a.train_batch):
                     lp = runner.logprob_sum([(p.to(dev), x.to(dev)) for p, x in ans[s:s + a.train_batch]])
                     (-(w[s:s + a.train_batch] * lp).sum()).backward()
+                    del lp  # its graph would keep the model alive after the checkpoint is released
                 packs[g].append(sketch_grads(tables, args.sketch_dim))
             kept.append((j, sum(rs[0]), sum(rs[1])))
         runner.model.zero_grad(set_to_none=True)
@@ -213,14 +226,14 @@ def grad_part(args, dev):
             out["group_a"], out["group_b"] = gram_report(A), gram_report(B)
             X = A @ B.T
             X = (X + X.T) / 2
-            out["cross_gram_shares_top5"] = shares(torch.linalg.eigvalsh(X))
-            out["cross_gram_negative_mass"] = float(-torch.linalg.eigvalsh(X).clamp(max=0).sum() / torch.linalg.eigvalsh(X).abs().sum())
+            out["cross_gram_shares"] = shares(torch.linalg.eigvalsh(X))
             na, nb = A.norm(dim=1).clamp(min=1e-300), B.norm(dim=1).clamp(min=1e-300)
             same = (A * B).sum(1) / (na * nb)
             Xc = (A / na[:, None]) @ (B / nb[:, None]).T
             Xc = (Xc + Xc.T) / 2
             out["same_problem_cross_cosine"] = {"mean": float(same.mean()), "quartiles": [float(x) for x in torch.quantile(same, torch.tensor([0.25, 0.5, 0.75], dtype=same.dtype, device=same.device))]}
-            out["cross_cosine_shares_top5"] = shares(torch.linalg.eigvalsh(Xc))
+            out["cross_cosine_shares"] = shares(torch.linalg.eigvalsh(Xc))
+            out["zero_sketches"] = int((A.norm(dim=1) == 0).sum() + (B.norm(dim=1) == 0).sum())
         else:
             out["note"] = "fewer than two problems mixed in both groups"
         rep[ck] = out

@@ -525,15 +525,21 @@ def load_discovery(runner, path, problems):
     for i, q in enumerate(problems):
         d = found[q["question"]]
         seq = None
-        if d.get("response"):
-            ids = tok(d["response"], add_special_tokens=False).input_ids
+        # one response, or candidates in order (teacher archives): the first that survives canonicalization
+        cands = d.get("responses") or ([d["response"]] if d.get("response") else [])
+        why = None
+        for resp in cands:
+            ids = tok(resp, add_special_tokens=False).input_ids
             text = tok.decode(ids, skip_special_tokens=True)
             if len(ids) > runner.args.max_new - 1:
-                dropped["too_long"] += 1
+                why = why or "too_long"
             elif not (reward(text, q["answer"]) and last_boxed(text) is not None):
-                dropped["unverified"] += 1
+                why = why or "unverified"
             else:
                 seq = (torch.tensor(tok(build_prompt(tok, q["question"])).input_ids), torch.tensor(ids + [stop]))
+                break
+        if cands and seq is None:
+            dropped[why] += 1
         out[i] = {"c": int(d["c"]), "n": int(d["n"]), "seq": seq}
     kept = sum(d["seq"] is not None for d in out.values())
     print(f"discovery: {len(out)} problems, {kept} retained traces, dropped {dropped}", flush=True)
@@ -881,7 +887,7 @@ class OffDirection:
         update W_t - W_0; other parameters are unchanged. Inactive during the first `warmup` steps."""
         if step < self.warmup:
             return {"projected": False}
-        tot = kept = 0.0
+        tot = kept = res = 0.0
         for n, p in self.mats:
             if p.grad is None:
                 continue
@@ -892,15 +898,20 @@ class OffDirection:
             if top is None:
                 kept += gn ** 2
                 continue
-            u, v, _ = top
+            u, v, r = top
+            res += r * gn ** 2
             gu = u @ g  # u^T G
             gv = g @ v  # G v
             new = g - torch.outer(u, gu) - torch.outer(gv, v) + float(gu @ v) * torch.outer(u, v)
             nn = float(new.norm())
+            if nn <= 1e-6 * gn:  # nothing outside the tracked subspaces: the teacher term is removed for this matrix
+                p.grad.zero_()
+                continue
             kept += nn ** 2
-            if nn > 0:
-                p.grad.copy_(new * (gn / nn))
-        return {"projected": True, "removed_share": 1.0 - kept / max(tot, 1e-30)}
+            p.grad.copy_(new * (gn / nn))
+        if tot == 0:
+            return {"projected": True, "removed_share": 0.0, "power_residual": 0.0}
+        return {"projected": True, "removed_share": 1.0 - kept / tot, "power_residual": res / tot}
 
     @torch.no_grad()
     def apply(self, before, step):
@@ -929,7 +940,8 @@ class OffDirection:
             p.data.copy_(before[n] + new)
             par += float(c) ** 2
         return {"active": True, "dominant_share_before": par / max(tot, 1e-30),
-                "realized_cosine": dot / max(math.sqrt(tot * new_tot), 1e-30), "power_residual": res / max(tot, 1e-30)}
+                "realized_cosine": dot / math.sqrt(tot * new_tot) if tot * new_tot > 0 else 1.0,  # inactive: 1
+                "power_residual": res / tot if tot > 0 else 0.0}
 
 
 def teacher_backward(runner, args, items, norm):
@@ -991,7 +1003,8 @@ def whitening_weights(runner, args, answers, adv, owner, norm, tables):
     ev = torch.linalg.eigvalsh(G).flip(0)
     one = torch.ones_like(alpha)
     # angle between the whitened and the plain combined gradient (in sketch space)
-    cos = float(alpha @ G @ one / torch.sqrt(torch.clamp((alpha @ G @ alpha) * (one @ G @ one), min=1e-300)))
+    den = float((alpha @ G @ alpha) * (one @ G @ one))
+    cos = float(alpha @ G @ one) / math.sqrt(den) if den > 0 and math.isfinite(den) else 1.0  # undefined: inactive
     w = {j: float(a) for j, a in zip(probs, alpha)}
     mult = [w.get(o, 1.0) for o in owner]
     return mult, {"problems": m, "top_eigen_share": float(ev[0] / ev.sum()), "alpha_min": float(alpha.min()),
