@@ -54,3 +54,28 @@ curve but not the profiles leaves problem-specific differences; falling below me
 coverage than RL; lying above means temperature gives better coverage; no pass@1 overlap is inconclusive. Caveats:
 the base truncates 35.8% of samples at T = 1 and 1,024 tokens, so length and truncation are monitored; temperatures
 should be chosen on validation problems before comparing held-out profiles.
+
+## Part 2 (October 28): where does the pass@1 gain come from? (1.5B, 1,024 tokens, test problems)
+
+Notation: per sample, "right" (boxed and verified), "boxed-wrong" (boxed, not verified), "unfinished" (no final box:
+truncated at 1,024 tokens or ended without a box). Shares are over all 32 x 511 samples. r_i, w_i, u_i: the base
+model's right, boxed-wrong and unfinished rates on problem i. "Format error": boxed-wrong whose box contains the
+reference value with extra decoration (units, "x =", text).
+
+| | right | boxed-wrong (of which format) | unfinished | truncated |
+|---|---|---|---|---|
+| Base | 21.6% | 35.8% (1.9) | 42.5% | 35.8% |
+| B1k8 step 25 | 40.0% | 35.8% (1.6) | 24.2% | 26.7% |
+| B1k8 step 150 | 58.1% | 30.4% (1.0) | 11.5% | 15.2% |
+
+- Boxing more answers at the base's accuracy among boxed answers (37.6%) accounts for +11.6 of the +35.8-point mean
+  step-150 gain (32%); accuracy among boxed answers rises from 37.6% to 65.7%, so the remaining gain is not formatting.
+- From base to step 25 the boxed-wrong share is unchanged while right rises by 18.4 points and unfinished falls by 18.3.
+- "Conditioning on finishing" cannot explain the gain: if every base answer finished at the base's per-problem
+  accuracy among its finished answers, pass@1 would be 35.6%. A one-parameter model that converts unfinished mass at
+  that accuracy needs a conversion factor above 1 (1.05-2.71) and overpredicts pass@16 (RMSE 4.5 pp).
+- Descriptive regression of step-150 rates on the base's rates: p_i ~ 0.52 + 0.98 r_i + 0.24 u_i - 0.70 w_i. Problems on
+  which the base finishes with a wrong answer are the ones RL leaves unsolved; unfinished base mass is mildly positive.
+
+Reading (exploratory): about a third of the gain is learning to finish; the rest raises accuracy among finished
+answers, and the problems that stay unsolved are those where the base already converges on wrong answers.
