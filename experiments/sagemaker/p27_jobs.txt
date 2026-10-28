@@ -1,2 +1,2 @@
-us-west-2:worth-p27-base-s0-20261028-055034
-us-east-2:worth-p27-base-s0-20261028-055652
+us-east-2:worth-p27-base-s0-20261028-063800
+us-west-2:worth-p27-base-s0-20261028-063953

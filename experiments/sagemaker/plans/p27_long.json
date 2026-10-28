@@ -1,0 +1,178 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "parallel": true,
+ "torchrun": [
+  {
+   "name": "LH1",
+   "script": "train_dist.py",
+   "gpus": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "1e-6",
+    "--train",
+    "train.json",
+    "--steps",
+    "1000",
+    "--max-new",
+    "1024",
+    "--calib-prompts",
+    "16",
+    "--save-steps",
+    "50,100,150,300,500,700,1000",
+    "--arms",
+    "baseline",
+    "--param-dtype",
+    "fp32",
+    "--train-batch",
+    "2"
+   ],
+   "then": [
+    {
+     "name": "LH1",
+     "live": "LH1",
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--max-new",
+      "1024",
+      "--expect-steps",
+      "50,100,150,300,500,700,1000",
+      "--temperatures",
+      "1.0",
+      "--n",
+      "32"
+     ],
+     "split_steps": [
+      50,
+      100,
+      150,
+      300,
+      500,
+      700,
+      1000
+     ]
+    },
+    {
+     "name": "LH1n256",
+     "live": "LH1",
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--max-new",
+      "1024",
+      "--expect-steps",
+      "50,100,150,300,500,700,1000",
+      "--temperatures",
+      "1.0",
+      "--n",
+      "256"
+     ],
+     "split_steps": [
+      150,
+      500,
+      1000
+     ]
+    }
+   ]
+  },
+  {
+   "name": "LH3",
+   "script": "train_dist.py",
+   "gpus": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "out": "dir",
+   "args": [
+    "--seed",
+    "8",
+    "--prompts-per-step",
+    "16",
+    "--group",
+    "8",
+    "--lr",
+    "3e-6",
+    "--train",
+    "train.json",
+    "--steps",
+    "1000",
+    "--max-new",
+    "1024",
+    "--calib-prompts",
+    "16",
+    "--save-steps",
+    "50,100,150,300,500,700,1000",
+    "--arms",
+    "baseline",
+    "--param-dtype",
+    "fp32",
+    "--train-batch",
+    "2"
+   ],
+   "then": [
+    {
+     "name": "LH3",
+     "live": "LH3",
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--max-new",
+      "1024",
+      "--expect-steps",
+      "50,100,150,300,500,700,1000",
+      "--temperatures",
+      "1.0",
+      "--n",
+      "32"
+     ],
+     "split_steps": [
+      50,
+      100,
+      150,
+      300,
+      500,
+      700,
+      1000
+     ]
+    },
+    {
+     "name": "LH3n256",
+     "live": "LH3",
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--max-new",
+      "1024",
+      "--expect-steps",
+      "50,100,150,300,500,700,1000",
+      "--temperatures",
+      "1.0",
+      "--n",
+      "256"
+     ],
+     "split_steps": [
+      150,
+      500,
+      1000
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -185,12 +185,36 @@ def run_plan(plan):
         # spec["out"] = "dir" passes --out /opt/ml/checkpoints/<name>, "file" passes --out .../<name>.json.
         LIVE.mkdir(parents=True, exist_ok=True)
 
+        def evaluate_after(spec, gpus):
+            # spec["then"]: evaluations of this run's checkpoints (or others under /opt/ml/checkpoints, "live"), run
+            # after it succeeds; each one's "split_steps" are dealt round-robin to the run's GPUs, one vLLM process per GPU.
+            for ev in spec.get("then", []):
+                parts = [ev["split_steps"][i::len(gpus)] for i in range(len(gpus))]
+                threads = []
+                for gpu, steps in zip(gpus, parts):
+                    if not steps:
+                        continue
+                    cmd = [vllm_python(), "-I", str(EVAL_VLLM), "--ckpts", str(LIVE / ev["live"]),
+                           "--out", str(LIVE / ev["name"] / "eval"), *ev["args"], "--sampled-steps", ",".join(str(x) for x in steps)]
+                    key = f"{ev['name']}#eval#{'-'.join(str(x) for x in steps)}#gpu{gpu}"
+                    threads.append(threading.Thread(target=run_one, args=(key, cmd, gpu, status, True)))
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join()
+
         def launch(spec):
             gpus = spec.get("gpus") or list(range(int(spec["nproc"])))
             out = {"dir": ["--out", str(LIVE / spec["name"])], "file": ["--out", str(LIVE / f"{spec['name']}.json")]}.get(spec.get("out"), [])
             cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={len(gpus)}",
                    str(HERE / "training" / spec["script"]), *spec["args"], *out, *local]
             run_one(spec["name"], cmd, ",".join(str(g) for g in gpus), status)
+            if status.get(spec["name"]) == 0:
+                try:
+                    evaluate_after(spec, gpus)
+                except Exception as e:  # a failed evaluation must not look successful
+                    status[f"{spec['name']}#then"] = f"exception: {e!r}"
+                    print(f"[{spec['name']}] evaluation exception: {e!r}", flush=True)
 
         if plan.get("parallel"):
             used = [g for spec in plan["torchrun"] for g in spec["gpus"]]

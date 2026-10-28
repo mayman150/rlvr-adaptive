@@ -30,7 +30,7 @@
     ]
    },
    {
-    "name": "BASE15n128",
+    "name": "BASE15n256",
     "sub": null,
     "part": 1,
     "engine": "vllm",
@@ -45,7 +45,7 @@
      "--expect-steps",
      "0",
      "--n",
-     "128",
+     "256",
      "--temperatures",
      "1.0",
      "--base-temperatures",
