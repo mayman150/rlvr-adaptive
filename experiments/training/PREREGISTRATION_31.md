@@ -1,0 +1,42 @@
+# Pre-registration 31: Flat-RLVR (sharpness-aware RLVR) on the matched-pass@1 curve
+
+Declared October 28, 2026, before any run of this design; reviewed by Codex before launch.
+
+## Why
+
+The October 28 literature review (paper/LIT_2026_10_28.md) named Flat-RLVR (arXiv 2610.29281) as the strongest
+reported matched-accuracy counterexample: five-benchmark mean pass@1 16.3 for DAPO and Flat-DAPO, pass@256 65.2 vs 68.6
+(three seeds). Its own MATH500 numbers show no such gain (GRPO 34.6/72.7 vs Flat-GRPO 34.0/72.5; DAPO 35.7/72.1 vs
+Flat-DAPO 35.7/72.4, pass@1/pass@256); the average gain comes from AIME sets of 30 problems with 95% intervals of
+about +/-5 to +/-14. Its setting is close to ours (Qwen2.5-Math-1.5B, MATH training problems, 1,024 tokens, learning
+rate 1e-6, no KL). This tests it on our curve; the paper's own MATH500 results predict "on the curve".
+
+## Arms (Qwen2.5-Math-1.5B, Dr. GRPO, Pre-registration 21's recipe, seeds 8, 9, 10)
+
+Flat-RLVR's SAM step (Algorithm 1 and Appendix B; Table 11 settings) added to Dr. GRPO: at steps t (1-indexed) with
+t mod n = 0, gradient centralization of the Dr. GRPO gradient (each row of every weight gradient with two or more
+dimensions has its mean removed), radius rho_t = rho_min + (rho_init - rho_min)(1 + cos(pi t / T)) / 2 with
+rho_init = 0.01, rho_min = 0.002, T = 150, multiplied by the batch success rate (focal weight, gamma = 1) and floored
+at 0.001; ascent eps = rho g / ||g|| (global L2 norm); the gradient recomputed on the same answers at theta + eps and
+centralized; parameters restored; AdamW uses the recomputed gradient (clipped at 1 as usual). Exact SAM (eps stored),
+not the paper's memory approximation. Other steps are plain Dr. GRPO.
+- **FL10:** n = 10 (the paper's setting).
+- **FL5:** n = 5 (the paper's stronger-coverage variant, which lowers pass@1).
+Differences from the paper, stated: Dr. GRPO (no std normalization, constant normalizer) instead of GRPO/DAPO; 16
+problems x 8 answers per step, 150 steps, constant learning rate, no weight decay (Pre-registration 21's recipe).
+
+## Evaluation and decision (511 test problems, 32 samples, T = 1, 1,024 tokens, vLLM; checkpoints 25, 50, 100, 150)
+
+Reference: B1k seeds 8-10 (trajectory and temperature envelope). Pre-registration 21's estimator and guards; Holm over
+the two arms.
+- **Moves the curve:** pooled gain >= +2, 95% interval above 0, positive in all three seeds.
+- **Average equivalence:** the pooled and each seed's 90% interval within +/-2.
+- Otherwise inconclusive; more than 10% clamped in a seed: not interpreted.
+Reported: step-150 pass@1 minus B1k's; the SAM steps' radii and batch success rates; pass@16 by base-count stratum;
+pass@32 at matched pass@1 (the largest k our 32 samples support; the paper's pass@256 claim is not tested here).
+
+## Cost (estimate)
+
+Six single-GPU runs (SAM adds one backward pass every n steps, about +5-10% time) with their evaluations, on one
+8 x A100 machine shared with Pre-registration 30's Stage 0: about 5-6 hours of the machine, about $170-190 in total for
+the shared job.

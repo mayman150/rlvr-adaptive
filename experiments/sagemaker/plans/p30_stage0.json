@@ -1,0 +1,256 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_0",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "0",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_1",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "490",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_2",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "980",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_3",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "1470",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_4",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "1960",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_5",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "2450",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_6",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "2940",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "BASE15train64_7",
+    "include_base": true,
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "train.json",
+     "--offset",
+     "3430",
+     "--limit",
+     "490",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ]
+ ]
+}

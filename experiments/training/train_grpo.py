@@ -954,6 +954,47 @@ def teacher_backward(runner, args, items, norm):
     return {"solutions": len(items), "tokens": sum(len(b) for _, b in items)}
 
 
+def centralize_grads(params):
+    """Gradient centralization (Yong et al. 2020; as in Flat-RLVR, Appendix B.2): each row of a weight gradient (one
+    output unit's incoming weights, all trailing dimensions) has its mean removed."""
+    with torch.no_grad():
+        for q in params:
+            if q.grad is not None and q.grad.ndim >= 2:
+                q.grad.sub_(q.grad.mean(dim=tuple(range(1, q.grad.ndim)), keepdim=True))
+
+
+def sam_step(runner, args, answers, live, adv, norm, rewards, step):
+    """Flat-RLVR (arXiv 2610.29281, Algorithm 1) on Dr. GRPO, at every sam_period-th step: centralize the gradient g;
+    radius rho_t = rho_min + (rho_init - rho_min)(1 + cos(pi t / T)) / 2 (cosine annealing, B.3) times the batch success
+    rate to the power gamma (focal weight, B.1), floored at rho_floor; ascend by eps = rho g / ||g||; recompute the
+    gradient on the same answers; centralize it; restore the parameters. The optimizer then uses this gradient."""
+    params = runner.params
+    centralize_grads(params)
+    with torch.no_grad():
+        gn = torch.sqrt(sum((q.grad.float() ** 2).sum() for q in params if q.grad is not None))
+    t = step + 1
+    rho = args.sam_rho_min + 0.5 * (args.sam_rho_init - args.sam_rho_min) * (1 + math.cos(math.pi * t / args.steps))
+    success = sum(rewards) / len(rewards)
+    rho_eff = max(rho * success ** args.sam_gamma, args.sam_rho_floor)
+    if not (float(gn) > 0 and math.isfinite(float(gn))):
+        return {"applied": False}
+    eps = []
+    with torch.no_grad():
+        for q in params:
+            e = None if q.grad is None else q.grad * (rho_eff / gn)
+            if e is not None:
+                q.data.add_(e)
+            eps.append(e)
+    runner.model.zero_grad(set_to_none=True)
+    backward_weighted(runner, args, answers, live, adv, norm)
+    centralize_grads(params)
+    with torch.no_grad():
+        for q, e in zip(params, eps):
+            if e is not None:
+                q.data.sub_(e)
+    return {"applied": True, "rho": rho, "rho_eff": rho_eff, "batch_success": success, "grad_norm_before": float(gn)}
+
+
 def problem_sketch_tables(runner, dim, seed=0):
     """Fixed CountSketch hash (bucket, sign) per parameter of the 2-D non-embedding matrices."""
     tables = []
@@ -1463,6 +1504,12 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
             and not (args.od_beta < 1.0 and args.pw_lambda > 0), \
             "off-direction updates and problem-space whitening are implemented, one at a time, for plain on-policy Dr. GRPO"
+    if args.sam_period > 0:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
+            and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
+            and args.od_beta == 1.0 and args.pw_lambda == 0 and not args.teacher_archive, \
+            "Flat-RLVR's SAM step is implemented for plain on-policy Dr. GRPO"
     od = OffDirection(runner, args.od_beta, args.od_warmup) if args.od_beta < 1.0 else None  # after any SFT phase
     pw_tables = problem_sketch_tables(runner, args.pw_dim) if args.pw_lambda > 0 else None
     teacher, tproj = None, None
@@ -1712,6 +1759,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             seen[j] = seen.get(j, 0) + 1
             if seen[j] <= args.ref_block:
                 first_block.append(rewards[k])
+        if args.sam_period > 0 and n_live and (step + 1) % args.sam_period == 0:
+            extra["sam"] = sam_step(runner, args, answers, live, adv, norm, rewards, step)
         grad_norm = float(torch.nn.utils.clip_grad_norm_(runner.params, args.clip)) if n_live else 0.0
         if n_live and not math.isfinite(grad_norm):
             # A non-finite gradient would corrupt every parameter; skip the update and record it.
@@ -1856,6 +1905,11 @@ def main():
     parser.add_argument("--od-warmup", type=int, default=10)
     parser.add_argument("--pw-lambda", type=float, default=0.0, help="problem-space whitening ridge, times tr(G)/m (0: off)")
     parser.add_argument("--pw-dim", type=int, default=1 << 20, help="CountSketch dimension for problem-space whitening")
+    parser.add_argument("--sam-period", type=int, default=0, help="Flat-RLVR: a SAM step every this many steps (0: off)")
+    parser.add_argument("--sam-rho-init", type=float, default=0.01)
+    parser.add_argument("--sam-rho-min", type=float, default=0.002)
+    parser.add_argument("--sam-gamma", type=float, default=1.0, help="focal weight exponent on the batch success rate")
+    parser.add_argument("--sam-rho-floor", type=float, default=0.001)
     parser.add_argument("--teacher-archive", default="", help="teacher solutions (discovery format) for teacher distillation")
     parser.add_argument("--teacher-lambda", type=float, default=1.0, help="weight of each teacher solution's log-likelihood")
     parser.add_argument("--teacher-project", action="store_true", help="project the teacher gradient off each matrix's "
