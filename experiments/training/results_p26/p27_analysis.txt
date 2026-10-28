@@ -1,0 +1,25 @@
+Pre-registration 27 (base pass@256 94.91, 256 samples)
+   LH1 A: pass@256 step 1,000 minus base +1.96, 95% [+0.39, +3.72], one-sided p 0.0145 (Holm 0.0290) -> not met; step 150 minus base +1.17; change 150 -> 1,000 +0.78; solved by arm not base 15, base not arm 5
+      C: Spearman(base, arm) step 150 0.717, step 1,000 0.701; success on the 26 base-zero problems 0.60% (step 150) -> 1.25% (step 1,000)
+      B: step   50 pass@1  50.5 pass@16  86.4 law  86.8 diff -0.44
+      B: step  100 pass@1  56.1 pass@16  86.6 law  87.4 diff -0.83
+      B: step  150 pass@1  57.8 pass@16  86.0 law  87.6 diff -1.62
+      B: step  300 pass@1  61.4 pass@16  87.2 law  88.0 diff -0.77
+      B: step  500 pass@1  63.3 pass@16  87.7 law  88.2 diff -0.52, 95% [-2.42, +1.58] (2000 scorable draws)
+      B: step  700 pass@1  64.8 pass@16  87.4 law  88.4 diff -1.02
+      B: step 1000 pass@1  67.2 pass@16  87.9 law  88.7 diff -0.81, 95% [-2.67, +1.28] (2000 scorable draws)
+   LH3 A: pass@256 step 1,000 minus base +0.39, 95% [-1.37, +2.15], one-sided p 0.3580 (Holm 0.3580) -> not met; step 150 minus base +1.37; change 150 -> 1,000 -0.98; solved by arm not base 12, base not arm 10
+      C: Spearman(base, arm) step 150 0.707, step 1,000 0.658; success on the 26 base-zero problems 0.89% (step 150) -> 2.33% (step 1,000)
+      B: step   50 pass@1  58.6 pass@16  88.0 law  87.7 diff +0.29
+      B: step  100 pass@1  62.0 pass@16  87.7 law  88.1 diff -0.40
+      B: step  150 pass@1  63.7 pass@16  88.0 law  88.2 diff -0.28
+      B: step  300 pass@1  67.5 pass@16  88.1 law  88.8 diff -0.66
+      B: step  500 pass@1  69.1 pass@16  88.7 law  89.0 diff -0.31, 95% [-2.29, +1.87] (2000 scorable draws)
+      B: step  700 pass@1  69.5 pass@16  88.7 law  89.1 diff -0.38
+      B: step 1000 pass@1  70.7 pass@16  88.8 law  89.3 diff -0.53, 95% [-2.59, +1.76] (2000 scorable draws)
+   B departure LH1 step 500: -0.52 -> no departure (Holm 1.0000)
+   B departure LH1 step 1000: -0.81 -> no departure (Holm 1.0000)
+   B departure LH3 step 500: -0.31 -> no departure (Holm 1.0000)
+   B departure LH3 step 1000: -0.53 -> no departure (Holm 1.0000)
+   VERDICT LH1: not supported (step-1,000 pass@1 minus B1k8 step 150: +9.07)
+   VERDICT LH3: not supported (step-1,000 pass@1 minus B1k8 step 150: +12.55)

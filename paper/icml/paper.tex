@@ -20,206 +20,175 @@
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
-\theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
 \newcommand{\E}{\mathbb E}
-\graphicspath{{../../docs/figures/}}
+\graphicspath{{figures/}{../../docs/figures/}}
 \newcommand{\pending}[1]{\textcolor{red}{[#1]}}
 
-\icmltitlerunning{Advantage Rules at Matched Accuracy}
-\makeatletter\newcommand{\setrunninghead}{\gdef\@icmltitlerunning{Advantage Rules at Matched Accuracy}}\makeatother
+\icmltitlerunning{RLVR Follows a Frontier Set by the Base Model}
+\makeatletter\newcommand{\setrunninghead}{\gdef\@icmltitlerunning{RLVR Follows a Frontier Set by the Base Model}}\makeatother
 
 \begin{document}
 
 \twocolumn[
-  \icmltitle{Advantage Rules at Matched Accuracy:\\ Noise and the Accuracy--Diversity Frontier in RL with Verifiable Rewards}
+  \icmltitle{RLVR Follows a Frontier Set by the Base Model:\\ Matched-Accuracy Evidence from Controlled Interventions and Public Checkpoints}
   \setrunninghead
   \begin{icmlauthorlist}
     \icmlauthor{Anonymous Authors}{anon}
   \end{icmlauthorlist}
   \icmlaffiliation{anon}{Anonymous Institution}
   \icmlcorrespondingauthor{Anonymous Authors}{anon@anon}
-  \icmlkeywords{reinforcement learning with verifiable rewards, policy gradient variance, pass@k, evaluation, exploration}
+  \icmlkeywords{reinforcement learning with verifiable rewards, pass@k, evaluation, exploration, reasoning}
   \vskip 0.3in
 ]
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-Comparisons of reinforcement learning with verifiable rewards (RLVR) often mix learning speed with repeated-sampling success. We compare pass@16 at matched pass@1 using interpolated references and registered tests with bootstrap intervals over problems. Across the tested correctness-only rules, budgets, and Qwen model sizes, the evidence supports changes in the rate of progress along a shared pass@16-versus-pass@1 curve within each setting, rather than changes in the curve. We derive expected per-problem updates and exact second moments under independent on-policy sampling. A $1.5$B replication trained and evaluated at $1{,}024$ tokens meets all four average equivalence tests. A $7$B replication at $2{,}048$ tokens meets three; the direct contrast between negative- and positive-sample reinforcement is not interpreted under the clamping guard. Fixed-budget rollout allocation meets no registered frontier-improvement criterion. A minimum-hint credit pilot gives $-0.01$ points, 95\% $[-1.24,+0.89]$, and is dropped by its selection rule. The answer budget can create apparent frontier gains: re-evaluation reduces the supervised warm-start step-$0$ gain from $+4.77$ points, 90\% $[+3.45,+6.07]$, at $512$ tokens to $+2.15$, 90\% $[+1.10,+3.20]$, at $1{,}024$. Matched-accuracy conclusions remain conditional on answer budget, reference support, and observed training seeds.
+Comparisons of reinforcement learning with verifiable rewards (RLVR) at equal training steps mix learning speed with repeated-sampling coverage. We compare pass@16 at matched pass@1 with pre-registered decision rules and problem-bootstrap intervals. On Qwen2.5-Math-1.5B and 7B, the interpretable comparisons of more than twenty interventions---advantage rules, replay, larger groups, rollout allocation, human-solution guidance, process credit, update-geometry changes and teacher distillation at the tested dose---are consistent with progress along Dr.\ GRPO's pass@16-versus-pass@1 curve within each setting, not with a change of the curve. Training $6.7\times$ longer raises pass@1 by $9$--$13$ points without meeting the registered coverage criterion. A frozen per-problem law computed from the base model's success counts predicts this curve. Evaluated under one fixed protocol, $26$ public checkpoints from other groups lie within $+0.9$ points of, or below, the law's prediction, including off-policy, external-supervision and random-reward recipes; the largest departures are downward and coincide with truncation. At matched pass@1, different methods show similar per-problem success profiles although their saved weight updates differ, and forcing a final answer recovers $16\%$ of Dr.\ GRPO's pass@1 gain on the base model. These results place the remaining lever in the starting distribution rather than in the RL update; we register a prospective test of that prediction.
 \end{abstract}
 
 \section{Introduction}
-RL with verifiable rewards trains a language model on automatically checked answers. For binary rewards, many methods modify the advantage in $g=\sum_i A_i\nabla\log\pi(y_i)$, changing the weights assigned to correct and incorrect samples. Positive- and negative-sample reinforcement are a useful test case: they use only correct or only incorrect samples, respectively, yet have equal expected policy-gradient updates under on-policy sampling \citep{zhu2025nsr,williams1992,greensmith2004}. Normalization changes \citep{liu2025drgrpo} and pass@$k$ objectives \citep{walder2025pkpo,thrampoulidis2025shaping} provide further comparisons. We study whether these choices change the accuracy--diversity trade-off measured by pass@1 and pass@$k$.
+RLVR trains a language model on automatically checked answers \citep{shao2024deepseekmath,guo2025r1}. A large literature modifies how sampled answers are weighted \citep{liu2025drgrpo,zhu2025nsr,walder2025pkpo}, which problems receive rollouts \citep{wang2026hora}, what is replayed \citep{zhan2025exgrpo}, or what external solutions are mixed in \citep{yan2025guidance,ma2025relift}. Many report higher pass@$k$ at a fixed number of steps. Yet RL-trained models are often beaten by their own base model at large $k$ \citep{yue2025limit}, and a method that progresses more slowly is less sharpened and therefore has higher pass@$k$ at any fixed step.
 
-Fixed-step comparisons mix changes in single-answer accuracy with changes in repeated-sampling success. At \emph{matched pass@1}, we compare a method's measured $\widehat P_k$ with a reference $R(a)$ interpolated at the same estimated accuracy $a=\widehat P_1$; the gain is $\widehat P_k-R(a)$. For method $m$, a \emph{trajectory} is the ordered sequence of checkpoint measurements $\mathcal T_m=\{(\widehat P_1(\pi_{m,t}),\widehat P_k(\pi_{m,t}))\}_{t\in\mathcal K}$ at fixed decoding settings and answer budget. An \emph{envelope} is the pointwise maximum of supported reference curves. Here $E_B(a)=\max\{L_{\rm steps}(a),L_T(a)\}$ combines linear interpolation along Dr.\ GRPO's checkpoint trajectory with interpolation through a late-checkpoint temperature sweep; the maximum includes interpolants supported at $a$. Matched-accuracy comparisons have precedent in DARS \citep{yang2025depth}. Our protocol adds pre-registered decision criteria and problem-level bootstrap intervals that recompute the reference under resampling.
+We separate speed from coverage by comparing methods at \emph{matched pass@1}: a method's pass@16 is compared with a reference curve interpolated at the same pass@1. All decision rules are registered before the corresponding runs, and intervals come from bootstrap draws over problems that recompute the reference in each draw. Our findings are:
 
-We derive the mean and exact second moment of correctness-only updates under independent on-policy sampling and bounded reward-dependent stopping, and test whether changes in advantage rules or successful-sample availability alter pass@16 at matched pass@1. The registered comparisons support changes in progress rate along a shared curve within each tested setting: all four contrasts replicate at $1{,}024$ tokens on $1.5$B, and three replicate at $2{,}048$ tokens on $7$B; the direct $7$B NSR--PSR contrast is not interpreted under the clamping guard (\cref{sec:replication}). Fixed-budget allocation supplies more successes to pilot-zero problems but fails the registered improvement rules and its model forecast (\cref{sec:allocation}). Answer-budget checks reduce the supervised warm-start step-$0$ gain from $+4.77$ points at $512$ tokens, 90\% $[+3.45,+6.07]$, to $+2.15$ at $1{,}024$ tokens, 90\% $[+1.10,+3.20]$, qualifying the apparent gain as largely a budget effect (\cref{sec:budget}). \pending{Check 21: remaining human-solution seeds and the pooled budget-effect verdict.} Minimum-help process credit meets its mechanism gates but fails pilot selection (\cref{sec:minimumhints}). \pending{P22: results of external versus self prefix guidance.} Together, these comparisons distinguish faster accuracy progress from a supported change in the pass@16-versus-pass@1 relation.
+\begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{One curve per setting.} The interpretable registered comparisons of more than twenty interventions lie on Dr.\ GRPO's curve within $\pm2$ points (\cref{sec:curve}). The pattern replicates at $1{,}024$ tokens and at 7B with $2{,}048$ tokens.
+\item \textbf{Longer and stronger training does not leave it} (\cref{sec:long}). 1,000-step runs reach pass@1 up to $70.7$ while pass@256 changes by $-1.0$ to $+0.8$ points between steps 150 and 1,000.
+\item \textbf{Public checkpoints fall on or below the curve predicted from the base model} (\cref{sec:public}). Across $26$ checkpoints and $38$ evaluations, the largest residual against a frozen law is $+0.9$ points.
+\item \textbf{What is shared is behaviour, not a weight direction} (\cref{sec:mechanism}). Methods solve similar problems at similar rates; their saved updates overlap only as much as two seeds of one method; part of the gain is learning to finish an answer.
+\item \textbf{Methods designed to move the curve did not} (\cref{sec:attempts}), including verified teacher solutions at the tested dose.
+\end{enumerate}
+\Cref{sec:discussion} discusses what can still move the frontier and the prospective tests now running.
 
-At matched pass@1, pass@$k$ is a concave average of per-problem success probabilities. For Dr.\ GRPO, a group of eight rollouts with no correct answer has zero advantages, so multiplicative reweighting cannot make that group contribute an update. This motivates replay and larger groups as interventions on the availability of successful samples. Coverage-weighted replay gives a mean gain of $+1.19$ pass@16 points, below the registered $+2$ threshold. Groups of 32 and a supervised warm start reach higher accuracy after 150 steps, but their mean endpoints lie beyond the available reference range; the longer-reference comparisons remain interim.
-
-We also test a descriptive model of per-problem log-odds learning, with one transfer coefficient fitted on Dr.\ GRPO. Using base-model success counts and each checkpoint's observed pass@1, it predicts aggregate pass@16 with test-set RMSE of 1.21 points for nine further Qwen rules and 1.90 points on OLMo. It fails after the supervised warm start and on the allocation intervention it was used to design (\cref{sec:model}), so we treat it as a conditional description rather than a mechanism.
-
-The core registered comparisons and their outcomes are summarized in \cref{app:prereg}. Interim estimates and exploratory diagnostics are identified in the text.
-
-\section{Setup and the matched-accuracy protocol}\label{sec:setup}
-For a problem $x$ with reward $r\in\{0,1\}$, the policy's success probability is $p_x=\Pr_\pi(r=1\mid x)$, the score of an answer is $\ell(y)=\nabla_\vartheta\log\pi(y\mid x)$, and $F_r=\E[\|\ell\|^2\mid r]$ is the mean squared score norm of correct ($r=1$) and incorrect ($r=0$) answers. Unless stated otherwise, a training step samples $G=8$ rollouts for each of 16 problems. Dr.\ GRPO uses $A_i=r_i-\bar r$ within a group \citep{liu2025drgrpo}; positive-sample reinforcement (PSR) uses $A_i=r_i$ and negative-sample reinforcement (NSR) $A_i=r_i-1$ \citep{zhu2025nsr}. Over $N$ problems,
-\begin{align*}P_k&=\tfrac1N\textstyle\sum_x\big[1-(1-p_x)^k\big],\\ \widehat P_k&=\tfrac1N\textstyle\sum_x\Big[1-\binom{n_x-C_x}{k}\Big/\binom{n_x}{k}\Big],\end{align*}
-where $C_x$ counts correct answers among $n_x$ independent samples and $\widehat P_k$ is unbiased for $1\le k\le n_x$ \citep{chen2021codex}. The main Qwen replay evaluations use $n_x=32$.
+\section{Setup and protocol}\label{sec:setup}
+For problem $x$ with binary reward, $p_x$ is the policy's success probability. Over $N$ problems, $P_k=\frac1N\sum_x[1-(1-p_x)^k]$, estimated without bias from $n_x$ samples with $C_x$ successes as $\widehat P_k=\frac1N\sum_x[1-\binom{n_x-C_x}{k}/\binom{n_x}{k}]$ \citep{chen2021codex}.
 
 \begin{proposition}[pass@$k$ at matched pass@1 measures spread]\label{prop:spread}
-$P_1=\E_x p_x$ and $P_k=\E_x f_k(p_x)$ with $f_k(p)=1-(1-p)^k$ strictly concave for $k>1$. Among distributions of $\{p_x\}$ with the same mean, a mean-preserving spread lowers $P_k$; $P_k$ is largest when all $p_x$ are equal.
+$P_1=\E_xp_x$ and $P_k=\E_xf_k(p_x)$ with $f_k(p)=1-(1-p)^k$ strictly concave for $k>1$; at fixed mean, a mean-preserving spread of $\{p_x\}$ lowers $P_k$.
 \end{proposition}
 
-\textbf{Protocol.} We identify the reference for each comparison. For the primary coverage-weighted and base-seeded replay contrasts, $E_B(a)=\max\{L_{\rm steps}(a),L_T(a)\}$ is the larger of the linear interpolations in pass@1 along Dr.\ GRPO's trajectory (base model and steps 50, 100, 150) and its step-150 temperature sweep ($T\in\{1,1.15,1.3\}$), each within its supported range. NSR contrasts use PSR as the reference; uniform-replay and unlikeliness audits use Dr.\ GRPO's trajectory alone. Interim longer-training contrasts use the available step-250 trajectory. Gains are averaged over qualifying checkpoints within each run, then over seeds. Intervals use 2,000 bootstrap draws over problems, with the reference recomputed in every draw, conditional on the observed seeds. Observed checkpoints are restricted to the reference's pass@1 range; bootstrap endpoint clamping is disclosed in \cref{app:prereg}. We call a difference \emph{average equivalence} if its 90\% interval lies within $\pm2$ points and say a method \emph{moves the frontier} if its gain is at least $+2$ points with the 95\% interval above zero in every seed.
+\textbf{Training.} Dr.\ GRPO \citep{liu2025drgrpo}: advantage $A_i=r_i-\bar r$ within a group, a sequence-sum loss with a constant normalizer, one update per batch of fresh rollouts (near on-policy), no KL term, AdamW at $10^{-6}$, 16 problems $\times$ 8 rollouts per step, 150 steps, MATH training problems \citep{hendrycks2021math}. Qwen2.5-Math-1.5B \citep{yang2024qwen25math} is trained at 512 or 1,024 response tokens, Qwen2.5-Math-7B at 2,048 (FSDP, four GPUs per run).
 
-\section{Theory}\label{sec:theory}
-\begin{theorem}[Two moments of correctness-only rules]\label{thm:moments}
-Let a rule draw answers i.i.d.\ from $\pi(\cdot\mid x)$, stop at a time $N\le n_{\max}$ that depends only on the rewards observed so far, and assign advantages that depend only on the rewards. Then $g=\sum_{i\le N}A_i\ell(y_i)$ satisfies
-\begin{align*}\E g&=c(p)\nabla p,\\ \E\|g\|^2&=F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p),\end{align*}
-where $c$, $D_1$, $D_0$, $X$ and $\E N$ depend only on the rule and on $p$.
-\end{theorem}
-The proof conditions on the reward sequence, given which $N$ and the advantages are fixed and $\E[\ell\mid r=1]=\nabla p/p$, $\E[\ell\mid r=0]=-\nabla p/(1-p)$ (\cref{app:proofs}). For fixed groups the mean part is known \citep{davis2025objective}, and the equality of the PSR and NSR means is classical baseline invariance \citep{williams1992,greensmith2004}. The second-moment part, with $F_0\neq F_1$ and reward-dependent stopping, is what lets us predict and manipulate noise.
+\textbf{Evaluation.} 511 held-out MATH test problems with audited answer keys, 32 samples at $T=1$ (256 where stated), vLLM with per-problem sampling seeds and the training prompt; its agreement with the earlier Hugging Face evaluator was checked before use.
 
-\begin{corollary}\label{cor:psrnsr}
-With advantage $a$ for correct and $b$ for incorrect answers in a group of $n$, $\E g=n(a-b)\nabla p$. PSR and NSR have the same mean $n\nabla p$, and NSR equals PSR plus the zero-mean term $-\sum_i\ell(y_i)$; when $F_0>F_1$, NSR has the larger second moment on every problem with $p<F_0/(F_0+F_1)$.
-\end{corollary}
+\textbf{Matched-accuracy comparison.} For a checkpoint with pass@1 $a$, the gain is $\widehat P_{16}-R(a)$, where $R$ is the reference's piecewise-linear pass@16 at pass@1 $a$. The Dr.\ GRPO reference for a seed is the larger of its training trajectory (base and saved steps) and its step-150 temperature sweep ($T\in\{1,1.15,1.3\}$). Gains average eligible checkpoints within a seed, then seeds with equal weights; 2,000 problem-bootstrap draws recompute the reference; draws in which more than 10\% of points are clamped make a contrast ``not interpreted''. \emph{Average equivalence} requires the pooled and each seed's 90\% interval within $\pm2$ points; \emph{moving the curve} requires a gain of at least $+2$ with a 95\% interval above zero in every seed (Holm-corrected within registrations). Intervals condition on the trained seeds.
 
-\begin{lemma}[Rarely solved problems receive sparse updates]\label{lem:starve}
-Under Dr.\ GRPO with a group of $n$, the update on problem $x$ is zero unless the group contains both a correct and an incorrect answer. This event has probability $1-p^n-(1-p)^n\approx np$ for small $p$. Multiplicative reweighting of Dr.\ GRPO's advantages cannot make an all-failure or all-success group contribute an update.
-\end{lemma}
+\textbf{A frozen per-problem law.} Each problem's log-odds $\theta_x$ start at an empirical-Bayes estimate from the base model's 32-sample counts and follow $\dot\theta_x=p_x(1-p_x)+\tau\frac1N\sum_{x'}p_{x'}(1-p_{x'})$ with $\tau=-0.20$, fitted once on Dr.\ GRPO's 1.5B checkpoints and frozen. A checkpoint is placed where the law's mean success equals its observed pass@1; pass@16 is then a prediction. The law describes the curve \emph{conditional on pass@1}; it does not predict training speed or endpoints.
 
-A common frontier does not follow from the moment theorem. The expected update on each problem is collinear with $\nabla p_x$, but changes in the per-problem coefficients can rotate the aggregate update through shared parameters \citep{barakat2026interference}. The sparse-update lemma establishes a property of Dr.\ GRPO and its multiplicative reweightings; it does not establish a necessary condition for every frontier improvement. It motivates testing replay and larger groups as ways to change which problems receive realized updates.
-
-\section{Advantage rules at matched accuracy}\label{sec:audit}
-\textbf{Models.} Qwen2.5-Math-1.5B \citep{yang2024qwen25math}: MATH training problems, 150 steps, answers up to 512 tokens, evaluation on 511 held-out MATH test problems. OLMo-2-0425-1B-SFT \citep{olmo2024}: 300 steps, 256 held-out problems, 1,024-token answers. Our default update uses an on-policy sequence-sum loss with AdamW at $10^{-6}$; the sample-reuse replication and replay interventions modify this setup. Label checks are described in \cref{app:labels}.
-
-\textbf{Conditional score norms and update second moments.} At initialization, $F_0/F_1$ is 2.14 and 2.54 on OLMo and 2.7--3.4 on Qwen. On Qwen it falls to about 1.4--1.6 at steps 50--150, and the registered persistence criterion is inconclusive. In an exploratory diagnostic with $F_0$ and $F_1$ re-measured and interpolated during training, predicted and measured second moments agree within a factor of 0.69--1.18 in every 50-step window. Raw NSR/PSR second-moment ratios are about 6 on Qwen and 19--22 on OLMo. On Qwen, rescaling by Adam's previous per-coordinate scales reduces the ratio to 1.04--1.32.
-
-\textbf{NSR and PSR agree at matched accuracy.} The two satisfy average matched-accuracy equivalence on both model families (\cref{tab:audit}). Their progress rates differ less consistently: the registered OLMo speed prediction fails because both methods reach the midpoint at 52 steps in seed 1; in seed 2, NSR takes 88 steps and PSR 41. An earlier Qwen on-policy experiment found slower NSR progress and equal final pass@64. A Qwen replication using the implementation of \citet{zhu2025nsr}, including sample reuse, clipping and token averaging, did not reproduce the reported advantage in this setting. Across constant baselines $A=r-b$, progress follows the ordering by predicted second moment (rank correlation 0.9--0.97), with matched-accuracy differences within about two points of PSR's trajectory.
+\section{One curve within each setting}\label{sec:curve}
+\Cref{tab:curve} collects the registered comparisons. Advantage rules (PSR, NSR, constant baselines, noise injection), rollout allocation by frontier value and its controls, human-solution and self-generated prefix guidance, and process credit all reach average equivalence or fall within $\pm1.2$ points with intervals including zero. Coverage-weighted replay gains $+1.19$, below the registered $+2$. The registered contrasts replicate at $1{,}024$ tokens (all four contrasts) and at 7B with $2{,}048$ tokens (three of four; the fourth fails the clamping guard). \Cref{fig:curve} shows the $1{,}024$-token setting.
 
 \begin{table}[t]
-\caption{Average matched-pass@1 differences in pass@16 (points; 90\% bootstrap intervals over problems, conditional on the training seeds). Qwen rows use 128 problems and seeds 5--7; OLMo rows use 256 problems and two seeds. The OLMo pass@4 verdict is inconclusive. Checkpointwise equivalence is not established.}
-\label{tab:audit}
+\caption{Registered matched-pass@1 differences in pass@16 (points; 95\% intervals unless marked 90\%). Reference: Dr.\ GRPO's trajectory-and-temperature envelope (B) unless stated. Validation pilots use one seed and 255 problems.}
+\label{tab:curve}
 \centering\small
 \resizebox{\columnwidth}{!}{\begin{tabular}{@{}llr@{}}
 \toprule
-Comparison & Model, seeds & Difference [90\%]\\
+Comparison & Setting & Difference\\
 \midrule
-NSR vs PSR & OLMo, 2 & $-0.30$ [$-1.28$, $+0.77$]\\
-NSR vs PSR & Qwen, 3 & $-0.20$ [$-0.97$, $+0.55$]\\
-PSR + matched noise vs PSR & Qwen, 3 & $-0.37$ [$-1.13$, $+0.46$]\\
-NSR at $2\times$ learning rate vs PSR & Qwen, 3 & $-0.03$ [$-0.88$, $+0.88$]\\
-pass@4 objective vs Dr.\ GRPO & OLMo, 2 & $+1.32$ [$+0.24$, $+2.26$]\\
+NSR vs PSR & 1.5B, 512, 3 seeds & $-0.20$ [$-0.97$, $+0.55$] (90\%)\\
+Coverage-weighted replay vs B & 1.5B, 512, 3 seeds & $+1.19$ [$+0.54$, $+1.79$]\\
+Allocation AC vs B & 1.5B, 512, 3 seeds & $+0.14$ [$-0.36$, $+0.58$]\\
+NSR vs PSR & 1.5B, 1,024, 3 seeds & $-0.25$ [$-0.72$, $+0.20$]\\
+PSR vs B (trajectory) & 1.5B, 1,024, 3 seeds & $+0.11$ [$-0.26$, $+0.49$]\\
+NSR vs B (trajectory) & 1.5B, 1,024, 3 seeds & $-0.15$ [$-0.62$, $+0.31$]\\
+Allocation AC vs B & 1.5B, 1,024, 3 seeds & $-0.12$ [$-0.60$, $+0.29$]\\
+Human-solution prefixes vs B & 1.5B, 1,024, 3 seeds & $-0.05$ [$-0.52$, $+0.37$]\\
+Self-generated prefixes vs B & 1.5B, 1,024, 3 seeds & $-0.11$ [$-0.55$, $+0.32$]\\
+Minimum-help credit vs B & 1.5B, 1,024, pilot & $-0.01$ [$-1.24$, $+0.89$]\\
+PSR vs B (trajectory) & 7B, 2,048, 2 seeds & $-0.09$ [$-0.48$, $+0.31$] (90\%)\\
+NSR vs B (trajectory) & 7B, 2,048, 2 seeds & $-0.09$ [$-0.45$, $+0.27$] (90\%)\\
+Allocation AC vs B & 7B, 2,048, 2 seeds & $-0.15$ [$-0.57$, $+0.16$] (90\%)\\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-\textbf{Noise injection reproduces the pooled early lag.} On Qwen, we add a zero-mean random-sign term to PSR, calibrated to match the same-policy NSR second moment. Over steps 25--49, the registered progress index is $\phi=-0.11$, with a 90\% interval $[-0.22,-0.05]$, where NSR is 0 and PSR is 1. PSR with noise is slightly slower than NSR in the pooled comparison, and seed heterogeneity is flagged. This perturbation reproduces the pooled early accuracy lag without identifying scalar noise magnitude as its unique mechanism. Doubling NSR's learning rate gives $\phi=1.16$ relative to PSR at its original rate; at the matched doubled rate, NSR still lags by 4.7 accuracy points, 95\% $[2.7,6.3]$, over two seeds. The Adam diagnostic measures the lagged, unnormalized projection onto a population-gradient reference: its NSR/PSR ratio is 0.73--0.87.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{curve_1k.pdf}
+\caption{1.5B at 1,024 tokens: Dr.\ GRPO's trajectories (three seeds) and checkpoints of six other interventions (PSR, NSR, allocation, human-solution and self-generated prefixes, three seeds each). Dashed: the frozen law computed from the base model's counts.}
+\label{fig:curve}
+\end{figure}
 
-\textbf{Temperature control.} Higher-temperature evaluations of the late Qwen checkpoint have a mean matched-pass@1 difference of $-1.42$ pass@16 points, with a 90\% interval $[-2.19,-0.68]$, relative to the training trajectory. Entropy on fixed base-model text changes from 1.081 to 1.064, while entropy on policy-generated samples falls three- to fourfold. These diagnostics distinguish the tested temperature sweep from the training trajectory. Entropy on policy samples mixes changes in conditional token distributions with changes in the sampled contexts.
+\textbf{The answer budget is part of the estimand.} At 512 tokens, 48\% of Dr.\ GRPO's answers are truncated; short-answer arms then appear above its curve. A supervised warm start on base-model successes gains $+4.77$ points [$+3.45$, $+6.07$] (90\%) at 512 tokens but $+2.15$ [$+1.10$, $+3.20$] when the same checkpoints are evaluated at $1{,}024$, meeting the registered criterion for ``largely a budget effect''; a smaller positive gain remains. Human-solution warm starts at 512 tokens lie 5--6 points above the curve with 6--7\% truncation; their registered contrast is not interpretable for lack of overlap.
 
-\textbf{Pass@$k$, unlikeliness reward, and entropy.} The pass@4 objective \citep{walder2025pkpo} gives matched-accuracy differences of $+1.6$ and $+0.2$ points on Qwen in two seeds. Its OLMo comparison is inconclusive under the registered rule (\cref{tab:audit}). Unlikeliness reward \citep{he2025unlikely} gives $+0.14$ points, 95\% $[-0.32,+0.62]$, over three seeds. Unlikeliness reward and entropy control depend on trajectory likelihood or token entropy and are outside the correctness-only theorem. In a one-seed pilot, entropy bonuses gave no gain, while entropy floors and adaptive control prevented accuracy progress.
+\section{Longer and stronger training}\label{sec:long}
+A natural objection is that 150 steps are too few to leave the base model's neighbourhood \citep{liu2025prorl}. We trained Dr.\ GRPO for 1,000 steps (about four passes over the training problems) at learning rates $10^{-6}$ (LH1) and $3\times10^{-6}$ (LH3), 1.5B at $1{,}024$ tokens, and evaluated with 256 samples at steps 150, 500 and 1,000. The registered primary reading asks whether pass@256 at step 1,000 exceeds the base's by at least one point with a Holm-adjusted 95\% interval above zero.
 
-\section{Replay, larger groups, and a supervised warm start}\label{sec:faster}
-Dr.\ GRPO's zero advantages on all-failure groups motivate interventions that supply successful samples through replay or increased sampling. We evaluate replay, base-seeded replay, larger groups, and a supervised warm start on Qwen. The replay and warm-start arms use three seeds; the available larger-group results use two.
+\begin{table}[t]
+\caption{Longer training (1.5B, 1,024 tokens). pass@256 from 256 samples; the base's pass@256 is $94.91$. Law residual: pass@16 minus the frozen law at the checkpoint's pass@1.}
+\label{tab:long}
+\centering\small
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrr@{}}
+\toprule
+& LH1 ($10^{-6}$) & LH3 ($3\times10^{-6}$)\\
+\midrule
+pass@1, step 150 $\to$ 1,000 & $57.8\to67.2$ & $63.7\to70.7$\\
+pass@256 minus base, step 1,000 & $+1.96$ [$+0.39$, $+3.72$] & $+0.39$ [$-1.37$, $+2.15$]\\
+\quad Holm-adjusted one-sided $p$ & $0.029$ & $0.358$\\
+pass@256 change, step 150 $\to$ 1,000 & $+0.78$ & $-0.98$\\
+Law residual at step 1,000 & $-0.81$ [$-2.67$, $+1.28$] & $-0.53$ [$-2.59$, $+1.76$]\\
+Spearman (base, arm), step 150 $\to$ 1,000 & $0.72\to0.70$ & $0.71\to0.66$\\
+\bottomrule
+\end{tabular}}
+\end{table}
 
-\textbf{Replay.} Coverage-weighted replay stores verified successes and adds a log-likelihood term, selecting problems in proportion to the posterior mean of $k\,p(1-p)^{k-1}=\partial f_k/\partial\log p$. Its mean gain is $+1.19$ points, 95\% $[+0.54,+1.79]$, against Dr.\ GRPO's trajectory-and-temperature envelope. Uniform replay gives $+0.61$, 95\% $[-0.04,+1.27]$, against the trajectory alone. The direct coverage-weighted versus uniform contrast is $+0.66$, below its registered $+1$ criterion. Coverage-weighted replay also lowers step-150 pass@1 by 2.05 points, despite its positive matched-accuracy gain.
-
-The interim base-seeded replay analysis uses successes from 32 base-model samples per problem and gives $+1.02$ points, 95\% $[+0.23,+1.68]$, against the envelope, while lowering step-150 pass@1 by 5.35 points. The completed replay analyses meet the average-agreement criterion; the base-seeded estimate remains interim.
-
-\textbf{More rollouts, and a warm start.} Dr.\ GRPO with groups of $32$ (G32) uses more rollouts per step, while the supervised warm start on base-model successes (S32) adds a supervised stage before RL. Their higher accuracy at equal numbers of RL steps therefore comes with additional training resources. Endpoint comparisons are also limited by the accuracy range covered by the reference. For S32, Check~16 provides a supported comparison of the post-supervision initialization, step~0, with Dr.\ GRPO's trajectory at the same answer budget. The pooled matched-accuracy pass@16 gain is $+4.77$ points at $512$ tokens, 90\% $[+3.45,+6.07]$, and $+2.15$ at $1{,}024$ tokens, 90\% $[+1.10,+3.20]$. The larger-budget gain is below half the original gain, meeting the registered criterion for reporting the warm-start advantage as \emph{largely a budget effect}. A smaller positive initial gain remains. S32 checkpoints at steps $50$--$150$ exceed the available Dr.\ GRPO pass@1 range at both budgets. These evaluations therefore establish a budget-dependent initial gain and leave the matched-accuracy position after RL unresolved (\cref{sec:budget}). Against an interim longer reference, Dr.\ GRPO seed 13 through step 250, G32 lies $+0.60$ points above it on 4 of 6 checkpoints, an interim point estimate without an interval.
+Neither arm meets the criterion (\cref{tab:long}); LH1 is borderline (Holm-adjusted $p=0.029$ against $0.025$). Both arms move pass@1 far beyond the 150-step range ($+9.1$ and $+12.6$ points), so the registered verdict is ``not supported'' rather than inconclusive. The longer trajectories stay within $1.6$ points of the frozen law (\cref{fig:long}), and the base model's difficulty order is largely preserved (Spearman $0.66$--$0.72$). On the 26 problems with no success in 256 base samples, mean success rises from below $1\%$ to $1.3$--$2.3\%$. Longer training of this recipe sharpens; it does not broaden coverage beyond the registered margin. ProRL's prolonged training with KL control and resets reports a similar MATH500 pattern (pass@256 $99.0\to98.2$) alongside gains on code; our test does not cover those additions.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{frontier_qwen.pdf}
-\caption{Seed-mean (pass@1, pass@16) trajectories on Qwen. G32 (two seeds) and the supervised warm start (three seeds) reach mean pass@1 52.5 at step 150, compared with 44.1 for Dr.\ GRPO. The interim longer reference discussed in the text reaches pass@1 51.7 at step 250 and does not cover these mean endpoints.}
-\label{fig:frontier}
+\includegraphics[width=\columnwidth]{long_training.pdf}
+\caption{Dr.\ GRPO for 1,000 steps at two learning rates (checkpoints at steps 50--1,000) against the 150-step trajectories and the frozen law.}
+\label{fig:long}
 \end{figure}
 
-\section{Rollout allocation at a fixed budget}\label{sec:allocation}
+\section{Public checkpoints on the predicted curve}\label{sec:public}
+Our curve could be specific to our recipe. We evaluated published RLVR checkpoints trained from the same base models by other groups, under one protocol (our prompt and tokenizer, $T=1$, 32 samples, pinned Hub revisions): 14 at 1.5B, evaluated at $1{,}024$ and $3{,}072$ tokens, and 14 at 7B at $2{,}048$. They span Dr.\ GRPO and GRPO recipes \citep{liu2025drgrpo}, SimpleRL, DAPO and RAFT++ variants, one-shot RLVR, rank-1 extrapolation \citep{wei2026relex}, replay \citep{zhan2025exgrpo}, off-policy guidance from stronger-model traces \citep{yan2025guidance}, interleaved supervised fine-tuning \citep{ma2025relift}, and correct- and random-reward reproductions \citep{shao2025spurious}. Two 1.5B checkpoints truncate more than 90\% of answers under our protocol and are excluded as protocol failures. The reference is the frozen law computed from the same base model's counts at the same budget; at 3,072 tokens it is the only reference available.
 
-Pre-registration~18 tests whether reallocating sampled answers changes pass@16 at matched pass@1 without increasing the rollout budget. Each arm uses $128$ rollouts per step on the same $16$ problems as Dr.\ GRPO, denoted $B$. Training runs for $150$ steps with $512$-token answers in seeds $8$, $9$, and $10$. Four pilot rollouts per problem determine the success count $c$; the remaining $64$ rollouts are distributed with a cap of $32$ per problem. Pilot and additional samples are pooled before computing Dr.\ GRPO advantages.
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{public_checkpoints.pdf}
+\caption{Public checkpoints against the frozen law computed from the base model at the same budget. Left: 7B at 2,048 tokens, with our Dr.\ GRPO trajectories. Right: 1.5B at 3,072 tokens. Colour and marker give the training-data provenance.}
+\label{fig:public}
+\end{figure*}
 
-Frontier-value allocation (AC) assigns additional rollouts in proportion to the registered model value
-\[
-v(c)=\max\!\left\{0,\E\!\left[
-p^2(1-p)^2\{16(1-p)^{15}-\lambda\}\mid c
-\right]\right\},
-\]
-with $p\mid c\sim\operatorname{Beta}(c+1/2,4-c+1/2)$ and reference slope $\lambda=0.37$. Only $c=0$ has positive value under these settings; residual allocations after caps bind are distributed uniformly using largest-remainder rounding. Signal allocation (AV) instead weights additional rollouts by $\E[p(1-p)\mid c]$. Both retain the fixed normalizer. The HORA control, denoted HR, allocates greedily by posterior marginal hit gain under a $\operatorname{Beta}(1,1)$ prior and scales each problem's contribution by $8/N_x$, where $N_x$ is its final group size.
+\Cref{fig:public} shows the result. Residuals (pass@16 minus the law) range from $-7.6$ to $+0.3$ points at 7B, $-3.1$ to $+0.7$ at 1.5B and $3{,}072$ tokens, and $-4.6$ to $+0.9$ at 1.5B and $1{,}024$ tokens. No checkpoint lies more than $0.9$ points above the prediction. The checkpoints furthest below it truncate heavily at our budget: SimpleRL-Zero at 7B (28\% truncated), and four 1.5B checkpoints at $1{,}024$ tokens (30--52\%) that rise to within $-1.6$ to $+0.7$ points at $3{,}072$. Off-policy and external-supervision recipes are not exceptions: LUFFY at 7B $-1.0$, ExGRPO $-0.3$, ReLIFT $-1.7$, random reward $+0.1$, replay (RePO) $-0.1$ against $+0.3$ for its authors' own GRPO control. The registered per-checkpoint verdicts with Holm correction are reported in \cref{app:public}. Against our empirical 7B trajectory, one checkpoint (one-shot RLVR, pass@1 48.4) is $+2.0$ above; it lies where our 7B reference has no checkpoint between pass@1 30 and 62 and is linearly interpolated across the bend, and it is $+0.3$ against the law. \pending{final 2,000-draw intervals}
 
-Rule~1 compares AC with the trajectory-and-temperature envelope $E_B$; rules~2 and~3 compare it with the AV and HR trajectories. Their thresholds are $+2$ points for rule~1 and $+1$ for rules~2 and~3, with positive 95\% intervals and Holm correction; rule~1 also requires positive gains in every seed. Gains are averaged over supported checkpoints and then equally over seeds; bootstrap intervals resample problems and condition on the trained seeds. Rules~1--3 are not met. AC gains $+0.14$ pass@16 points against $E_B$, 95\% $[-0.36,+0.58]$; its 90\% interval $[-0.28,+0.51]$ satisfies average agreement. AC versus AV gives $+0.51$, 95\% $[+0.04,+0.99]$, below its effect threshold and nonsignificant after Holm correction. AC versus HR gives $+0.00$, 95\% $[-0.52,+0.46]$. No confirmation run was triggered.
+A fixed protocol is a limitation as well as a control: checkpoints trained with other prompts and longer budgets may perform better under their native settings. The test asks whether published RLVR recipes reach coverage beyond what the base model's counts predict under a common measurement; none does.
 
-The descriptive mechanism diagnostics show that allocation operates as intended. Pilot-zero problems, defined by no success in the current pilot, receive a mean of $18.9$ rollouts under AC. The reported fraction of their final groups containing a success is $50$--$54\%$, compared with $18$--$21\%$ under AV. These diagnostics were reported without bootstrap intervals. Thus AC increases binary success signals on problems missed by the pilot without establishing a better matched-accuracy curve.
+\section{What is shared}\label{sec:mechanism}
+\textbf{Per-problem profiles.} At matched pass@1 (within 1.5 points), the root-mean-square per-problem difference in success rate between two methods is $6.6$--$6.7$ points, the same as between two seeds of one method. A paired statistic---the excess squared per-problem distance of a method from Dr.\ GRPO over the distance between Dr.\ GRPO seeds---is $+2.1\%$ [$-1.9\%$, $+6.1\%$] of the seed-to-seed distance pooled over methods. Changes of the advantage rule leave a small signature (PSR $+7.5\%$ [$+2.6\%$, $+12.4\%$]); interventions that keep Dr.\ GRPO's advantages stay within seed variation. Mean success by base count is similar across methods at equal pass@1. This analysis is exploratory; per-problem outcomes still vary beyond what base success predicts \citep{yang2026kernel}, so the law is a conditional-mean description.
 
-The registered point forecast check interpolates seed-mean curves at covered accuracy coordinates. Confirmation requires absolute error within $1.5$ points of the forecast mean over those coordinates. HR and AV forecasts are confirmed under both model variants. AC has observed mean gain $-0.05$ points against forecasts of $+4.12$ from the frozen law and $+2.46$ from deeper initial counts; neither forecast is confirmed. The per-problem frontier model therefore fails on the allocation intervention it was designed to predict. More realized successes on rarely solved problems do not, in this experiment, produce the predicted change in the curve.
-
-\section{The answer budget as a confound}\label{sec:budget}
-
-An answer budget $b$ caps the number of generated response tokens. For $M$ sampled answers, let $I_i(b)$ indicate whether answer $i$ is stopped by this cap. We define the \emph{truncation rate} as $\rho_b=M^{-1}\sum_{i=1}^{M}I_i(b)$. This rate matters even at matched pass@1: a length cap can affect different problems unequally, changing pass@16 at a fixed mean success probability. A comparison can therefore depend on response length as well as on the distribution of per-problem success probabilities.
-
-At $512$ tokens, Dr.\ GRPO has a reported truncation rate of $48\%$, whereas the human-solution arms of Pre-registration~19 have rates of $6$--$7\%$. Both human-solution arms lie above its trajectory at this budget. Pre-registration~19 compares supervised training on human solutions for problems with observed base successes (HP) with a swap arm (HQ) that replaces some of those problems by problems with no observed base success. These strata refer to successes observed in $32$ base samples per problem.
-
-Check~16 re-evaluates existing checkpoints at the larger answer budget, with no additional training. For the supervised warm start on base-model successes (S32), the pooled step-0 gain against the same-budget Dr.\ GRPO trajectory is $+4.77$ pass@16 points at $512$ tokens, 90\% $[+3.45,+6.07]$, and $+2.15$ at $1{,}024$ tokens, 90\% $[+1.10,+3.20]$. Under the reading fixed before re-evaluation, a gain below half its original magnitude is classified as \emph{largely a budget effect}. The completed check meets that condition while retaining a smaller positive gain. Later S32 checkpoints lie outside the available reference accuracy range at both budgets, so this comparison concerns the supervised initialization.
-
-The registered Check~21 comparison uses checkpoints with common reference support at both budgets and paired bootstrap draws. The interim seed~10 observation reverses the ordering: the human-solution arm is below the same-budget Dr.\ GRPO trajectory at $1{,}024$ tokens. \pending{Check 21: remaining seeds and the registered pooled budget-effect verdict.} Separately, Pre-registration~19 rule~1 is not interpretable because HQ checkpoints in seeds~9 and~10 do not overlap the HP accuracy range. The descriptive step-150 zero-count stratum contrast, HQ minus HP, is $+0.58$ pass@16 points, 90\% $[-2.13,+3.43]$, and cannot substitute for the registered matched-accuracy test.
-
-Matched pass@1 controls mean success, but does not control which answers are censored by a length limit. Claims about an accuracy--diversity frontier must state the answer budget, use supported comparisons within that budget, and assess sensitivity to differential truncation. Re-evaluation changes the measurement protocol; \cref{sec:replication} reports replication with training and evaluation at $1{,}024$ tokens.
-
-\section{Replication at a larger budget and a larger model}\label{sec:replication}
-
-Pre-registration~21 trains and evaluates Qwen2.5-Math-1.5B at $1{,}024$ tokens in seeds~$8$--$10$. Each arm uses $150$ steps and $128$ rollouts per step, with problem order paired to its $512$-token counterpart. Both replications change the answer cap and loss normalizer together, so neither isolates the causal effect of the cap. With B1k denoting Dr.\ GRPO, matched-pass@1 differences in pass@16 are NSR1k--PSR1k $-0.25$, 95\% $[-0.72,+0.20]$; PSR1k--B1k $+0.11$, 95\% $[-0.26,+0.49]$; NSR1k--B1k $-0.15$, 95\% $[-0.62,+0.31]$; and AC1k against the B1k envelope $-0.12$, 95\% $[-0.60,+0.29]$. All four meet average equivalence, supporting the registered joint statement that the core result replicates at $1{,}024$ tokens. Equivalence requires pooled and per-seed 90\% intervals within $\pm2$ points; bootstrap intervals resample problems conditional on the trained seeds.
-
-Step-$150$ truncation is $15.2$--$17.0\%$, below the $20\%$ reporting qualifier. Comparison points remain steps $50$, $100$, and $150$; step~$25$ supplies reference knots only. Omitting these knots gives PSR1k--B1k $+0.14$, 95\% $[-0.24,+0.53]$; NSR1k--B1k $+0.44$, 95\% $[-0.07,+0.97]$; and NSR1k--PSR1k $+0.33$, 95\% $[-0.22,+0.91]$. The early NSR comparison therefore depends on reference resolution.
-
-At $7$B and $2{,}048$ tokens, Pre-registration~20 uses seeds~$8$ and~$9$. PSR7--B7 is $-0.09$, 90\% $[-0.48,+0.31]$, and NSR7--B7 is $-0.09$, 90\% $[-0.45,+0.27]$; both reach average equivalence. AC7 against the B7 envelope gives $-0.15$, 90\% $[-0.57,+0.16]$, 95\% $[-0.64,+0.23]$, replicating the allocation null. NSR7--PSR7 gives $+0.16$, 90\% $[-0.29,+0.57]$, but $13.7\%$ of bootstrap points in seed~$9$ are clamped, exceeding the $10\%$ guard. This contrast is not interpreted: three of four contrasts replicate, leaving the full joint claim unsupported. Both replications retain frozen AC settings; their null results concern that allocation rule.
-
-Late test-set pass@16 is compressed near $94$--$95$, limiting sensitivity. The separately reported hard cohort contains $253$ problems selected by independent base screening for zero to two successes in eight samples, with labels audited before evaluation. Screening samples are not reused for evaluation, and label disagreements are removed without replacement. The trained B7 checkpoints there span pass@16 $80.8$--$84.5$. Only NSR7--B7 reaches average equivalence; PSR7--B7 is inconclusive, and the other two contrasts fail the clamping guard. The frozen frontier model meets rule~3 in aggregate, with RMSE $0.23$ over eight B7 seed-checkpoints. Its observed-minus-predicted pass@16 errors offset: $+7.0$ to $+22.9$ points for zero successes in $32$ base samples and $-6.8$ to $-2.7$ for one to four.
-
-The evaluations use vLLM following registered amendments. The equivalence check gave base-7B pass@1/pass@16 of $30.5/88.0$ and $30.1/86.8$ in independent runs, versus $29.9/87.5$ with Hugging Face. For B1k seed~$9$, step~$50$ gave $52.2/87.5$ and $51.9/86.4$ versus $52.5/86.7$; step~$150$ gave $58.1/86.7$ twice versus $58.0/86.8$. Truncation and lengths also agreed. Every replication comparison uses one engine, including re-evaluated base models and references; the frozen rule~3 forecast retains its original Hugging Face base counts.
-
-\section{A per-problem model of the frontier}\label{sec:model}
-We test a descriptive model of the frontier using empirical-Bayes estimates from 32 base-model samples to initialize each problem's log-odds. With $p_x=\sigma(\theta_x)$, the dynamics are
-\[\dot\theta_x=p_x(1-p_x)+\tau\,\tfrac1N\textstyle\sum_{x'}p_{x'}(1-p_{x'}),\]
-combining state-dependent own-problem growth with a uniform transfer term. We fitted $\tau=-0.20$ on Dr.\ GRPO's nine checkpoints and froze it before computing the registered test predictions. Each checkpoint's observed pass@1 determines its location on the model trajectory; pass@16 and stratum-level success are then predictions. The model therefore describes the frontier conditional on accuracy, rather than predicting training speed.
-
-The frozen model has pass@16 RMSE of 1.21 points for nine further Qwen rules (56 available checkpoints), 1.90 points for five OLMo rules with $\tau$ transferred from Qwen (50 checkpoints), and 0.85 points for four 1,024-token evaluation checkpoints (\cref{fig:law}). The affine log-odds baseline has RMSE of 2.45, 12.58, and 1.27 points on these sets, respectively; the uniform-shift baseline ranges from 9.85 to 20.07 points. OLMo's aggregate RMSE coexists with larger mean stratum residuals: observed minus predicted pass@16 is $+6.0$ points in the zero-count stratum and $-6.8$ in the rare stratum. On Qwen, a uniform shift predicts pass@16 of 70--80 for problems with zero successes in 32 base samples, compared with an observed 24.0 for Dr.\ GRPO at step 150.
-
-The model fails the registered warm-start test when initialized from the warm-start policy's own step-0 counts: its pass@16 RMSE is 3.56 points. The longer-training test remains incomplete, with the available Dr.\ GRPO reference measured through step 250 and the registered extrapolation verdict pending. Deep base sampling is also partial: three of four shards cover 232 of the 309 problems with at most four successes in the initial 32 samples. Using 256 additional samples per problem, the refitted coefficient is $\tau=+0.20$, with a 90\% interval $[+0.10,+0.35]$ from 200 bootstrap draws. Refining the initial success estimates changes the fitted coefficient from negative to positive; its interpretation as transfer therefore depends on the initialization and the assumed log-odds dynamics.
-
-Pre-registration~18 tests the model's response to a deliberate change in rollout allocation. In the registered point forecast comparison, both model variants confirm the HR and AV forecasts, but neither confirms AC: its observed mean matched-accuracy gain is $-0.05$ points, against $+4.12$ from the frozen law and $+2.46$ from deeper initial counts. The allocation diagnostics establish that AC supplies additional successful samples to pilot-zero groups, so the failed forecast accompanies a realized change in the sampling mechanism. Deeper initialization counts reduce the forecast discrepancy without resolving it. The model's agreement with aggregate pass@16 in the earlier audits therefore supports a conditional descriptive fit, while its use to guide this allocation intervention is unsupported. The warm-start failure and sensitivity to initialization further limit a mechanistic interpretation. The expected-update identities constrain gradient estimators; they do not validate the assumed dynamics of learning and transfer across problems.
+\textbf{Not a shared weight direction.} Reported rank-1 structure of RLVR updates \citep{cai2025alpharl,wei2026relex} suggested that methods move along one direction. On saved 1.5B checkpoints, per-matrix rank-1 approximations capture $4.7$--$5.6\%$ of the update energy; the cosine between two methods' updates is $0.27$--$0.47$, against $0.34$ between Dr.\ GRPO seeds; PSR and NSR are the least similar pair ($0.27$). Removing each matrix's top singular component leaves $98\%$ of the pass@1 gain. Different weight changes produce the same behaviour. (Checkpoints are saved in bf16, which distorts the rank-1 component; the remainder is preserved with cosine $0.975$.)
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.8\columnwidth]{law_fit.pdf}
-\caption{Predicted against observed pass@16 for the frozen per-problem model.}
-\label{fig:law}
+\includegraphics[width=\columnwidth]{finishing.pdf}
+\caption{Answers of the 1.5B base and of Dr.\ GRPO (seed 8) at steps 25 and 150 at 1,024 tokens: correct, boxed but wrong, and without a final box (truncated or ended without one).}
+\label{fig:finish}
 \end{figure}
 
-\section{Process credit from minimum hints}\label{sec:minimumhints}
+\textbf{Finishing versus accuracy.} At $1{,}024$ tokens the base model leaves $42.5\%$ of its answers without a final box (\cref{fig:finish}). Between the base and step 25, correct answers rise by $18.4$ points while unfinished answers fall by $18.3$ and boxed-wrong answers are unchanged. Boxing more answers at the base's accuracy among boxed answers accounts for $+11.6$ of the $+35.8$-point mean step-150 gain; accuracy among boxed answers also rises ($37.6\%\to65.7\%$). As an intervention, appending ``Final answer: \textbackslash boxed\{'' to every unfinished base sample and decoding 32 greedy tokens raises pass@1 from $22.0$ to $27.7$, against $22.3$ for the same number of extra tokens without the cue: $16\%$ of Dr.\ GRPO's step-150 pass@1 gain, at slightly higher compute. Across problems, post-RL success is negatively associated with the base model's boxed-wrong rate (descriptive regression coefficient $-0.70$). Temperature is not a substitute: lowering the base model's temperature to $0.4$--$0.8$ caps pass@1 near $29\%$ with $45$--$53\%$ truncation. Budget forcing at test time has prior art \citep{muennighoff2025s1}; our contribution is measuring how much of RLVR's gain it accounts for.
 
-Pre-registration~23 tests process credit on the policy's own failed prefixes. During the first $100$ training steps, it probes up to four failed answers on each of up to four problems with at most one success in eight rollouts. Prefixes contain at most $256$ tokens and end before the answer box. Each receives zero, $32$, or $64$ tokens from a verified human solution, cut before its answer, with two continuations per hint level under a total $1{,}024$-token budget. Minimum-help credit (MH) assigns values $1$, $2/3$, or $1/3$ for the smallest tested hint level yielding a verified success, and $0$ if none succeeds. Values are centred within each problem, and credit updates only policy-generated prefix tokens. Its coefficient $c_t=2(1-t/100)$ decreases linearly to zero; Dr.\ GRPO training continues to step~$150$. The averaged-value control (AVH) uses identical hints, queries, and schedule but scores each prefix by mean success across its six continuations.
+\section{Attempts to move the curve}\label{sec:attempts}
+Each of the following was designed from a diagnosis and pre-registered with a selection or decision rule.
 
-On $255$ validation problems in seed~$8$, MH against the B1k envelope gives $-0.01$ pass@16 points, 95\% $[-1.24,+0.89]$; AVH gives $-0.05$, 95\% $[-1.32,+0.91]$. MH against the AVH trajectory gives $+0.05$, 95\% $[-0.67,+0.84]$. Both mechanism gates are met: MH credits $520$ prefixes, exceeding the $150$ floor, and values differ in $61\%$ of probed problem-steps, above the $30\%$ gate. AVH credits $563$ prefixes with contrasts in $64\%$. Neither reaches the registered $+1.5$-point gain gate, so selection drops the method without a three-seed test. These intervals remain conditional on one training seed.
+\textbf{More signal on rare problems.} Dr.\ GRPO's update on a problem is zero unless its group mixes correct and incorrect answers. Allocation by frontier value raises the share of success-bearing groups among pilot-zero problems from $18$--$21\%$ to $50$--$54\%$, and the frozen law forecast a $+4.1$-point gain; the observed mean is $-0.05$ (\cref{tab:curve}). Supplying more successes on rare problems does not move the curve, so starvation is not the binding constraint in this form.
 
-\section{Discussion}\label{sec:moves}
+\textbf{External solutions.} Human-solution prefixes inside RL ($-0.05$), minimum-help process credit that credits failed prefixes by the smallest successful human hint ($-0.01$), and supervised warm starts once the budget is controlled leave the curve unchanged.
 
-The tested correctness-only interventions mainly change how quickly training reaches a given accuracy. At matched pass@1, the registered comparisons support a shared pass@16 curve within each setting. The larger-budget replication reaches average equivalence in all four contrasts; the $7$B replication does so in three, while its direct NSR--PSR comparison is excluded by the clamping guard. This is agreement within the registered tolerance over supported checkpoints. It permits smaller differences and does not establish equivalence at every checkpoint. The small replay gain also remains below the registered frontier-improvement threshold.
+\textbf{Update geometry and teacher signal} (one-seed validation pilots; selection required $+1.5$): removing 75\% of each update's component along the tracked dominant direction ($+0.20$ [$-0.84$, $+1.19$]); whitening problem weights by a sketched gradient Gram matrix ($-0.04$ [$-1.21$, $+1.05$]); adding the log-likelihood of verified 7B solutions on base-rare problems, 6.6 solutions per step ($+0.31$ [$-1.05$, $+1.35$]); and the same with the teacher gradient projected off the dominant direction ($+0.22$; $-0.03$ against plain teacher distillation). None qualifies. A gradient diagnostic with two independent rollout groups per problem found same-problem gradient cosines of $0.01$; the registered whitening reading was inconclusive.
 
-Similar pass@16 at matched pass@1 means similar repeated-sampling coverage at a fixed mean success probability. It does not identify the full distribution of per-problem success or the properties of generated solutions. Nor does it establish invariance for other task families, longer training, or non-correctness rewards. Minimum-help credit supplies external process information, but its failed selection in one validation seed cannot settle that broader question. Answer budgets remain part of the estimand: differential truncation can create apparent gains, while pass@16 compression at $7$B reduces sensitivity. \pending{Check 21: pooled human-solution budget-effect verdict.} \pending{P22: external versus self prefix guidance.}
+\section{Related work}\label{sec:related}
+\citet{yue2025limit} show that base models beat RLVR models at large $k$ and that six RLVR algorithms perform similarly; we test that similarity at matched accuracy, across interventions and public checkpoints, and model it. The budgeted-search perspective \citep{sun2026boptr} maps RL operating points to base search budgets with $N_{\rm base}\approx\alpha N_{\rm RL}^\beta$. In a restricted single-decoder adaptation fitted on our Dr.\ GRPO checkpoints, with a 256-sample base, it predicts held-out pass@16 with RMSE $1.98$ points over 47 checkpoints, against $0.91$ for Dr.\ GRPO's curve. DARS \citep{yang2025depth} reports matched-accuracy plots; we add registered intervals. \citet{yang2026kernel} show per-problem heterogeneity beyond base success, which our aggregate result tolerates. Rank-1 and subnetwork structure \citep{cai2025alpharl,wei2026relex,mukherjee2025subnetworks} motivated our direction test. Reported departures include sharpness-aware updates \citep{kim2026flat}, which reach equal rounded mean pass@1 with higher pass@256 on AIME but not on MATH500 ($72.7$ vs $72.5$); BBG \citep{yuan2026overtraining}; base anchoring \citep{zhou2026pba}; ARMOR \citep{huang2026armor}; and EAPO \citep{lu2026eapo}, mostly at fixed steps. Distillation and mid-training change what RL can reach \citep{kim2025rlvsdistill,wang2025octothinker,zhang2025interplay,deshmukh2026projected}, and pre-RL pass@large-$k$ and held-out loss predict RL outcomes after SFT \citep{kang2025quagmires,malladi2026tailsft}. Reward noise as a change of clock has a theoretical predecessor \citep{rad2026rate}; training on atomic skills can solve compositions the base never solved \citep{wang2026primitives}.
 
-The update identities do not imply the observed invariance. Per-problem coefficients can rotate the aggregate gradient through shared parameters, and optimizer state and noise can alter the realized update. Nor does aggregate prediction identify a learning mechanism: the $7$B model fit combines small aggregate error with large offsetting stratum errors.
+\section{Discussion}\label{sec:discussion}
+Within the tested regimes, RLVR methods differ in how fast they move along a curve, and that curve is predicted by the base model's per-problem success counts. Three explanations were tested: lack of on-policy signal on unsolved problems (allocation and teacher solutions at the tested dose did not help), shared skills that lift problems in the base model's order (consistent with the per-problem and finishing analyses), and too-short training (not supported for plain Dr.\ GRPO over four passes). The evidence points to the starting distribution as the lever: changing it should move the curve, and the frozen law should forecast by how much.
 
-The forthcoming causal update-direction test is therefore the natural next step (\pending{P25}). Perturbing direction at a common policy while controlling update magnitude and answer budget would ask whether updates follow the same local pass@1--pass@16 relation. Measuring both quantities after the intervention would connect direction to frontier displacement directly. This would test whether the shared curve reflects a common effective update direction, beyond the descriptive agreement of completed training trajectories.
-
-% Draft-v4 consistency edits in Limitations:
-% Replace its first two sentences with:
-% Our experiments use 1B, 1.5B, and 7B models, with main runs of 150 steps on Qwen and 300 on OLMo. Registered conclusions for longer training remain incomplete.
-% Replace ``The 1,024-token check remains partial.'' with:
-% The pooled human-solution budget check remains incomplete (\pending{Check 21}).
+\textbf{Running, registered tests.} (i) Starting models fine-tuned on Qwen2.5-Math-72B-Instruct solutions for random, rarely solved and ``confidently wrong'' training problems at two doses, with the law's forecast of each start's post-RL curve frozen before RL, then RL from the starts with three seeds and a random-SFT control \pending{P30}. (ii) Teacher distillation at 7B with the 72B teacher \pending{P29}. (iii) Sharpness-aware RLVR on our curve \pending{P31}.
 
 \section{Limitations}
-Our experiments use 1B and 1.5B models, with main runs of 150 steps on Qwen and 300 on OLMo. Generalization to larger models and longer training horizons remains untested. The evaluation budget matters substantially: for Dr.\ GRPO seed 10 at step 150, increasing the budget from 512 to 1,024 tokens raises pass@1 from 44.6 to 57.7 and reduces truncation from 48\% to 15.5\%. The 1,024-token check remains partial. Bootstrap intervals cover problem sampling conditional on the observed training seeds; they do not estimate training-run variability. Average equivalence within $\pm2$ points permits smaller and checkpoint-specific differences. The longer-reference comparisons in \cref{sec:faster} are interim estimates against one seed and include only overlapping checkpoints.
+Models are Qwen2.5-Math 1.5B and 7B (and OLMo-2 1B in earlier comparisons) on MATH-style problems with binary verification. Answer budgets of 512--3,072 tokens are part of the estimand; long chain-of-thought regimes, KL-regularized prolonged training, and other domains are not covered. Bootstrap intervals cover problem sampling conditional on the trained seeds. Average equivalence within $\pm2$ points permits smaller and checkpoint-specific differences. The law is a conditional-mean description fitted on Dr.\ GRPO; it fails after a supervised warm start (RMSE $3.56$) and in base-zero strata at 7B ($+7$ to $+23$ points). Public checkpoints are evaluated under our protocol rather than their native one. The per-problem, weight-space and finishing analyses are exploratory.
 
 \bibliography{paper}
 \bibliographystyle{icml2026}
@@ -227,39 +196,58 @@ Our experiments use 1B and 1.5B models, with main runs of 150 steps on Qwen and 
 \newpage
 \appendix
 \onecolumn
-\section{Proofs}\label{app:proofs}
-\textbf{\Cref{thm:moments}.} Couple the rule to an i.i.d.\ sequence $y_1,y_2,\dots$ with rewards $r$. Given $r$, the stopping time $N$ and the advantages $A_i$ are fixed, the answers are independent, $\E[\ell(y_i)\mid r]=\kappa(r_i)\nabla p$ with $\kappa(1)=1/p$ and $\kappa(0)=-1/(1-p)$, and $\E[\|\ell(y_i)\|^2\mid r]=F_{r_i}$. Hence $\E[g\mid r]=\sum_{i\le N}A_i\kappa(r_i)\nabla p$ and $\E[\|g\|^2\mid r]=\sum_iA_i^2F_{r_i}+\sum_{i\neq j}A_iA_j\kappa(r_i)\kappa(r_j)\|\nabla p\|^2$; averaging over $r$, whose law depends only on $p$, gives the claim.
-\textbf{\Cref{prop:spread}.} $f_k''(p)=-k(k-1)(1-p)^{k-2}<0$ for $k>1$; apply Jensen's inequality.
-\textbf{\Cref{lem:starve}.} With all rewards equal, $r_i-\bar r=0$ for every $i$; a reweighting that depends only on the rewards multiplies these zeros.
+\section{Expected updates}\label{app:theory}
+\begin{theorem}[Two moments of correctness-only rules]
+Let a rule draw answers i.i.d.\ from $\pi(\cdot\mid x)$, stop at a time $N\le n_{\max}$ that depends only on the rewards observed so far, and assign advantages that depend only on the rewards. Then $g=\sum_{i\le N}A_i\nabla\log\pi(y_i)$ satisfies $\E g=c(p)\nabla p$ and $\E\|g\|^2=F_1D_1(p)+F_0D_0(p)+\|\nabla p\|^2X(p)$, where $F_r$ is the mean squared score norm of answers with reward $r$ and $c,D_1,D_0,X$ depend only on the rule and $p$.
+\end{theorem}
+Conditioning on the reward sequence fixes $N$ and the advantages, and $\E[\nabla\log\pi\mid r=1]=\nabla p/p$, $\E[\nabla\log\pi\mid r=0]=-\nabla p/(1-p)$. The expected update on each problem is collinear with $\nabla p_x$, but the aggregate update through shared parameters need not be; the invariance we observe is empirical, not implied. Under Dr.\ GRPO a group without both a correct and an incorrect answer contributes nothing, with probability $p^n+(1-p)^n$.
 
-\section{Pre-registrations}\label{app:prereg}
-\begin{center}
-\small
-\begin{tabular}{@{}p{0.09\textwidth}p{0.36\textwidth}p{0.47\textwidth}@{}}
+\section{Registrations and verdicts}\label{app:prereg}
+\begin{center}\small
+\begin{tabular}{@{}p{0.08\textwidth}p{0.36\textwidth}p{0.5\textwidth}@{}}
 \toprule
-Registration & Comparison & Outcome\\
+Reg. & Comparison & Verdict\\
 \midrule
-9 & OLMo NSR--PSR replication & Average matched-accuracy equivalence; larger NSR second moments in both seeds. The registered speed prediction failed because one seed tied.\\
-10 & Qwen noise injection and learning-rate controls & Pooled early-lag reproduction with seed heterogeneity; average matched-accuracy equivalence. NSR still lagged at the matched doubled learning rate; gradient-norm persistence was inconclusive.\\
-11 & Late-checkpoint temperature control & Mean matched-pass@1 difference $-1.42$ points, 90\% $[-2.19,-0.68]$.\\
-12 & Coverage-weighted replay against Dr.\ GRPO's envelope & $+1.19$ points, 95\% $[+0.54,+1.79]$: average agreement. Registered frontier improvement, equal-cost accuracy improvement, and a coverage-weighting benefit were not established.\\
-14 & Base-seeded replay and controls & Interim base-seeded estimate $+1.02$ points, 95\% $[+0.23,+1.68]$. Some registered contrasts remain incomplete; larger-group and warm-start mean endpoints exceed the original reference range.\\
-17 & Frozen frontier model & Available Qwen-method, OLMo, and 1,024-token test sets meet the aggregate RMSE criterion. The warm-start test fails; longer-training extrapolation remains pending.\\
-16 (check) & Answer budget: re-evaluation at 1,024 tokens & Warm-start step-0 gain $+4.77$ at 512 and $+2.15$ at 1,024 tokens: largely a budget effect.\\
-18 & Rollout allocation at a fixed budget (AC, AV, HORA) & Rules 1--3 not met; AC $+0.14$, 95\% $[-0.36,+0.58]$; forecasts confirmed for HR and AV, not for AC.\\
-19 & Supervised fine-tuning on human solutions & Rule 1 not interpretable (insufficient overlap); zero-count stratum contrast $+0.58$, 90\% $[-2.13,+3.43]$.\\
-20 & 7B replication (2,048 tokens) & PSR7--B7 and NSR7--B7 reach average equivalence; AC7 replicates the allocation null ($-0.15$, 95\% $[-0.64,+0.23]$). NSR7--PSR7 is not interpreted: $13.7\%$ clamping exceeds the $10\%$ guard. Three of four contrasts replicate. Rule~3 RMSE is $0.23$, with large offsetting stratum errors.\\
-21 & 1.5B replication at 1,024 tokens & All four contrasts reach average equivalence: the core result replicates. AC1k against B1k's envelope gives $-0.12$, 95\% $[-0.60,+0.29]$. Truncation is $15.2$--$17.0\%$; step-$25$ reference knots affect the early NSR comparison.\\
-21 (check) & Human-solution arms at 1,024 tokens & \pending{pending}\\
-22 & External versus self prefix guidance & \pending{pending}\\
-23 & Minimum-help credit (pilot) & Against B1k's envelope, MH gives $-0.01$, 95\% $[-1.24,+0.89]$, and AVH $-0.05$, 95\% $[-1.32,+0.91]$. MH against AVH's trajectory gives $+0.05$, 95\% $[-0.67,+0.84]$. Mechanism gates met: $520$ MH prefixes, contrasts in $61\%$. Neither arm reaches the $+1.5$ gain gate; no candidate, method dropped.\\
+9--11 & NSR vs PSR on OLMo and Qwen; noise injection; temperature & Average equivalence; noise reproduces NSR's early lag; temperature sweep $-1.42$ [$-2.19$, $-0.68$] (90\%)\\
+12, 14 & Coverage-weighted and base-seeded replay & $+1.19$ and $+1.02$: below the $+2$ threshold\\
+16 (check) & Answer budget & Warm-start gain $+4.77\to+2.15$: largely a budget effect\\
+17 & Frozen per-problem law & RMSE criterion met on three test sets; fails after the warm start\\
+18 & Rollout allocation (AC, AV, HORA) & No rule met; AC forecast not confirmed\\
+19 & Human-solution warm starts & Rule 1 not interpretable (no overlap)\\
+20 & 7B at 2,048 tokens & Three of four contrasts equivalent; one not interpreted\\
+21 & 1.5B at 1,024 tokens & All four contrasts equivalent\\
+22 & Human vs self prefix guidance & Human prefixes on the curve; matched-problem contrast not interpreted\\
+23 & Minimum-help credit (pilot) & Not selected\\
+26 & Shared-direction diagnostics; OD, PW, TD, RTD pilots & Shared-direction criterion not met; no pilot selected\\
+27 & 1,000-step training & Not supported for either learning rate\\
+28 & Public checkpoints; forced answer & No upward departure from the law (\cref{app:public})\\
+29--31 & 72B teacher at 7B; start change with frozen forecasts; Flat-RLVR & \pending{running}\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Pre-registration 12's nominal second-half confirmation set cannot provide independent confirmation: those 256 problems had already been used for branch selection in Pre-registration 11. Interim results from Pre-registration 12's seeds 9 and 10 were visible when Pre-registration 14 was declared. In the Pre-registration 12 bootstrap, endpoint clamping occurred for 0 of 18,000 coverage-weighted replay points, 35 of 18,000 uniform-replay points, and 267 of 18,000 unlikeliness points. These intervals cover problem sampling conditional on the observed training seeds.
-
-\section{Label audit}\label{app:labels}
-The 511-problem Qwen evaluation set used audited answer keys. In the OLMo analysis, excluding one audit-rejected problem did not change any registered verdict.
+\section{Public checkpoints}\label{app:public}
+Residual of pass@16 against the frozen law at the checkpoint's pass@1 (points; truncation in parentheses). \pending{Registered verdicts with 2,000-draw intervals and Holm correction.}
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Checkpoint & 1.5B, 1,024 & 1.5B, 3,072 & 7B, 2,048\\
+\midrule
+Oat-Zero (Dr.\ GRPO paper) & $-0.88$ (11\%) & $+0.22$ (1\%) & $-1.07$ (1\%)\\
+Our Dr.\ GRPO, step 150 & $-1.6$ & -- & $-0.1$\\
+SimpleRL-Zoo / -Zero & -- & -- & $-0.91$ (3\%) / $-7.59$ (28\%)\\
+RLHFlow GRPO / DAPO / RAFT++ & $-1.72$ / $-0.99$ & $-0.83$ / $-0.24$ & -- / -- / $-0.46$\\
+One-shot RLVR (1 example / 7.5k) & $-3.83$ (33\%) / $-1.01$ & $-3.10$ / $-0.97$ & $+0.33$ / --\\
+RLVR / RELEX (rank-1 extrapolation) & $-0.12$ / $+0.64$ & $-0.80$ / $-0.66$ & --\\
+Zero-Solver; base GRPO & $-1.49$; $+0.89$ & $-0.52$; $+0.70$ & --\\
+ExGRPO (replay) & $-2.81$ (30\%) & $+0.45$ & $-0.29$\\
+LUFFY (stronger-model traces) / on-policy baseline & $-4.63$ (49\%) & $+0.72$ & $-1.01$ / $-0.90$\\
+ReLIFT (interleaved SFT) & $-3.28$ (52\%) & $-1.57$ & $-1.73$\\
+ExGRPO from LUFFY & -- & -- & $+0.34$\\
+Correct / random reward (rethink RLVR) & -- & -- & $-1.39$ / $+0.08$\\
+RePO / its GRPO control (DeepMath) & protocol failure & protocol failure & $-0.07$ / $+0.28$\\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \end{document}

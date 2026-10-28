@@ -22,8 +22,8 @@ import numpy as np
 N = 32
 
 
-def passk(c, k):
-    return float(np.mean([1 - comb(N - int(x), k) / comb(N, k) for x in c]))
+def passk(c, k, n=N):
+    return float(np.mean([1 - comb(n - int(x), k) / comb(n, k) for x in c]))
 
 
 def load(pattern):
@@ -35,13 +35,13 @@ def load(pattern):
     return out
 
 
-def base_curve(c0):
-    ks = np.arange(1, N + 1)
-    vals = np.array([passk(c0, k) for k in ks])
+def base_curve(c0, n0=N):
+    ks = np.unique(np.round(np.geomspace(1, n0, 64)).astype(int))
+    vals = np.array([passk(c0, int(k), n0) for k in ks])
     lk = np.log(ks)
 
     def at(n):
-        return float(np.interp(np.log(n), lk, vals)) if 1 <= n <= N else None
+        return float(np.interp(np.log(n), lk, vals)) if 1 <= n <= n0 else None
 
     def inv(p):  # smallest N with base pass@N = p (the base curve is increasing)
         return float(np.exp(np.interp(p, vals, lk))) if vals[0] <= p <= vals[-1] else None
@@ -51,10 +51,16 @@ def base_curve(c0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--setting", default="1k", choices=("1k",))
+    ap.add_argument("--base256", action="store_true", help="base curve from the 256-sample base evaluation (P28)")
     a = ap.parse_args()
     res = load("results/worth-v15v-all-*/*/eval/step*_T*_eval.json")
     c0 = res[("BASE15", 0, 1.0)]
-    at, inv = base_curve(c0)
+    if a.base256:
+        import glob as _g
+        cb = np.array(json.loads(open(_g.glob("results/worth-p28-public-*/BASE15n256/eval/step0_T1.00_eval.json")[0]).read())["counts"])
+        at, inv = base_curve(cb, 256)
+    else:
+        at, inv = base_curve(c0)
     fit = {k: v for k, v in res.items() if re.fullmatch(r"B1k(8|9|10)", k[0])}
     held = {k: v for k, v in res.items() if not re.fullmatch(r"B1k(8|9|10)|BASE15(val)?", k[0]) and not k[0].endswith("val")}
     pts = sorted([(passk(c0, 1), passk(c0, 16))] + [(passk(c, 1), passk(c, 16)) for c in fit.values()])
@@ -77,7 +83,7 @@ def main():
     betas = np.linspace(0.05, 2.0, 391)
     losses = [loss(b)[0] for b in betas]
     beta = float(betas[int(np.argmin(losses))])
-    print(f"setting {a.setting}: base pass@1 {100 * passk(c0, 1):.2f}, pass@16 {100 * passk(c0, 16):.2f}, pass@32 {100 * passk(c0, 32):.2f}")
+    print(f"setting {a.setting}{' (base curve: 256 samples)' if a.base256 else ''}: base pass@1 {100 * passk(c0, 1):.2f}, pass@16 {100 * passk(c0, 16):.2f}, pass@32 {100 * passk(c0, 32):.2f}")
     print(f"BOPTR beta fitted on {len(fit)} Dr. GRPO evaluations: {beta:.3f} (fit RMSE {100 * np.sqrt(min(losses)):.2f} pp over k = 2-16)")
     rows = []
     for (name, step, t), c in sorted(held.items()):
