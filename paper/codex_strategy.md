@@ -1,0 +1,41 @@
+1. **I would pursue (1), do (2) now, and move a small version of (3) into the main paper.** This is the strongest next direction, but “targeted SFT improves subsequent RL” would be incremental.
+
+   The crucial framing correction: your law predicts **pass@k conditional on the eventual pass@1**. It does not predict the RL endpoint or compute required to reach it. Call it a predictor of the *post-RL accuracy–coverage curve* unless you add an independently validated endpoint predictor. [law.py](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/law.py:1)
+
+   An excellent paper would prospectively use the frozen law to choose an initialization, predict a substantial curve shift, and verify it across seeds and an independent model family. Its community value would be a cheap, reliable training decision tool with stated failure conditions.
+
+   Your P28 residuals, −0.9 and −1.1 points, are encouraging external checks. However, the existing 7B aggregate fit conceals **+7 to +23-point errors on base-zero problems**. Resolving this is essential before claiming that the per-problem mechanism explains the frontier. [Current results](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:719)
+
+2. **Novelty risk is substantial, especially for initialization selection and RL-readiness prediction.**
+
+   | Prior work | Overlap with your proposal |
+   |---|---|
+   | **TailSFT** | Filters already-fit SFT sequences to improve coverage; verifies that the resulting checkpoints produce better GRPO outcomes. This is the most direct intervention overlap. ([arxiv.org](https://arxiv.org/abs/2608.25756)) |
+   | **OctoThinker** | Studies how mid-training data, reasoning traces, formatting, and scale affect downstream RL; explicitly targets RL-compatible starting models. ([arxiv.org](https://arxiv.org/html/2506.20512)) |
+   | **On the Interplay of Pre-Training, Mid-Training, and RL** | Controlled causal experiments across training stages; mid-training improves reasoning under fixed compute. Its setting is synthetic reasoning. ([arxiv.org](https://arxiv.org/abs/2512.07783)) |
+   | **Quagmires in SFT-RL Post-Training** | Predicts subsequent RL performance using pre-RL pass@large-k and held-out reasoning loss; shows starting pass@1 can mislead. ([arxiv.org](https://arxiv.org/abs/2510.01624)) |
+   | **BOPTR** | Predicts RL operating curves from base decoding/search, including settings without a target-model RL checkpoint or any RL supervision; tests multiple families. ([arxiv.org](https://arxiv.org/abs/2609.01274)) |
+
+   The clearest remaining contribution is **a quantitatively accurate, prospectively frozen law that survives controlled changes to initialization and improves a practical selection decision**. “Changing the start changes RL” and “base diagnostics predict RL” are already established research directions.
+
+   Compare against base pass@1, pass@64, held-out solution loss, and full BOPTR at comparable diagnostic cost. Your current single-decoder, 32-sample comparison is explicitly restricted and mostly unscorable; it cannot establish superiority over published BOPTR. [Baseline limitations](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/BOPTR_BASELINE.md:8)
+
+3. **Design (1) around a falsifiable prediction, with SFT as the intervention.**
+
+   **Targets.** Generate one common pool of verified teacher solutions on training problems only. Compare random selection, rare-success problems, and confidently wrong problems. Define “confidently wrong” behaviorally: frequent finished answers concentrated on the same incorrect answer—not token confidence. Keep unfinished problems separate. Top up sampling for candidate hard problems: 0/32 successes does not establish impossibility. Match teacher quality, topic mix, and response length across selections; audit reasoning traces because correct final answers alone do not verify the reasoning.
+
+   **Doses and controls.** Screen approximately **0.5M, 2M, and 8M response tokens**, reporting unique examples and repetitions. Include no SFT, random SFT, targeted SFT, and TailSFT using the same teacher pool. Expand the pool rather than obtaining every larger dose through repetition. Screen cheaply with SFT and validation diagnostics; advance only a few starts to replicated RL. Your earlier 2.46M-token warm-start experiment makes dose and trajectory overlap particularly important. [Earlier warm starts](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:694)
+
+   **Decisive test.** Before RL, freeze the dynamics, prior-estimation procedure, evaluation protocol, and predictions at several common pass@1 targets. Select a contrast with a predicted meaningful separation—say ≥2 points on a validation curve. Run the same RL recipe from each start. Test whether the **observed difference between curves matches the predicted difference**, including pass@64 and difficulty strata, with uncertainty from problems, base sampling, and training seeds. A small residual when the predicted intervention effect is nearly zero is weak evidence. Lack of common pass@1 support is inconclusive.
+
+   **Practical outcome.** Also report final performance at equal RL-generated tokens and equal *total* teacher/SFT/RL compute. These answer whether the initialization is useful; the current law alone does not predict them.
+
+   **Main confounds.** SFT can improve finishing, shorten answers, change formatting, narrow diversity, or memorize related problems. Measure these explicitly, repeat at a budget with little truncation, and deduplicate train/validation/test. Changed law inputs are expected; interpreting a length-induced change as new reasoning capability is the danger.
+
+   **Cost at 1.5B.** Four starts × three seeds × 150 steps gives 230,400 rollouts, capped at roughly 236M response tokens at 1,024 tokens. Using P26 as a planning anchor, budget approximately **100–150 L40S-hours plus teacher generation and SFT**. Reserve longer runs for the decisive pair: your P27 estimate for two 1,000-step runs is 12–15 hours on eight A100s, including evaluation. These are project estimates, not measured costs for this design. [P26](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_26.md:117), [P27](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_27.md:67)
+
+4. **The more interesting underlying question is whether the starting success profile is sufficient to predict subsequent RL.** Construct starts with similar estimated per-problem success profiles but different reasoning behaviors or training histories. If they diverge beyond the frozen predictions, you have identified missing state. Behavior Injection provides a relevant alternative: RL readiness depends on rollout accuracy and cross-example co-influence. ([arxiv.org](https://arxiv.org/html/2505.18917v2))
+
+   For (2), evaluate long-CoT checkpoints against forecasts from their **actual initialization**, with matched prompts and sufficiently long budgets. ProRL and DeepScaleR descend from R1-distilled models; BroRL continues a trained ProRL checkpoint. Coverage improvement over a base does not itself establish departure from your matched-pass@1 curve. Track ancestry and truncation carefully. Also, DeepScaleR trained on Omni-MATH, so a newly selected Omni-MATH subset is not automatically held out. ([huggingface.co](https://huggingface.co/agentica-org/DeepScaleR-1.5B-Preview), [huggingface.co](https://huggingface.co/nvidia/Nemotron-Research-Reasoning-Qwen-1.5B), [arxiv.org](https://arxiv.org/abs/2505.24864), [arxiv.org](https://arxiv.org/abs/2510.01180))
+
+   I would avoid scratch pre-training for this paper. Earlier injection of reasoning data already has substantial prior work, including Front-Loading Reasoning. Spend the next compute on **controlled initialization changes and attempts to falsify the law**; either accurate intervention forecasts or a reproducible failure revealing the missing variable could make the paper substantially stronger. ([proceedings.iclr.cc](https://proceedings.iclr.cc/paper_files/paper/2026/hash/82eac7050fb44b662062ac64aa6637c3-Abstract-Conference.html))
