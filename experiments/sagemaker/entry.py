@@ -111,6 +111,8 @@ def fetch_hub_model(model_id, tokenizer_dir, tag, revision=None):
     checking that its vocabulary and added tokens are identical to ours and fit its embedding table, its tokenizer
     files (and chat template) are replaced by those of `tokenizer_dir`, so every model sees the identical prompt."""
     dest = Path("/opt/ml/hub") / tag
+    if (dest / ".complete").exists():  # a shared download ("hub_tag") from an earlier step of this lane
+        return dest
     shutil.rmtree(dest, ignore_errors=True)
     hub_download(model_id, dest, ["*.json", "*.safetensors", "*.txt", "*.jinja"], revision)
     mine, theirs = vocab_of(tokenizer_dir), vocab_of(dest)
@@ -125,6 +127,7 @@ def fetch_hub_model(model_id, tokenizer_dir, tag, revision=None):
         (dest / f).unlink(missing_ok=True)
         if (Path(tokenizer_dir) / f).exists():
             shutil.copy(Path(tokenizer_dir) / f, dest / f)
+    (dest / ".complete").write_text(model_id + "@" + (revision or ""))
     return dest
 
 
@@ -203,12 +206,13 @@ def run_plan(plan):
                     hub_dir = None
                     if spec.get("hub_model"):  # a public checkpoint, evaluated as "step 0" under our prompt
                         tok_src = hub_tokenizer(spec["tokenizer_from"]) if spec.get("tokenizer_from") else Path(local[1])
-                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src, f"{spec['name']}__lane{lane}", spec.get("revision"))
+                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src, spec.get("hub_tag") or f"{spec['name']}__lane{lane}",
+                                                  spec.get("revision"))
                         base = ["--base", str(hub_dir)]
                     engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                     cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
                     run_one(key, cmd, gpu, status, isolated=spec.get("engine") == "vllm")
-                    if hub_dir is not None:
+                    if hub_dir is not None and not spec.get("keep_hub"):
                         shutil.rmtree(hub_dir, ignore_errors=True)  # disk: one public checkpoint per lane at a time
                 else:
                     raise ValueError(f"unknown step kind {spec['kind']}")

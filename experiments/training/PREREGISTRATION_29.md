@@ -74,3 +74,7 @@ initialization with "custom_all_reduce.cuh: invalid argument"; the first failure
 all-reduce needs CUDA IPC, unavailable in SageMaker containers). eval_vllm.py now disables it for tensor parallelism
 (NCCL all-reduce, same numerics up to reduction order); third launch worth-p29a3-teacher-s0-20261028-184900. Lost time
 about 9 + 10 minutes of one machine (about $10).
+Second addendum: the third launch generated for about 15 minutes, then failed with "CUDA error: an illegal memory
+access" in the tensor-parallel-8 engine (no samples written). Fourth launch: CUDA graphs disabled (enforce_eager) and
+the 3,920 problems in four sequential parts sharing one download, so a failure loses at most one part; per-problem
+sampling seeds unchanged.

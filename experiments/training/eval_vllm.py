@@ -91,7 +91,9 @@ def evaluate(job):
               max_model_len=room, enable_prefix_caching=a["prefix_caching"], tensor_parallel_size=a.get("tp", 1),
               # vLLM's custom all-reduce needs CUDA IPC between GPUs, which SageMaker containers do not allow
               # ("custom_all_reduce.cuh: invalid argument"); NCCL all-reduce is used instead
-              disable_custom_all_reduce=a.get("tp", 1) > 1)
+              disable_custom_all_reduce=a.get("tp", 1) > 1,
+              # CUDA graphs with NCCL collectives raised "illegal memory access" at tensor parallelism 8 on SageMaker
+              enforce_eager=a.get("enforce_eager", False))
 
     def decode(o):
         """eval_ckpt.py's accounting on the generated token ids: cut after the first stop token, decode without
@@ -202,6 +204,7 @@ def main():
     ap.add_argument("--temperatures", default="")
     ap.add_argument("--base-temperatures", default="")
     ap.add_argument("--tp", type=int, default=1, help="tensor-parallel GPUs (large models)")
+    ap.add_argument("--enforce-eager", action="store_true", help="no CUDA graphs (stability with tensor parallelism)")
     ap.add_argument("--identity", default="", help="model identity (e.g. repo@revision), part of the resume fingerprint")
     ap.add_argument("--force-answer", type=int, default=0, help="also score samples without a final box after a forced "
                     "answer of this many greedy tokens (0: off)")
@@ -227,7 +230,7 @@ def main():
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
     shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out",
-                                            "force_answer", "tp")}
+                                            "force_answer", "tp", "enforce_eager")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
