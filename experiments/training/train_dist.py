@@ -111,6 +111,27 @@ def allocation(args, c1):
     return allocate_extra([value(c) for c in c1], left, args.alloc_cap - n0)
 
 
+def teacher_bank(args, tok, problems):
+    """Teacher solutions (Pre-registration 29): question -> (prompt_ids, response_ids), the first of each problem's
+    listed responses that survives Pre-registration 14's canonicalization (retokenized without special tokens, at most
+    max_new - 1 tokens, verifies, has a final box; the stop token appended)."""
+    path = Path(args.teacher_archive) if Path(args.teacher_archive).exists() else HERE / "data" / args.teacher_archive
+    recs = {d["question"]: d for d in json.loads(path.read_text())}
+    stops = stop_token_ids(tok)
+    im_end = tok.convert_tokens_to_ids("<|im_end|>")
+    stop = im_end if isinstance(im_end, int) and im_end in stops else stops[0]
+    bank = {}
+    for q in problems:
+        d = recs.get(q["question"])
+        for resp in (d.get("responses") or ([d["response"]] if d.get("response") else [])) if d else []:
+            ids = tok(resp, add_special_tokens=False).input_ids
+            text = tok.decode(ids, skip_special_tokens=True)
+            if len(ids) <= args.max_new - 1 and reward(text, q["answer"]) and last_boxed(text) is not None:
+                bank[q["question"]] = (torch.tensor(tok(build_prompt(tok, q["question"])).input_ids), torch.tensor(ids + [stop]))
+                break
+    return bank
+
+
 def deal(live, lengths, world):
     """Deal the live items to ranks: longest first, snake order (counts differ by at most one)."""
     order = sorted(live, key=lambda k: -lengths[k])
@@ -135,6 +156,10 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
     norm = args.prompts_per_step * args.group * args.max_new
     save_steps = {int(s) for s in args.save_steps.split(",") if s}
     pps, G, log = args.prompts_per_step, args.group, []
+    bank = teacher_bank(args, tok, problems) if args.teacher_archive else None
+    if bank is not None and rank == 0:
+        print(f"[{arm}] teacher solutions for {len(bank)} of {len(problems)} problems (lambda {args.teacher_lambda}, "
+              f"groups with at most {args.teacher_max_success} successes)", flush=True)
     dummy = (torch.tensor([pol.pad_id], device=dev), torch.tensor([pol.pad_id], device=dev))
     for step in range(args.steps + 1):
         if step in save_steps:
@@ -176,14 +201,25 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
             for s, r in enumerate(g):
                 adv[(j, s)] = scale * fixed_advantage(arm, r, m, args.w, args.pos_weight, args.shift, n_j, args.train_k)
             groups.append([sum(g), n_j])
+        t_items = {}
+        if bank is not None:
+            # teacher term: -lambda log pi(y_T | x) / norm for the step's problems with a teacher solution whose group
+            # has at most teacher_max_success successes; item (j, -1), dealt and microbatched like an answer
+            for j, q in enumerate(batch):
+                if q["question"] in bank and groups[j][0] <= args.teacher_max_success:
+                    t_items[(j, -1)] = bank[q["question"]]
+                    adv[(j, -1)] = args.teacher_lambda
+            extra["teacher"] = {"solutions": len(t_items), "tokens": sum(len(v[1]) for v in t_items.values())}
         live = sorted(k for k, a in adv.items() if a != 0)
         lengths = {k: stats[k][1] for k in stats}
+        lengths.update({k: len(v[1]) for k, v in t_items.items()})
         plan = deal(live, lengths, world)
         # Move the token ids of the live answers to the ranks that will run their backward passes.
         send = [{k: seqs[k] for k in plan[d] if k in seqs} for d in range(world)]
         own = {}
         for part in gather(send, world):
             own.update(part[rank])
+        own.update({k: t_items[k] for k in plan[rank] if k in t_items})  # every rank holds the teacher bank
         assert set(own) == set(plan[rank]), "every live answer must reach its rank"
         if args.offload_gen:  # 48 GB GPUs: the generation copy waits in host memory during the update
             gen_model.to("cpu")
@@ -264,6 +300,10 @@ def main():
     ap.add_argument("--alloc-lambda", type=float, default=0.37)
     ap.add_argument("--alloc-norm", default="global", choices=("global", "group"))
     ap.add_argument("--coverage-k", type=int, default=16)
+    ap.add_argument("--teacher-archive", default="", help="teacher solutions (discovery format) for teacher distillation")
+    ap.add_argument("--teacher-lambda", type=float, default=1.0)
+    ap.add_argument("--teacher-max-success", type=int, default=8, help="use a teacher solution only when the problem's "
+                    "group has at most this many successes")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()  # unsupported train_grpo.py options are errors, not silently ignored
@@ -276,6 +316,8 @@ def main():
     arms = args.arms.split(",")
     assert "scaled" not in arms or args.w is not None, "the scaled arm needs an explicit --w"
     assert not (args.alloc_first > 0 and "passk" in arms), "passk advantages need fixed groups larger than train_k"
+    assert not args.teacher_archive or (arms == ["baseline"] and args.alloc_first == 0 and args.teacher_lambda > 0), \
+        "teacher distillation is implemented for plain Dr. GRPO"
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = Path(args.train) if Path(args.train).exists() else HERE / "data" / args.train

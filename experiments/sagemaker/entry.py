@@ -152,25 +152,38 @@ def run_plan(plan):
         # earlier step of this job ("live": a path under /opt/ml/checkpoints); output /opt/ml/checkpoints/<name>/eval.
         LIVE.mkdir(parents=True, exist_ok=True)
 
-        def mixed_lane(gpu, steps):
+        def mixed_lane(lane, lane_spec):
+            # a lane is a list of steps on one GPU, or {"gpus": [...], "steps": [...]} for steps that use several
+            if isinstance(lane_spec, dict):
+                gpu, steps = ",".join(str(g) for g in lane_spec["gpus"]), lane_spec["steps"]
+            else:
+                gpu, steps = str(lane), lane_spec
+            run_lane(lane, gpu, steps)
+
+        def run_lane(lane, gpu, steps):
             blocked = False  # set when a step that later steps may depend on fails ("independent" steps never block)
             for spec in steps:
-                key = f"{spec['name']}#{spec['kind']}#{spec.get('part', 0)}#lane{gpu}"
+                key = f"{spec['name']}#{spec['kind']}#{spec.get('part', 0)}#lane{lane}"
                 if blocked:
                     status[key] = "skipped"
-                    print(f"[{key}] skipped (an earlier step of lane {gpu} failed)", flush=True)
+                    print(f"[{key}] skipped (an earlier step of lane {lane} failed)", flush=True)
                     continue
                 try:
-                    run_step(spec, key, gpu)
+                    run_step(spec, key, gpu, lane)
                 except (Exception, SystemExit) as e:  # e.g. a refused tokenizer: record it, keep the lane going
                     status[key] = f"failed: {e!r}"
                     print(f"[{key}] failed: {e!r}", flush=True)
                 if status.get(key) != 0 and not spec.get("independent"):
                     blocked = True
 
-        def run_step(spec, key, gpu):
+        def run_step(spec, key, gpu, lane):
             if True:
-                if spec["kind"] == "train":
+                if spec["kind"] == "torchrun":  # a multi-GPU run over the lane's GPUs
+                    n = len(gpu.split(","))
+                    cmd = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc-per-node={n}",
+                           str(HERE / "training" / spec["script"]), *spec["args"], "--out", str(LIVE / spec["name"]), *local]
+                    run_one(key, cmd, gpu, status)
+                elif spec["kind"] == "train":
                     cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(LIVE / spec["name"]),
                            *plan["common"], *spec["args"], *local]
                     run_one(key, cmd, gpu, status)
@@ -186,7 +199,7 @@ def run_plan(plan):
                     hub_dir = None
                     if spec.get("hub_model"):  # a public checkpoint, evaluated as "step 0" under our prompt
                         tok_src = hub_tokenizer(spec["tokenizer_from"]) if spec.get("tokenizer_from") else Path(local[1])
-                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src, f"{spec['name']}__lane{gpu}", spec.get("revision"))
+                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src, f"{spec['name']}__lane{lane}", spec.get("revision"))
                         base = ["--base", str(hub_dir)]
                     engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                     cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
@@ -202,7 +215,7 @@ def run_plan(plan):
             except Exception as e:
                 status[f"lane{g}"] = f"exception: {e!r}"
                 print(f"lane {g} exception: {e!r}", flush=True)
-        threads = [threading.Thread(target=guarded_mixed, args=(g, steps)) for g, steps in enumerate(plan["lanes"])]
+        threads = [threading.Thread(target=guarded_mixed, args=(g, lane)) for g, lane in enumerate(plan["lanes"])]
         for t in threads:
             t.start()
         for t in threads:

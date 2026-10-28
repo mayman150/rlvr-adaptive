@@ -1,0 +1,46 @@
+# Pre-registration 29: teacher distillation at 7B with a 72B teacher (TD7)
+
+Declared October 28, 2026, before any run of this design; reviewed by Codex before launch.
+
+## Why
+
+Every tested correctness-only intervention lies on Dr. GRPO's matched-pass@1 curve at 1.5B and 7B. Teacher
+distillation (TD, Pre-registration 26) is the one tested idea that adds information the policy lacks; at 1.5B with a
+7B teacher, one solution per base-rare problem visit, it gave +0.31 [-1.05, +1.35] (one seed, not selected). The
+literature reports that distillation, unlike RLVR, can add reasoning patterns (Yue et al. 2504.13837). This tests TD
+at 7B with a much stronger teacher, as the user requested ("try the best idea at the larger model").
+
+## Step 1: teacher solutions (job P29a)
+
+Teacher: Qwen/Qwen2.5-Math-72B-Instruct (Hub revision pinned in the plan), vLLM with tensor parallelism over 4 A100,
+our prompt (the 1.5B tokenizer and chat template substituted after the vocabulary check of Pre-registration 28),
+T = 1, 4 samples, 2,048 tokens, on all 3,920 training problems (two shards). Archive: every training problem with its
+verified samples in sample order (`make_teacher.py --max-c 32`); the trainer keeps the first that survives
+canonicalization (Pre-registration 14: retokenized, at most 2,047 tokens, verifies, final box). Reported: coverage
+(problems with at least one verified solution), by the 1.5B base count. The same job runs a 3-step smoke test of the
+multi-GPU teacher term at 1.5B (train_dist.py, 4 GPUs, the 1.5B teacher archive) before any 7B run.
+
+## Step 2: training (job P29b)
+
+- **TD7:** Dr. GRPO on Qwen2.5-Math-7B with Pre-registration 20's recipe (train_dist.py, FSDP2, 4 A100 per run, fp32
+  weights with bf16 autocast, 16 problems x 8 answers, 2,048 tokens, AdamW 1e-6, 150 steps, constant normalizer
+  16 x 8 x 2,048, the same data order per seed), plus, for each of the step's problems that has a teacher solution and
+  whose group has at most 2 successes of 8, the gradient of -lambda log pi(y_T | x) / normalizer with lambda = 1 (a
+  teacher solution counts as one answer with advantage 1). Seeds 8 and 9 (in parallel on one machine).
+- **Reference:** B7 seeds 8 and 9 (Pre-registration 20; vLLM evaluations; trajectory steps 0, 25, 50, 100, 150 and the
+  step-150 temperature trajectory T = 1, 1.15, 1.3).
+
+## Evaluation and decision (Pre-registration 21's estimator and guards; 511 test problems, 32 samples, T = 1, 2,048 tokens)
+
+Checkpoints 50, 100, 150 of TD7 (evaluated on the training machine after training).
+- **Moves the curve:** TD7 against B7's envelope, pooled gain >= +2, 95% interval above 0, positive in both seeds.
+- **Average equivalence:** 90% interval within +/-2 (pointwise).
+- Otherwise inconclusive. More than 10% clamped bootstrap points in a seed: not interpreted.
+Reported: step-150 pass@1 minus B7's; teacher solutions per step; pass@16 by base-count stratum (Pre-registration 20's
+7B base counts); truncation and length. A "moves" verdict triggers a confirmation on the fresh Omni-MATH set
+(Pre-registration 24's design) before any claim.
+
+## Cost (estimates)
+
+P29a: one 8 x A100 machine, about 1.5 hours (two 145 GB downloads, two tensor-parallel shards, smoke test): about $50.
+P29b: one machine, about 6.5 hours of training and 30 minutes of evaluation: about $220. Total about $270.
