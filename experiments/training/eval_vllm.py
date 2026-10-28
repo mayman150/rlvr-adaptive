@@ -22,6 +22,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 EVALUATOR = "eval_vllm v2"  # bump when the generation or accounting changes
+FORCE_SUFFIX = "\n\nFinal answer: \\boxed{"
 sys.path.insert(0, str(HERE))
 
 
@@ -81,10 +82,13 @@ def evaluate(job):
     longest = max([len(tok(t).input_ids) for t in texts + gtexts] or [0])
     from transformers import AutoConfig
     limit = getattr(AutoConfig.from_pretrained(job["path"]), "max_position_embeddings", 4096)
-    if longest + a["max_new"] > limit:
-        raise SystemExit(f"prompt {longest} + max_new {a['max_new']} exceeds the model's context {limit}")
+    force = a.get("force_answer", 0)
+    suffix = tok(FORCE_SUFFIX, add_special_tokens=False).input_ids if force else []
+    room = longest + a["max_new"] + (len(suffix) + force if force else 0)
+    if room > limit:
+        raise SystemExit(f"prompt {longest} + max_new {a['max_new']} (+ forced answer) exceeds the model's context {limit}")
     llm = LLM(model=job["path"], tokenizer=tok_dir, dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
-              max_model_len=longest + a["max_new"], enable_prefix_caching=a["prefix_caching"])
+              max_model_len=room, enable_prefix_caching=a["prefix_caching"])
 
     def decode(o):
         """eval_ckpt.py's accounting on the generated token ids: cut after the first stop token, decode without
@@ -107,13 +111,16 @@ def evaluate(job):
                               skip_special_tokens=True, detokenize=False)
                for i in range(len(texts))]
         gens = llm.generate(texts, sps)
-        outs, meta = [], []
+        outs, meta, raw = [], [], []
         for g in gens:
             assert len(g.outputs) == a["n"]
             for o in g.outputs:
                 text, length, ended = decode(o)
                 outs.append(text)
                 meta.append((length, ended))
+                ids = list(o.token_ids)
+                cut = next((i for i, t in enumerate(ids) if t in stop), None)
+                raw.append(ids[:cut] if cut is not None else [t for t in ids if t != pad])
         res["mean_length_chars"] = sum(len(o) for o in outs) / len(outs)
         res["mean_length_tokens"] = sum(m[0] for m in meta) / len(meta)
         res["truncated_rate"] = sum(not m[1] for m in meta) / len(meta)
@@ -122,6 +129,23 @@ def evaluate(job):
         counts = [sum(correct[i * a["n"]:(i + 1) * a["n"]]) for i in range(len(problems))]
         ks = [k for k in (1, 2, 4, 8, 16, 32, 64, 128, 256) if k <= a["n"]]
         res.update({"counts": counts, "pass_at_k": {k: sum(pass_at_k(a["n"], c, k) for c in counts) / len(counts) for k in ks}})
+        if force:
+            # forced answer (Pre-registration 28): every sample without a final box (truncated, or ended without one)
+            # is continued greedily for `force` tokens after FORCE_SUFFIX, then scored by the same verifier
+            from vllm.inputs import TokensPrompt
+            pids = [tok(t).input_ids for t in texts]
+            todo = [k for k, o in enumerate(outs) if last_boxed(o) is None]
+            spf = SamplingParams(n=1, temperature=0.0, max_tokens=force, stop_token_ids=stop, ignore_eos=True,
+                                 skip_special_tokens=True, detokenize=False)
+            conts = llm.generate([TokensPrompt(prompt_token_ids=pids[k // a["n"]] + raw[k] + suffix) for k in todo], spf)
+            fouts = list(outs)
+            for k, g in zip(todo, conts):
+                fouts[k] = tok.decode(raw[k] + suffix + list(g.outputs[0].token_ids), skip_special_tokens=True)
+            fcorrect = [reward(o, problems[i // a["n"]]["answer"]) for i, o in enumerate(fouts)]
+            fcounts = [sum(fcorrect[i * a["n"]:(i + 1) * a["n"]]) for i in range(len(problems))]
+            res["forced"] = {"tokens": force, "suffix": FORCE_SUFFIX, "forced_samples": len(todo),
+                             "newly_right": sum(fcorrect[k] for k in todo), "counts": fcounts,
+                             "pass_at_k": {k: sum(pass_at_k(a["n"], c, k) for c in fcounts) / len(fcounts) for k in ks}}
         with gzip.open(Path(a["out"]) / f"{job['tag']}_texts.json.gz", "wt") as fh:
             json.dump({"step": job["tag"], "n": a["n"], "problems": [{"question": q["question"], "answer": q["answer"]} for q in problems],
                        "samples": [{"problem": i // a["n"], "text": o, "reward": c} for i, (o, c) in enumerate(zip(outs, correct))]}, fh)
@@ -161,6 +185,8 @@ def main():
     ap.add_argument("--expect-steps", default="")
     ap.add_argument("--temperatures", default="")
     ap.add_argument("--base-temperatures", default="")
+    ap.add_argument("--force-answer", type=int, default=0, help="also score samples without a final box after a forced "
+                    "answer of this many greedy tokens (0: off)")
     args = ap.parse_args()
     if args.worker:
         evaluate(json.loads(Path(args.worker).read_text()))
@@ -182,7 +208,8 @@ def main():
         raise SystemExit(f"missing checkpoints for steps {sorted(expected - {s for _, _, s in jobs})} under {args.ckpts}")
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
-    shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out")}
+    shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out",
+                                            "force_answer")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
@@ -191,6 +218,8 @@ def main():
             full = tag if t is None else f"{tag}_T{t:.2f}"
             done = out_dir / f"{full}_eval.json"
             fingerprint = {k: shared[k] for k in ("problems", "limit", "offset", "n", "max_new", "seed")}
+            if shared["force_answer"]:
+                fingerprint["force_answer"] = shared["force_answer"]
             if done.exists():
                 old = json.loads(done.read_text())
                 if old.get("fingerprint") == fingerprint and old.get("evaluator") == EVALUATOR:

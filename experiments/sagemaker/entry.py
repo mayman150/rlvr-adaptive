@@ -75,6 +75,40 @@ def run_one(name, cmd, gpu, status, isolated=False):
     print(f"[{name}] exit {status[name]}", flush=True)
 
 
+TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "special_tokens_map.json",
+                   "added_tokens.json", "chat_template.jinja", "chat_template.json")
+_hub_lock = threading.Lock()
+
+
+def hub_download(model_id, dest, patterns):
+    """snapshot_download in a subprocess with Hub access (HF_HUB_OFFLINE is set for the local model channel and is read
+    at import time). No remote code is fetched."""
+    env = {k: v for k, v in os.environ.items() if k != "HF_HUB_OFFLINE"}
+    code = ("import sys; from huggingface_hub import snapshot_download; "
+            "snapshot_download(sys.argv[1], local_dir=sys.argv[2], allow_patterns=sys.argv[3].split(','))")
+    subprocess.run([sys.executable, "-c", code, model_id, str(dest), ",".join(patterns)], env=env, check=True)
+
+
+def fetch_hub_model(model_id, tokenizer_dir):
+    """A public checkpoint for evaluation under our prompt: weights and config from the Hub; tokenizer files (and chat
+    template) replaced by those of `tokenizer_dir`, so every model sees the identical prompt."""
+    dest = Path("/opt/ml/hub") / model_id.replace("/", "__")
+    hub_download(model_id, dest, ["*.json", "*.safetensors", "*.txt", "*.jinja"])
+    for f in TOKENIZER_FILES:
+        (dest / f).unlink(missing_ok=True)
+        if (Path(tokenizer_dir) / f).exists():
+            shutil.copy(Path(tokenizer_dir) / f, dest / f)
+    return dest
+
+
+def hub_tokenizer(model_id):
+    with _hub_lock:
+        dest = Path("/opt/ml/hub/tokenizers") / model_id.replace("/", "__")
+        if not (dest / "tokenizer_config.json").exists():
+            hub_download(model_id, dest, list(TOKENIZER_FILES))
+        return dest
+
+
 def run_plan(plan):
     local = local_model_args()
     if local:
@@ -114,11 +148,18 @@ def run_plan(plan):
                 elif spec["kind"] == "eval":
                     if spec.get("engine", "hf") not in ("hf", "vllm"):
                         raise ValueError(f"unknown engine {spec['engine']}")
-                    ckpts = LIVE / spec["live"] if spec.get("live") else CKPT_CHANNEL / spec["sub"]
+                    ckpts = LIVE / spec["live"] if spec.get("live") else CKPT_CHANNEL / spec["sub"] if spec.get("sub") else CKPT_CHANNEL / "none"
                     base = ["--base", local[1]] if spec.get("include_base") else []
+                    hub_dir = None
+                    if spec.get("hub_model"):  # a public checkpoint, evaluated as "step 0" under our prompt
+                        tok_src = hub_tokenizer(spec["tokenizer_from"]) if spec.get("tokenizer_from") else Path(local[1])
+                        hub_dir = fetch_hub_model(spec["hub_model"], tok_src)
+                        base = ["--base", str(hub_dir)]
                     engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
                     cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
                     run_one(key, cmd, gpu, status, isolated=spec.get("engine") == "vllm")
+                    if hub_dir is not None:
+                        shutil.rmtree(hub_dir, ignore_errors=True)  # disk: one public checkpoint per lane at a time
                 else:
                     raise ValueError(f"unknown step kind {spec['kind']}")
 
