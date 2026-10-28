@@ -67,6 +67,10 @@ def run_one(name, cmd, gpu, status, isolated=False):
     env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu)}
     if isolated:  # a separate virtual environment: do not let the container's site-packages shadow its own
         env = {**clean_env(), "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "CUDA_VISIBLE_DEVICES": str(gpu)}
+        # each vLLM engine gets its own port range (by its first GPU), so concurrent tensor-parallel engines on one
+        # machine cannot collide on their distributed-init ports
+        first = int(str(gpu).split(",")[0])
+        env["VLLM_PORT"] = str(31000 + 1000 * first)
     print(f"[{name}] gpu {gpu}: {' '.join(cmd)}", flush=True)
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     for line in proc.stdout:
