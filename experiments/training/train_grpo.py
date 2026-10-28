@@ -966,33 +966,51 @@ def centralize_grads(params):
 def sam_step(runner, args, answers, live, adv, norm, rewards, step):
     """Flat-RLVR (arXiv 2610.29281, Algorithm 1) on Dr. GRPO, at every sam_period-th step: centralize the gradient g;
     radius rho_t = rho_min + (rho_init - rho_min)(1 + cos(pi t / T)) / 2 (cosine annealing, B.3) times the batch success
-    rate to the power gamma (focal weight, B.1), floored at rho_floor; ascend by eps = rho g / ||g||; recompute the
-    gradient on the same answers; centralize it; restore the parameters. The optimizer then uses this gradient."""
-    params = runner.params
-    centralize_grads(params)
-    with torch.no_grad():
-        gn = torch.sqrt(sum((q.grad.float() ** 2).sum() for q in params if q.grad is not None))
-    t = step + 1
-    rho = args.sam_rho_min + 0.5 * (args.sam_rho_init - args.sam_rho_min) * (1 + math.cos(math.pi * t / args.steps))
-    success = sum(rewards) / len(rewards)
-    rho_eff = max(rho * success ** args.sam_gamma, args.sam_rho_floor)
-    if not (float(gn) > 0 and math.isfinite(float(gn))):
-        return {"applied": False}
-    eps = []
-    with torch.no_grad():
-        for q in params:
-            e = None if q.grad is None else q.grad * (rho_eff / gn)
-            if e is not None:
-                q.data.add_(e)
-            eps.append(e)
-    runner.model.zero_grad(set_to_none=True)
-    backward_weighted(runner, args, answers, live, adv, norm)
-    centralize_grads(params)
-    with torch.no_grad():
-        for q, e in zip(params, eps):
-            if e is not None:
-                q.data.sub_(e)
-    return {"applied": True, "rho": rho, "rho_eff": rho_eff, "batch_success": success, "grad_norm_before": float(gn)}
+    rate to the power gamma (focal weight, B.1), floored at rho_floor; ascend by eps = rho g / ||g||; at theta + eps the
+    gradient is that of the paper's surrogate with the policy frozen at theta (Eq. 2): -sum_k A_k sum_t
+    exp(log pi_t(theta + eps) - log pi_t(theta)) / norm (unclipped: the ratios stay near 1 for these radii; at theta it
+    equals the Dr. GRPO gradient); then centralize it and restore the cached perturbation. The optimizer uses it."""
+    with torch.enable_grad():
+        params = runner.params
+        centralize_grads(params)
+        with torch.no_grad():
+            gn = torch.sqrt(sum((q.grad.float() ** 2).sum() for q in params if q.grad is not None))
+            old = []  # per-token log-probabilities at theta (the frozen policy of the surrogate)
+            for s in range(0, len(live), args.train_batch):
+                old.extend(t.detach() for t in runner.token_logprobs([answers[k] for k in live[s:s + args.train_batch]]))
+        t = step + 1
+        rho = args.sam_rho_min + 0.5 * (args.sam_rho_init - args.sam_rho_min) * (1 + math.cos(math.pi * t / args.steps))
+        success = sum(rewards) / len(rewards)
+        rho_eff = max(rho * success ** args.sam_gamma, args.sam_rho_floor)
+        if not (float(gn) > 0 and math.isfinite(float(gn))):
+            return {"applied": False, "t": t}
+        eps = []
+        with torch.no_grad():
+            for q in params:
+                e = None if q.grad is None else q.grad * (rho_eff / gn)
+                if e is not None:
+                    q.data.add_(e)
+                eps.append(e)
+        ratio_max = 0.0
+        try:
+            runner.model.zero_grad(set_to_none=True)
+            for s in range(0, len(live), args.train_batch):
+                chunk = live[s:s + args.train_batch]
+                lps = runner.token_logprobs([answers[k] for k in chunk])
+                loss = 0.0
+                for k, lp, lo in zip(chunk, lps, old[s:s + len(chunk)]):
+                    r = torch.exp(lp - lo)
+                    ratio_max = max(ratio_max, float((r.detach() - 1).abs().max()))
+                    loss = loss - adv[k] * r.sum() / norm
+                loss.backward()
+            centralize_grads(params)
+        finally:  # the parameters are restored even if the second pass fails
+            with torch.no_grad():
+                for q, e in zip(params, eps):
+                    if e is not None:
+                        q.data.sub_(e)
+        return {"applied": True, "t": t, "rho": rho, "rho_eff": rho_eff, "batch_success": success,
+                "grad_norm_before": float(gn), "max_abs_ratio_minus_1": ratio_max}
 
 
 def problem_sketch_tables(runner, dim, seed=0):
