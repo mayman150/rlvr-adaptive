@@ -22,14 +22,14 @@
 
 \title{\textbf{Same Direction, Different Noise}\\[6pt]
 \large The full record of the project: the problem, the literature, every experiment\\ with its reason, design and result, the methods, and where we stand}
-\author{Mohamed Ayman\\\small Version 4, October 24, 2026}
+\author{Mohamed Ayman\\\small Version 5, October 28, 2026}
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent This document records the whole project for a reader who has not followed it: how language models are trained with reinforcement learning on verifiable rewards (RLVR), what the literature claims and where it has gaps, and every experiment we ran, each with its question, reason, pre-registered design, result and consequence. It covers an earlier idea (STOP) and why it was dropped; a theory of the mean and second moment of correctness-only updates; the measurements and tests that led to the main diagnosis (advantage rules trace one accuracy--diversity trajectory and differ in progress rate, with noise as a sufficient cause); the answer-key audit; the first method (coverage-weighted replay, about $+1.2$ points); the 2026 literature and what it changed; base-seeded replay and its controls; the answer-budget check; the matched-accuracy audit of 2026 methods; a pilot of mechanisms that push signal onto rarely solved problems; a transfer probe; a frozen per-problem model of the frontier and its limits; the long Dr.\ GRPO run, which shows that groups of 32 add speed rather than diversity; and the two experiments running now (rollout allocation by frontier value; external versus self-generated information). Appendices give every method's definition and settings and an experiment tracker.
+\noindent This document records the whole project for a reader who has not followed it: how language models are trained with reinforcement learning on verifiable rewards (RLVR), what the literature claims and where it has gaps, and every experiment we ran, each with its question, reason, pre-registered design, result and consequence. It covers an earlier idea (STOP) and why it was dropped; a theory of the mean and second moment of correctness-only updates; the measurements and tests that led to the main diagnosis (advantage rules trace one accuracy--diversity trajectory and differ in progress rate, with noise as a sufficient cause); the answer-key audit; the first method (coverage-weighted replay, about $+1.2$ points); the 2026 literature and what it changed; base-seeded replay and its controls; the answer-budget check; the matched-accuracy audit of 2026 methods; a pilot of mechanisms that push signal onto rarely solved problems; a transfer probe; a frozen per-problem model of the frontier and its limits; the long Dr.\ GRPO run, which shows that groups of 32 add speed rather than diversity; rollout allocation by frontier value and external human solutions (both on the curve). Version 5 adds the move to AWS and a vLLM evaluator; the 7B replication at 2,048 tokens and the 1.5B replication at 1,024 tokens; human-solution guidance inside RL and minimum-help credit (both on the curve); a test of the shared-update-direction explanation with four pilots that change the update's direction or add verified teacher solutions (none qualifies); an exploratory analysis showing that, at matched pass@1, methods solve nearly the same problems at nearly the same rates and that about a third of the gain is learning to finish answers; a restricted comparison with the budgeted-search law; and the two experiments running now (longer and stronger training; published checkpoints and a forced-answer test). Appendices give every method's definition and settings and an experiment tracker.
 \end{abstract}
 
 \begin{idea}{The idea in one paragraph}RLVR methods that change how sampled answers are scored are usually compared at equal training steps, where a method that progresses more slowly is less sharpened and so has higher pass@$k$. Compared instead at matched pass@1, the advantage rules we tested lie on one accuracy--diversity trajectory on two model families: each rule's expected update on a problem is a multiple of the gradient of its success probability, and the rules differ mainly in noise, which sets the progress rate. Because pass@$k$ at matched pass@1 measures how evenly success is spread across problems, moving the frontier needs signal on rarely solved problems, which a group of 8 rollouts rarely provides. Interventions that add the policy's or the base model's own samples mostly add speed; whether allocating rollouts by frontier value, or adding information the base model lacks, moves the frontier is what the current experiments decide.
@@ -675,52 +675,144 @@ Dr.\ GRPO seed 13 reaches (pass@1, pass@16) = (36.6, 72.0), (40.3, 71.1), (43.5,
 \end{figure}
 
 %=====================================================================
-\section{Allocating rollouts by frontier value (Pre-registration 18, running)}
+\section{Allocating rollouts by frontier value (Pre-registration 18)}
 \begin{why}
-A problem's own Dr.\ GRPO gradient contribution requires a mixed-reward group (\cref{lem:starve-story}); updates on other problems can still change its success probability. Allocating more rollouts increases the chance of observing a success on rarely solved problems. The frozen model forecasts three allocations of the same rollout budget.
+A problem's own Dr.\ GRPO gradient contribution requires a mixed-reward group (\cref{lem:starve-story}). Allocating more rollouts to rarely solved problems raises the chance of observing a success there; the frozen frontier model forecast that allocation by frontier value (AC) would move the curve by about $+4$ points.
 \end{why}
-\textbf{Arms} (seeds 8--10; 16 problems and exactly 128 rollouts per step): 4 pilot rollouts per problem, followed by 64 extras, with at most 32 rollouts per problem. AC allocates extras in proportion to $\max\{0,\E[p^2(1-p)^2(16(1-p)^{15}-\lambda)]\}$, with $\lambda=0.37$ from B's observed slope at steps 50--150. Only zero-success pilot groups have positive value. AV allocates by $\E[p(1-p)]$. HR adapts HORA's greedy posterior hit utility and per-problem normalization. Forecast means average matched pass@1 coordinates 0.37, 0.40 and 0.44: frozen model / deep-count variant, AC $+4.34$ / $+2.56$; HR $+0.15$ / $+0.07$; AV $-1.13$ / $-0.72$. AC against B's envelope requires a pooled gain $\ge+2$, a 95\% interval above 0 and positive gains in every seed. AC against AV and HR each requires $\ge+1$ with a 95\% interval above 0; Holm covers all three tests. A primary win triggers confirmation on 512 fresh problems. Forecast checks use only coordinates covered by both trajectories and a 1.5-point tolerance against the forecast mean at those same coordinates. Status: running.
-
-\section{External versus self-generated information (Pre-registration 19, running)}
-\begin{why}
-This experiment tests human-written solutions on problems with no observed base-model success. Absence of a success in 32 samples does not establish that the base model lacks the relevant information.
-\end{why}
-\textbf{Data}: human-written MATH solutions for all 3,920 training problems; every final boxed answer verifies with our checker. \textbf{Arms} (supervised stage as S32, then Dr.\ GRPO): HP contains the 3,433 problems with $c>0$; HQ replaces 487 randomly selected HP problems (seed 1919) with the 487 problems having $c=0$; HS contains the 3,235 problems represented in S32. These are counts before trainer exclusions. The primary comparison is HQ against HP's trajectory, including HP's post-supervised step 0: gain $\ge+1$ with a 95\% interval above 0. It is uninterpretable if any seed has fewer than two HQ checkpoints in HP's pass@1 range, more than 10\% of bootstrap points are clamped, or fewer than 400 of the 487 $c=0$ solutions survive filtering. The swapped solutions are about twice as long, giving about 12\% fewer epochs at the fixed token budget. HS against S32 is descriptive; their human and base-model solutions average 374 and 1,110 characters, respectively. Status: running.
-
-\section{Early reference checkpoints (Check 20, running)}
-Dr.\ GRPO for 50 steps, seeds 8--10, checkpoints at 10, 20, 30, 40, 50, evaluated on the 511 problems with 32 samples at $T=1$ (Nibi H100s). Gains with and without the early checkpoints are reported as a sensitivity analysis; registered verdicts remain unchanged. Step 50 is compared with the earlier L40S reference to check hardware agreement.
-
 \begin{lemma}[stated for reference]\label{lem:starve-story}
 For $n$ independent rollouts with success probability $p$, the sampled Dr.\ GRPO gradient contribution of a problem is zero when all rewards are identical. A mixed-reward group occurs with probability $1-p^n-(1-p)^n$, approximately $np$ when $np\ll1$. Finite multiplicative reweighting of the centered advantages preserves this zero-gradient condition. Updates through shared parameters can still change the problem's success probability.
 \end{lemma}
+\textbf{Design} (seeds 8--10; 16 problems and exactly 128 rollouts per step): 4 pilot rollouts per problem, 64 extras, at most 32 per problem. AC allocates extras by frontier value, AV by $\E[p(1-p)]$, HR adapts HORA's hit utility.
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item AC against B's envelope: $+0.14$, 95\% $[-0.36,+0.58]$; average agreement (rule 1 needed $\ge+2$). AC against AV: $+0.51$ $[+0.04,+0.99]$; AC against HR: $+0.00$ $[-0.52,+0.46]$; neither is Holm-significant.
+\item Forecasts: HR and AV confirmed (within 0.5 points), AC not confirmed ($+0.09$ observed against $+4.12$ forecast). AC gives rare problems about 2.5 times more successes, yet stays on the curve.
+\item The starvation explanation (the curve is fixed because rare problems get no signal) is not supported in this form.
+\end{itemize}
+\end{found}
+
+\section{External versus self-generated information (Pre-registration 19) and the answer budget (Checks 16 and 21)}
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item P19 rule 1 (human solutions on the 487 never-solved problems, HQ against HP) is not interpretable: after fine-tuning, RL moves pass@1 by at most 1.6 points, so the trajectories do not overlap. On never-solved problems, HQ minus HP is $+0.58$ $[-2.13,+3.43]$; 434--435 of 487 solutions survived the filters.
+\item At 512 tokens, the human-solution arms lay 5--6 points above B's curve, but only 6--7\% of their answers were truncated against 48\% for B. Check 16: the warm start's step-0 gain falls from $+4.77$ $[+3.45,+6.07]$ at 512 tokens to $+2.15$ $[+1.10,+3.20]$ at 1,024 (45\%): \emph{largely a budget effect}.
+\item Check 21 (partial): human-prefix arm HP at 1,024 tokens, seed 10, lies 2.4--3.9 points \emph{below} B's curve; the other seeds were not evaluated (their jobs were stopped before producing checkpoints).
+\end{itemize}
+\end{found}
+
+\section{Early reference checkpoints (Check 20)}
+Registered as a sensitivity analysis of B's early trajectory (steps 10--50). No result is recorded; the registered verdicts do not depend on it.
 
 %=====================================================================
-\section{Where we stand, and the path to ICML}
+\section{Moving to AWS, and a faster evaluator}
+All compute moved to one AWS account (SageMaker): L40S machines for single-GPU work and 8$\times$A100 machines (ml.p4de.24xlarge, \$31.56 per hour) packed to use every GPU. The Hugging Face evaluator needed about 14 hours per 7B checkpoint; four such evaluations were stopped after about 27.5 A100-hours (about \$870) without output. A vLLM evaluator (\texttt{eval\_vllm.py}) replaced it: identical prompts, stopping and scoring, per-problem sampling seeds, a tokenizer compatibility layer, an isolated environment, and about 13 minutes per 1.5B and 30 minutes per 7B checkpoint. Its agreement with the earlier evaluator was checked before use (Pre-registration 20, amendment).
+
+%=====================================================================
+\section{A larger model: Qwen2.5-Math-7B at 2,048 tokens (Pre-registration 20)}
+\begin{why}
+A diagnosis at one 1.5B model could be a small-model artifact. The core contrasts were repeated at 7B with a longer answer budget, with a frozen forecast from the 1.5B frontier model.
+\end{why}
+\textbf{Design.} Qwen2.5-Math-7B, multi-GPU trainer (FSDP2, 4 A100 per run, fp32 weights with bf16 autocast; parity with the single-GPU trainer checked at 1.5B), seeds 8 and 9, 150 steps, 16$\times$8 rollouts, 2,048 tokens; arms B7, PSR7, NSR7, AC7; 511 test problems and a harder 253-problem cohort.
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item PSR7 against B7: $-0.09$, 90\% $[-0.48,+0.31]$; NSR7 against B7: $-0.09$ $[-0.45,+0.27]$: both average equivalence. AC7 against B7's envelope: $-0.15$ $[-0.57,+0.16]$: the allocation null replicates. NSR7 against PSR7 ($+0.16$) is not interpreted (13.7\% of bootstrap points clamped in seed 9).
+\item The frozen frontier model predicts B7's pass@16 with RMSE 0.23 points over 8 seed-steps (uniform shift 5.53, affine 0.93): supported. Its stratum errors are large on never-solved problems ($+7$ to $+23$) and on $c=1$--4 ($-3$ to $-7$).
+\item On the harder cohort every contrast is within $\pm0.9$. Greedy accuracy 74--76\% for all arms.
+\end{itemize}
+\end{found}
+
+\section{A larger answer budget: 1.5B at 1,024 tokens (Pre-registration 21)}
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item NSR1k against PSR1k $-0.25$ $[-0.72,+0.20]$; PSR1k against B1k $+0.11$ $[-0.26,+0.49]$; NSR1k against B1k $-0.15$ $[-0.62,+0.31]$; AC1k against B1k's envelope $-0.12$ $[-0.60,+0.29]$ (95\% intervals). All four reach average equivalence: \textbf{the core result replicates at 1,024 tokens}.
+\item Step-150 truncation 15.2--17.0\% in every arm (below the 20\% qualifier); greedy accuracy 63.6--64.6\%.
+\end{itemize}
+\end{found}
+
+\section{Guidance with human solutions inside RL (Pre-registration 22)}
+\begin{why}
+Pre-registration 19's human solutions acted through a supervised stage. Here they guide RL directly: some rollouts continue from a prefix of a human (HG, HGm) or a stored self-generated (PG) solution on rarely solved problems.
+\end{why}
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item Rule 1, HG1k against B1k's envelope: $-0.05$, 95\% $[-0.52,+0.37]$: on the curve (average equivalence).
+\item Rule 2, HGm1k (human prefixes on the problems where a self-generated success also exists) against PG1k: $+0.05$; not interpreted (15.8\% clamped in seed 9).
+\item Reported: PG1k against B1k $-0.11$ $[-0.55,+0.32]$; HGm1k against B1k $-0.01$ $[-0.41,+0.37]$.
+\end{itemize}
+\end{found}
+
+\section{Minimum-help credit (Pre-registration 23, pilot; 24 and 25)}
+\begin{why}
+If rare problems fail because a long solution must be found from scratch, crediting the policy's own failed prefixes by the smallest human hint that makes them succeed gives dense, problem-specific signal.
+\end{why}
+\begin{found}
+MH against B1k's envelope on 255 validation problems: $-0.01$, 95\% $[-1.24,+0.89]$; the averaged-value control AVH $-0.05$; MH against AVH $+0.05$. The credit operated at the registered dose (520 credited prefixes; contrast in 61\% of probed problem-steps). Neither arm reached the $+1.5$ selection gate: \textbf{dropped}. The conditional 7B test (Pre-registration 24) was withdrawn; the causal update-direction design (Pre-registration 25) was drafted but not run.
+\end{found}
+
+%=====================================================================
+\section{Do methods move along one shared direction? (Pre-registration 26)}
+\begin{why}
+Different methods give the same curve. Reported rank-1 structure of RLVR weight updates (AlphaRL, RELEX) suggested a hypothesis: every method moves the weights along one shared direction, so methods can only change speed. Step 1 measured this; step 2 piloted four methods that change the update's direction or add a new gradient source.
+\end{why}
+\textbf{Weights} (step-150 checkpoints of 11 runs, 196 weight matrices; saved in bf16):
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item Rank-1 approximations capture 4.7--5.6\% of the update energy; the top singular directions align across runs (0.82--0.91 with B1k8).
+\item Update cosines: Dr.\ GRPO seed to seed 0.34; methods against B1k8 0.34--0.47; PSR1k8 against NSR1k8 0.27 (the least similar pair). The registered support threshold (0.5) was not met.
+\item Split checkpoints of B1k8's update: base 21.6/78.0 (pass@1/pass@16); trained non-matrix parameters only 23.4/79.1; rank-1 part 31.8/84.8 (distorted by bf16 rounding: cosine 0.35 with the intended part); remainder 57.5/86.9; full B1k8 58.2/86.5. Nearly all of the gain lies outside each matrix's top direction.
+\end{itemize}
+\textbf{Gradients} (32 problems, two independent groups of 8 answers each, CountSketch $2^{20}$): the same problem's gradients from the two groups have mean cosine 0.01; gradients of different problems have mean cosine about 0; the cross-group Gram matrix has 37\% negative spectral mass, so the registered whitening reading is inconclusive.
+
+\textbf{Pilots} (seed 8, 1,024 tokens, 255 validation problems; selection needs $\ge+1.5$ at matched pass@1, pass@1 within 2 points of B1k, and an active mechanism):
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}lYP{2.9cm}Y@{}}
+\toprule
+Arm & Change & Gain [95\%] & Mechanism\\
+\midrule
+OD & remove 75\% of each update's component along the tracked top direction, renormalize & $+0.20$ $[-0.84,+1.19]$ & share 0.051; realized cosine 0.986 (gate 0.98 not met)\\
+PW & whiten problem weights with the sketched gradient Gram matrix & $-0.04$ $[-1.21,+1.05]$ & active: alpha ratio $>1.5$ in all steps, cosine 0.948\\
+TD & add the log-likelihood of verified 7B solutions on base-rare problems & $+0.31$ $[-1.05,+1.35]$ & 6.55 teacher solutions per step (1,580 of 1,668 rare problems covered)\\
+RTD & TD with the teacher gradient projected off the tracked direction & $+0.22$ $[-0.97,+1.17]$; vs TD $-0.03$ & 15\% of the teacher gradient removed\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\begin{found}
+No arm qualifies. Even supplying verified correct solutions for the hard training problems (TD) leaves the matched-pass@1 curve unchanged at this dose. The shared-direction explanation is not supported in the form tested: methods change the weights differently but reach the same behaviour.
+\end{found}
+
+%=====================================================================
+\section{Same problems, same rates: where the gain comes from (Investigation 27, exploratory)}
+\begin{found}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item \textbf{Per problem.} At matched pass@1 (within 1.5 points), two different methods differ per problem by about as much as two Dr.\ GRPO seeds (RMS 6.6--6.7 points). A paired excess statistic, as a share of the seed-to-seed distance: all methods $+2.1\%$ $[-1.9\%,+6.1\%]$; PSR $+7.5\%$ $[+2.6\%,+12.4\%]$; NSR $+7.0\%$; hint and prefix arms about 0; PG $-7.1\%$. Advantage-rule changes leave a small per-problem signature; arms that keep Dr.\ GRPO's advantages stay within seed variation.
+\item \textbf{By difficulty.} Success by base count is similar across methods at matched pass@1 (at pass@1 $\approx58$: 9\% on never-solved problems, 33\% at $c=1$--2, 67\% at $c=3$--8). A uniform logit shift of the base rates fits poorly (pass@16 RMSE 10 points), while the frozen frontier law fits with 0.82 points.
+\item \textbf{Finishing versus accuracy} (1.5B, 1,024 tokens). Base: 21.6\% right, 35.8\% boxed but wrong, 42.5\% without a final box (35.8\% truncated). B1k8 step 25: 40.0 / 35.8 / 24.2; step 150: 58.1 / 30.4 / 11.5. Boxing more answers at the base's accuracy accounts for about a third of the gain (+11.6 of +35.8 points); accuracy among boxed answers rises from 37.6\% to 65.7\%. Format errors are 1--2\%.
+\item \textbf{What stays unsolved.} Across problems, step-150 success is described by $0.52+0.98\,r_i+0.24\,u_i-0.70\,w_i$ (base right, unfinished and boxed-wrong rates): problems on which the base finishes with a wrong answer are the ones RL leaves unsolved.
+\end{itemize}
+\end{found}
+
+\section{Comparison with the budgeted-search law (restricted)}
+The closest prior work (2609.01274) maps an RL model's pass@$k$ to the base model's pass@$N$ with $N=\alpha k^\beta$. Fitted on Dr.\ GRPO's evaluations ($\beta=0.845$) and restricted to one decoder with 32 base samples, it can score only 8 of 53 held-out evaluations (the base's pass@32 is below most trained checkpoints' pass@16). On those 8, Dr.\ GRPO's curve predicts held-out pass@16 with RMSE 0.63 points against 1.93 for the restricted law. A full comparison needs the base with 256 samples (Pre-registration 28).
+
+%=====================================================================
+\section{Running now}
+\textbf{Pre-registration 27 (reason 3: is the training too short?).} Two Dr.\ GRPO runs of 1,000 steps (about 4 passes over the training problems) at learning rates $10^{-6}$ (LH1) and $3\times10^{-6}$ (LH3), 1.5B, 1,024 tokens. Primary reading: does pass@256 at step 1,000 exceed the base's pass@256 (both 256 samples; Holm over the two arms)? Reported: pass@16 against the frozen law, and the change in the base's difficulty order. Started October 28; both runs passed step 800.
+
+\textbf{Pre-registration 28 (evaluation only).} 21 published RLVR checkpoints trained from Qwen2.5-Math-1.5B or 7B (Oat-Zero, SimpleRL-Zoo and -Zero, LUFFY, ExGRPO, ReLIFT, RELEX, one-shot RLVR, RLHFlow GRPO/DAPO/RAFT++, Zero-Solver, correct- and random-reward reproductions) evaluated under one protocol and placed against Dr.\ GRPO's curve and the frozen law; a forced final answer for unfinished samples of the base and B1k8; the base with 256 samples and at lower temperatures.
+
+%=====================================================================
+\section{Where we stand}
 \subsection{What is established}
 \begin{enumerate}[leftmargin=*,itemsep=1pt]
-\item For reward-adapted rules on independent on-policy rollouts, the expected raw gradient per problem is $c(p_x)\nabla p_x$, and its second moment follows from four quantities. At baseline, incorrect answers have roughly 2--3 times larger squared score norms.
-\item NSR--PSR equivalence within $\pm2$ points is supported on Qwen and OLMo. A mean-preserving random-sign noise intervention reproduces NSR's lag in the Qwen recipe. The other controls do not establish equivalence for every rule on both families; the temperature check's registered verdict is inconclusive.
-\item CM and D32 give pooled gains of $+1.19$ and $+1.02$ against their registered B references. Against the exploratory seed-13 trajectory, G32 gives $+0.60$, S32 $+2.38$, CM $+1.73$ and U32 $+1.74$. These longer-run contrasts have incomplete overlap and no reported confidence intervals.
-\item Conditional on observed pass@1, a frozen per-problem model fits aggregate pass@16 across several rules, families and budgets. It has substantial OLMo stratum errors and fails after the warm start. The longer-training test awaits a documented analysis.
+\item Compared at matched pass@1, every correctness-only intervention we tested lies on Dr.\ GRPO's pass@16-versus-pass@1 curve within its observed support: advantage rules (PSR, NSR, constant baselines, pass@$k$ objectives, MaxRL, BBG), entropy terms, replay and group completion, larger groups, rollout allocation (AC, AV, HR), supervised warm starts once the answer budget is controlled, human-solution prefixes, minimum-help credit, update-direction changes, problem whitening, and teacher distillation at the tested dose. This holds at 1.5B with 512 and 1,024 tokens and at 7B with 2,048 tokens.
+\item At matched pass@1, methods solve nearly the same problems at nearly the same rates, although their weight updates differ; a frozen per-problem law from the base model's counts predicts the curve (0.23--0.82 points RMSE).
+\item About a third of the 1,024-token gain is learning to finish; the problems left unsolved are those where the base finishes with a wrong answer.
 \end{enumerate}
-
-\subsection{Open questions}
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-\item Does allocation by frontier value move the frontier at an equal rollout budget, and beat HORA (Pre-registration 18)?
-\item Does external information move it where self-generated information does not (Pre-registration 19)?
-\item The long-run reference with three seeds; the 2026 methods with the early-checkpoint reference; TAR.
-\item Scale: Qwen2.5-Math-7B at 2,048 tokens (multi-GPU training on Nibi or Fir).
-\end{itemize}
-
-\subsection{Independent review over time}
-The reviews motivated the noise intervention, OLMo replication and comparison with close prior work. The next assessment depends on the allocation and human-solution experiments, their confirmation, and replication at a larger model scale.
-
-\subsection{Three months to ICML}
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-\item \textbf{November:} verdicts of Pre-registrations 18 and 19; long-run reference with three seeds; multi-GPU training code; 7B core runs (Dr.\ GRPO, PSR/NSR, the best method) at 2,048 tokens on Nibi or Fir.
-\item \textbf{December:} 7B results; OLMo replication of the method or thesis; full matched-pass@1 audit of 2026 methods.
-\item \textbf{January:} writing (draft v1 in \texttt{paper/icml/}), internal review with Codex, submission.
-\end{itemize}
+\subsection{Explanations ruled out or weakened}
+Starvation of rare problems (allocation gave 2.5 times more successes without moving the curve); external information as the key (human solutions, prefixes, teacher solutions); a shared weight direction (cosines 0.27--0.47, nearly all of the gain outside the top direction).
+\subsection{Open}
+Is the lock a short-horizon effect (Pre-registration 27)? Do published checkpoints lie on the curve (Pre-registration 28)? How much of RL's gain is a decoding fix (forced answer)? Does distillation at a realistic scale move the curve?
+\subsection{To ICML (late January 2027)}
+November: Pre-registrations 27 and 28; distillation dose test; PBA, ReCo and BBG on the curve; paper draft v5. December: confirmation at 7B and on the fresh Omni-MATH set; full budgeted-search comparison. January: writing and internal review.
 
 \appendix
 \section{Methods reference}\label{app:methods}
@@ -759,7 +851,7 @@ Allocation (AC, AV, HR) & pool 4 pilot rollouts per problem with 64 extras; AC/A
 
 \textbf{Frontier model.} The model in \cref{sec:p17} fits $\tau_{32}=-0.20$ and affine slope $\beta=2.10$ using only B's nine fitting checkpoints. Uniform-shift and affine comparators are $\theta'_x=\theta_x+\alpha$ and $\theta'_x=\alpha+\beta\theta_x$, with $\alpha$ matching observed pass@1. The model's evolution parameter also matches observed pass@1. Registered RMSE categories are supported at $\le2$ points, partial at 2--3, and falsified above 3; T1--T4 also require higher total per-problem log-likelihood than the affine comparator. The reported $\tau_{\rm deep}$ interval uses 200 problem-bootstrap draws with refitting.
 
-\section{Experiment tracker (Pre-registrations 13--20)}
+\section{Experiment tracker (Pre-registrations 12--28)}
 \small
 \begin{longtable}{@{}P{0.9cm}P{3.3cm}P{4.6cm}P{5.2cm}@{}}
 \toprule
@@ -776,12 +868,26 @@ C17 & Transfer to rare problems & likelihood margins of fixed base answers & 4/6
 17 & Frontier model & frozen model, 5 test sets & aggregate RMSE criterion met on 3; warm-start test fails; longer-training analysis unreported\\
 18 & Allocation by frontier value & AC, AV, HR; 3 seeds; registered forecasts & running\\
 19 & External vs self-generated information & HQ, HP, HS; 3 seeds & running\\
-C20 & Early reference checkpoints & B steps 10--50, 3 seeds & running\\
+C20 & Early reference checkpoints & B steps 10--50, 3 seeds & no result recorded\\
+18 (final) & Allocation by frontier value & AC, AV, HR; 3 seeds & AC $+0.14$: on the curve; AC forecast not confirmed\\
+19 (final) & External vs self-generated information & HQ, HP, HS & rule 1 not interpretable (no overlap); 512-token gains are budget effects (Check 16)\\
+C21 & Human prefixes at 1,024 tokens & HP seed 10 & partial: 2.4--3.9 below the curve\\
+20 & 7B at 2,048 tokens & B7, PSR7, NSR7, AC7; 2 seeds & PSR7 and NSR7 equivalent to B7; AC7 null; frozen law RMSE 0.23\\
+21 & 1.5B at 1,024 tokens & B1k, PSR1k, NSR1k, AC1k; 3 seeds & all four contrasts equivalent: replicates\\
+22 & Human/self prefixes inside RL & HG1k, HGm1k, PG1k; 3 seeds & HG1k on the curve; rule 2 not interpreted\\
+23 & Minimum-help credit (pilot) & MH, AVH; seed 8 & no candidate; dropped\\
+24, 25 & 7B MH test; causal direction test & drafts & withdrawn; not run\\
+26 & Shared direction; OD, PW, TD, RTD pilots & diagnostics + 4 pilots, seed 8 & shared-direction criterion not met; no pilot qualifies\\
+I27 & Per-problem agreement; finishing & existing evaluations & methods match seeds per problem; a third of the gain is finishing\\
+27 & Long and stronger training & LH1, LH3; 1,000 steps & running\\
+28 & Published checkpoints; forced answer & 21 checkpoints; evaluation only & launching\\
 \bottomrule
 \end{longtable}
 \normalsize
 
 \section{Compute and engineering}
-The registered pilot uses Tamia H100s for every arm and reference. Check 20 uses Nibi H100s and compares step 50 with the earlier L40S reference. The longer-reference design places seed 13 on AWS and seeds 14--15 on Tamia. A reproducible compute comparison still needs per-run GPU-hours, software versions, optimizer and numerical settings, and attempted, completed and skipped optimizer-update counts. Accounting must include discovery, supervised training, rollout generation, replay and evaluation. All code, registrations, results and figures: \texttt{github.com/mayman150/rlvr-adaptive}.
+\textbf{Since October 25 (version 5).} All runs use one AWS account: SageMaker L40S machines (single GPU) and 8$\times$A100 machines packed so that every GPU has work (several runs and evaluations per machine; lanes are described in \texttt{experiments/sagemaker/plans/}). Every experiment is registered and reviewed by Codex before launch; code, plans, job lists and results are in the repository. Known one-off losses: about \$870 of A100 time on Hugging Face 7B evaluations that were too slow (replaced by vLLM), duplicate 7B evaluations in two regions (about 7 hours of one machine), and a teacher-generation job that failed after 16 minutes (about \$8).
+
+\textbf{Earlier.} The registered pilot uses Tamia H100s for every arm and reference. Check 20 uses Nibi H100s and compares step 50 with the earlier L40S reference. The longer-reference design places seed 13 on AWS and seeds 14--15 on Tamia. A reproducible compute comparison still needs per-run GPU-hours, software versions, optimizer and numerical settings, and attempted, completed and skipped optimizer-update counts. Accounting must include discovery, supervised training, rollout generation, replay and evaluation. All code, registrations, results and figures: \texttt{github.com/mayman150/rlvr-adaptive}.
 
 \end{document}
