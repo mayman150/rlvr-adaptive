@@ -88,6 +88,57 @@ def run_plan(plan):
         snapshot_download(plan.get("model", "Qwen/Qwen2.5-Math-1.5B"))
         local = ["--model", plan.get("model", "Qwen/Qwen2.5-Math-1.5B")]
     status = {}
+    if "lanes" in plan:
+        # Mixed lanes, one per GPU, each a sequence of steps run in order (a step after a failed one is skipped):
+        # {"kind": "train", "name", "args"}: train_grpo.py with plan["common"] + args, output /opt/ml/checkpoints/<name>;
+        # {"kind": "script", "name", "script", "args"}: training/<script> with --out /opt/ml/checkpoints/<name>;
+        # {"kind": "eval", ...}: an eval_lanes spec whose checkpoints come from the ckpts channel ("sub") or from an
+        # earlier step of this job ("live": a path under /opt/ml/checkpoints); output /opt/ml/checkpoints/<name>/eval.
+        LIVE.mkdir(parents=True, exist_ok=True)
+
+        def mixed_lane(gpu, steps):
+            for spec in steps:
+                key = f"{spec['name']}#{spec['kind']}#{spec.get('part', 0)}#lane{gpu}"
+                if any(code != 0 for k, code in status.items() if k.endswith(f"#lane{gpu}")):
+                    status[key] = "skipped"
+                    print(f"[{key}] skipped (an earlier step of lane {gpu} failed)", flush=True)
+                    continue
+                if spec["kind"] == "train":
+                    cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(LIVE / spec["name"]),
+                           *plan["common"], *spec["args"], *local]
+                    run_one(key, cmd, gpu, status)
+                elif spec["kind"] == "script":
+                    cmd = [sys.executable, str(HERE / "training" / spec["script"]), *spec["args"],
+                           "--out", str(LIVE / spec["name"]), *local]
+                    run_one(key, cmd, gpu, status)
+                elif spec["kind"] == "eval":
+                    if spec.get("engine", "hf") not in ("hf", "vllm"):
+                        raise ValueError(f"unknown engine {spec['engine']}")
+                    ckpts = LIVE / spec["live"] if spec.get("live") else CKPT_CHANNEL / spec["sub"]
+                    base = ["--base", local[1]] if spec.get("include_base") else []
+                    engine = [vllm_python(), "-I", str(EVAL_VLLM)] if spec.get("engine") == "vllm" else [sys.executable, str(EVAL)]
+                    cmd = [*engine, "--ckpts", str(ckpts), *base, "--out", str(LIVE / spec["name"] / "eval"), *spec["args"]]
+                    run_one(key, cmd, gpu, status, isolated=spec.get("engine") == "vllm")
+                else:
+                    raise ValueError(f"unknown step kind {spec['kind']}")
+
+        def guarded_mixed(g, steps):
+            try:
+                mixed_lane(g, steps)
+            except Exception as e:
+                status[f"lane{g}"] = f"exception: {e!r}"
+                print(f"lane {g} exception: {e!r}", flush=True)
+        threads = [threading.Thread(target=guarded_mixed, args=(g, steps)) for g, steps in enumerate(plan["lanes"])]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        (LIVE / "status.json").write_text(json.dumps(status, indent=1))
+        shutil.copytree(LIVE, FINAL / "runs", dirs_exist_ok=True, ignore=shutil.ignore_patterns("ckpt_step*"))
+        print("status:", status, flush=True)
+        if any(code != 0 for code in status.values()):
+            sys.exit(1)
+        return
     if "eval_lanes" in plan:
         # One lane per GPU; a lane is a list of evaluations run in sequence. Each evaluation reads the
         # checkpoints of one run from a subfolder of the ckpts channel (a training job's S3 prefix)

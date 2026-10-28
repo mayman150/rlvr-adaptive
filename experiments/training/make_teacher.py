@@ -5,11 +5,12 @@ that survives canonicalization. Usage: python make_teacher.py TEXTS.json.gz [...
 import argparse
 import gzip
 import json
+import sys
 from pathlib import Path
 
-from verifier import last_boxed, reward
-
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from verifier import last_boxed, reward  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("texts", nargs="+")
