@@ -68,3 +68,9 @@ The two tensor-parallel-4 vLLM engines of job worth-p29a-teacher-s0-20261028-180
 teacher solutions per step, finite gradients). Teacher generation reruns as one tensor-parallel-8 engine over all
 3,920 problems (job worth-p29a2-teacher-s0-20261028-183430); per-problem sampling seeds are unchanged (they depend on
 the global problem index), so the design is unchanged.
+
+Amendment 1 addendum: the tensor-parallel-8 rerun (worth-p29a2-teacher-s0-20261028-183430) failed at vLLM
+initialization with "custom_all_reduce.cuh: invalid argument"; the first failure had the same cause (vLLM's custom
+all-reduce needs CUDA IPC, unavailable in SageMaker containers). eval_vllm.py now disables it for tensor parallelism
+(NCCL all-reduce, same numerics up to reduction order); third launch worth-p29a3-teacher-s0-20261028-184900. Lost time
+about 9 + 10 minutes of one machine (about $10).
