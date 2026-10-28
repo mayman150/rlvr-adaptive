@@ -78,3 +78,5 @@ Second addendum: the third launch generated for about 15 minutes, then failed wi
 access" in the tensor-parallel-8 engine (no samples written). Fourth launch: CUDA graphs disabled (enforce_eager) and
 the 3,920 problems in four sequential parts sharing one download, so a failure loses at most one part; per-problem
 sampling seeds unchanged.
+
+Third addendum: the fourth launch produced degenerate text (fluent openings followed by random tokens; 71% truncated, pass@1 28.7% on the first 980 problems), consistent with corrupted tensor-parallel communication; it was stopped and its samples are discarded. Fifth launch: NCCL peer-to-peer disabled for tensor-parallel engines, and a 48-problem gate that aborts the lane if pass@1 is below 0.6.

@@ -71,6 +71,8 @@ def run_one(name, cmd, gpu, status, isolated=False):
         # machine cannot collide on their distributed-init ports
         first = int(str(gpu).split(",")[0])
         env["VLLM_PORT"] = str(31000 + 1000 * first)
+        if "," in str(gpu):  # tensor parallelism: NCCL peer-to-peer over CUDA IPC corrupted outputs in SageMaker
+            env["NCCL_P2P_DISABLE"] = "1"
     print(f"[{name}] gpu {gpu}: {' '.join(cmd)}", flush=True)
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     for line in proc.stdout:

@@ -175,6 +175,8 @@ def evaluate(job):
         res["greedy"] = {"accuracy": sum(gc) / len(gc), "n": len(gc), "correct": gc}
     res["seconds"] = time.time() - t0
     (Path(a["out"]) / f"{job['tag']}_eval.json").write_text(json.dumps(res))
+    if a.get("min_pass1") and job["sampled"] and res["pass_at_k"].get(1, 0) < a["min_pass1"]:
+        raise SystemExit(f"{job['tag']}: pass@1 {res['pass_at_k'][1]:.3f} below the gate {a['min_pass1']} (corrupted generation?)")
     print(f"{job['tag']}: pass@1 {100 * res['pass_at_k'].get(1, math.nan):.1f} pass@16 {100 * res['pass_at_k'].get(16, math.nan):.1f} "
           f"pass@32 {100 * res['pass_at_k'].get(32, math.nan):.1f}"
           + (f" greedy {100 * res['greedy']['accuracy']:.1f}" if "greedy" in res else "") + f" ({res['seconds']:.0f}s)", flush=True)
@@ -205,6 +207,7 @@ def main():
     ap.add_argument("--base-temperatures", default="")
     ap.add_argument("--tp", type=int, default=1, help="tensor-parallel GPUs (large models)")
     ap.add_argument("--enforce-eager", action="store_true", help="no CUDA graphs (stability with tensor parallelism)")
+    ap.add_argument("--min-pass1", type=float, default=0.0, help="fail if sampled pass@1 is below this (sanity gate)")
     ap.add_argument("--identity", default="", help="model identity (e.g. repo@revision), part of the resume fingerprint")
     ap.add_argument("--force-answer", type=int, default=0, help="also score samples without a final box after a forced "
                     "answer of this many greedy tokens (0: off)")
@@ -230,7 +233,7 @@ def main():
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
     shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out",
-                                            "force_answer", "tp", "enforce_eager")}
+                                            "force_answer", "tp", "enforce_eager", "min_pass1")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
