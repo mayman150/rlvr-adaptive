@@ -67,11 +67,13 @@ Lane 5 of the same job; raw output `results_p26/dirdiag_g.json`. 32 problems mix
 
 - S_A, S_B: CountSketch (2^20) of each problem's Dr. GRPO surrogate gradient from group A or group B (8 answers each,
   T = 1, 1,024 tokens), over the same matrices as the weight diagnostic; parameters fp32, forward in bf16 autocast.
-- One-group shares: eigenvalues of S_A S_A^T (or of the cosine matrix) over their sum. Cross-group shares: eigenvalues
-  of (S_A S_B^T + S_B S_A^T) / 2 over the sum of their absolute values; negative share: the negative eigenvalues' part
-  of that sum.
-- Same-problem cross-group cosine: cosine between a problem's S_A row and its S_B row. Under a signal-plus-independent-
-  noise model it estimates the signal share of a one-group gradient's energy.
+- One-group shares: eigenvalues of S_A S_A^T (or of the cosine matrix) over their sum. Cross-group shares: signed
+  eigenvalues of (S_A S_B^T + S_B S_A^T) / 2 divided by the sum of their absolute values (not explained-variance
+  fractions); negative share: the negative eigenvalues' part of that sum.
+- Batch-mean direction share: the fraction of a group's total sketch energy projected onto that group's own empirical
+  mean direction.
+- Same-problem cross-group cosine: cosine between a problem's S_A row and its S_B row, averaged over problems without
+  energy weighting.
 
 ## Results
 
@@ -86,16 +88,16 @@ Lane 5 of the same job; raw output `results_p26/dirdiag_g.json`. 32 problems mix
 
 ## Readings
 
-- **Whitening reading: not interpretable (noise-dominated).** The amendment's rule uses the cross-group top share at
-  step 150 and declares it not interpretable when the negative share exceeds 0.2; the negative share is 0.37.
-- **Per-problem gradients from one group of 8 are dominated by sampling noise:** the same problem's gradients from two
-  independent groups have mean cosine 0.01, i.e. about 1% of a one-group gradient's energy is reproducible under the
-  signal-plus-noise model. Gradients of different problems are uncorrelated at this resolution (mean pairwise cosine
-  about 0), and no direction dominates (one-group top shares 0.06-0.11, all below the registered 0.3).
-- **Joint picture with Step 1a (descriptive, not registered):** a single step's per-problem gradients show no shared
-  direction, yet the saved cumulative updates of independent Dr. GRPO seeds have cosine 0.34, and the other methods'
-  cumulative updates match B1k8 about as closely as another seed does (0.34-0.47). Any shared component therefore
-  appears only after accumulation over many problems and steps; it is not a property of individual problem gradients.
-- **Implication for the whitening pilot (PW):** its weights alpha are computed from one-group per-problem gradients,
-  which are about 99% noise here, so PW's reweighting is expected to be close to random with respect to the
-  reproducible gradient structure. The pilot's registered rule still decides.
+- **Whitening reading: inconclusive.** The amended rule uses the cross-group top share at step 150 and declares it not
+  interpretable when the negative share exceeds 0.2; the negative share is 0.373. The amended diagnostic is therefore
+  inconclusive about the directional concentration of expected gradients conditional on both groups being mixed. (The
+  one-group shares are reported for description only; the amendment superseded the one-group threshold.)
+- **Description:** the sampled sketches show low cross-group directional agreement (mean same-problem cosine 0.011 and
+  0.014) and near-zero mean inter-problem cosine. These are not energy fractions: per-problem normalization and
+  unweighted averaging prevent reading them as the reproducible share of gradient energy without further assumptions.
+- **Joint reading with Step 1a:** Step 1a fails the saved-update support criterion; Step 1b leaves expected-gradient
+  structure unresolved. The two measure different objects (cumulative optimizer updates from bf16 checkpoints vs.
+  conditional stochastic surrogate-gradient sketches); their joint pattern is compatible with a weak persistent shared
+  component obscured by sampling noise, without identifying its mechanism.
+- **Implication for the whitening pilot (PW):** its reweighting may be sensitive to gradient-estimation noise; its
+  effect remains to be tested by the registered pilot.
