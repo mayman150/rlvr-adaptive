@@ -1,0 +1,8 @@
+Pre-registration 26, step 1(a): par / perp / other (test problems, seed 8)
+   BASE15: pass@1 21.63, pass@16 78.01
+   B1k8_other: pass@1 23.35, pass@16 79.12
+   B1k8_par: pass@1 31.76, pass@16 84.76
+   B1k8_perp: pass@1 57.52, pass@16 86.88
+   B1k8: pass@1 58.15, pass@16 86.48
+   B1k8 pass@1 gain over 'other' +34.80, 90% [+32.76, +36.72]; par recovers 24% (90% [22%, 26%]; registered reading needs >= 80% and a positive gain interval; par is distorted by bf16 rounding, see RESULTS_26_interim)
+   perp vs B1k8 envelope (reported): insufficient overlap {8: [150]}

@@ -1,0 +1,7 @@
+setting 1k: base pass@1 21.63, pass@16 78.01, pass@32 85.52
+BOPTR beta fitted on 18 Dr. GRPO evaluations: 0.845 (fit RMSE 2.28 pp over k = 2-16)
+held-out evaluations: 53; scorable by both predictors: 8 (curve only: 39, BOPTR only: 0)
+pass@16 prediction error on the common set (pp): curve RMSE 0.63, mean +0.37; BOPTR RMSE 1.93, mean +1.81
+   NSR1k: n 3, curve RMSE 0.41, BOPTR RMSE 1.43
+   PG1k: n 2, curve RMSE 1.11, BOPTR RMSE 2.57
+   PSR1k: n 3, curve RMSE 0.27, BOPTR RMSE 1.86

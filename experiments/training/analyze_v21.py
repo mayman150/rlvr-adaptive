@@ -1,6 +1,7 @@
 """Registered analyses of Pre-registrations 21 (1.5B, 1,024 tokens: B1k, PSR1k, NSR1k, AC1k), 22 (HG1k, HGm1k, PG1k)
-and 23 (pilot: MH, AVH on validation problems), from the vLLM re-evaluation (results/worth-v15v-*/<NAME>/eval).
-Usage: python analyze_v21.py [--draws 2000] [--which 21,22,23]
+and 23 (pilot: MH, AVH on validation problems), from the vLLM re-evaluation (results/worth-v15v-*/<NAME>/eval),
+and 26 (pilots OD, PW, TD, RTD; the par/perp/other checkpoints), from results/worth-p26-pack-*/<NAME>/eval.
+Usage: python analyze_v21.py [--draws 2000] [--which 21,22,23,26,26a]
 """
 
 import argparse
@@ -16,10 +17,15 @@ import matched as M
 SEEDS = (8, 9, 10)
 
 
-def load(pattern="results/worth-v15v-*/*/eval/step*_T*_eval.json"):
+PACK = {"OD": "OD8val", "PW": "PW8val", "TD": "TD8val", "RTD": "RTD8val"}  # Pre-registration 26 pilots (validation)
+
+
+def load(patterns=("results/worth-v15v-*/*/eval/step*_T*_eval.json", "results/worth-p26-pack-*/*/eval/step*_T*_eval.json")):
     out = {}
-    for f in glob.glob(pattern):
+    for f in (f for pat in patterns for f in sorted(glob.glob(pat))):
         name = f.split("/")[-3]
+        if "worth-p26-pack-" in f:
+            name = PACK.get(name, name)
         step, t = re.search(r"step(\d+)_T([\d.]+)_eval", f).groups()
         d = json.loads(open(f).read())
         out[(name, int(step), round(float(t), 2))] = d
@@ -212,6 +218,125 @@ def p23(res, draws):
         print("   SELECTION: no candidate; the method is dropped and reported")
 
 
+def p26_log(arm):
+    f = glob.glob(f"results/worth-p26-pack-*/{arm}/baseline_train.json")
+    return json.loads(open(f[0]).read()) if f else None
+
+
+def p26_gates(arm, log, warmup=10):
+    """Pre-registration 26's mechanism gates from the training log; steps without the method's record count as
+    inactive (share 0, cosine 1, alpha ratio 1, removed share 0)."""
+    steps = [r for r in log if "step" in r]
+    if arm == "OD":
+        late = [r for r in steps if r["step"] >= warmup]
+        share = np.mean([r.get("od", {}).get("dominant_share_before", 0.0) for r in late])
+        cos = np.mean([r.get("od", {}).get("realized_cosine", 1.0) if r.get("od", {}).get("active") else 1.0 for r in late])
+        return share >= 0.05 and cos <= 0.98, f"mean dominant share {share:.3f} (gate 0.05), mean realized cosine {cos:.4f} (gate 0.98)"
+    if arm == "PW":
+        def ratio(x):
+            if "alpha_max" not in x:
+                return 1.0
+            return np.inf if x["alpha_min"] <= 0 < x["alpha_max"] else x["alpha_max"] / x["alpha_min"]
+        frac = np.mean([ratio(r.get("pw", {})) > 1.5 for r in steps])
+        cos = np.mean([r.get("pw", {}).get("realized_cosine", 1.0) for r in steps])
+        return frac >= 0.5 and cos <= 0.98, f"steps with alpha max/min > 1.5: {100 * frac:.0f}% (gate 50%), mean realized cosine {cos:.4f} (gate 0.98)"
+    if arm == "RTD":
+        late = [r for r in steps if r["step"] >= warmup]
+        rem = np.mean([r.get("teacher", {}).get("removed_share", 0.0) for r in late])
+        return rem >= 0.05, f"mean removed share of the teacher gradient {rem:.3f} (gate 0.05)"
+    return True, "no mechanism gate"
+
+
+def strata(res, arm, base, ref, step=150):
+    """pass@16 minus the reference's at step 150, by the base model's success count on each problem (of 32)."""
+    c0 = counts(res, base, 0)
+    a, b = counts(res, arm, step), counts(res, ref, step)
+    out = []
+    for lab, m in (("c=0", c0 == 0), ("c=1-4", (c0 >= 1) & (c0 <= 4)), ("c>=5", c0 >= 5)):
+        if m.sum():
+            out.append(f"{lab} ({int(m.sum())}): {A.met(a[m], np.ones(m.sum()))[1] - A.met(b[m], np.ones(m.sum()))[1]:+.1f}")
+    return ", ".join(out)
+
+
+def p26(res, draws):
+    print("Pre-registration 26 (pilots, seed 8, validation problems; vLLM evaluation)")
+    arms = ("OD", "PW", "TD", "RTD")
+    need = [("BASE15val", 0, 1.0)] + [(f"{a}8val", st, 1.0) for a in arms for st in (50, 100, 150)] + \
+           [("B1k8val", st, 1.0) for st in (25, 50, 100, 150)] + [("B1k8val", 150, t) for t in (1.15, 1.3)]
+    miss = missing(res, need)
+    if miss:
+        print(f"   incomplete evaluation; missing {miss}")
+        return
+    n = len(counts(res, "BASE15val", 0))
+    seeds, w = (8,), np.ones(n)
+    Benv = M.reference(traj(res, "B1k", (25, 50, 100, 150), "val"), temps(res, "B1k", "val"))
+    qual, est = {}, {}
+    for arm in arms:
+        t = M.compare(arm_points(res, arm, (50, 100, 150), "val"), Benv, seeds, n, draws)
+        p1 = A.met(counts(res, f"{arm}8val", 150), w)[0] - A.met(counts(res, "B1k8val", 150), w)[0]
+        log = p26_log(arm)
+        if log is None:
+            print(f"   {arm}: training log missing; selection blocked")
+            qual[arm] = None
+            continue
+        g_ok, g_txt = p26_gates(arm, log)
+        interp = "estimate" in t and M.clamped_ok(t)
+        est[arm] = t.get("estimate")
+        qual[arm] = bool(interp and t["estimate"] >= 1.5 and p1 >= -2 and g_ok)
+        print(M.show(f"{arm} vs B1k envelope", t) + f"; step-150 pass@1 minus B1k {p1:+.2f}")
+        extra = ""
+        if arm in ("TD", "RTD"):
+            sol = [r.get("teacher", {}).get("solutions", 0) for r in log if "step" in r]
+            extra = f"; teacher solutions per step {np.mean(sol):.2f}"
+        print(f"   {arm} gates: {g_txt}{extra}; interpretable: {interp} -> qualifies: {qual[arm]}")
+        print(f"   {arm} pass@16 minus B1k at step 150 by base count: {strata(res, f'{arm}8val', 'BASE15val', 'B1k8val')}")
+    TDtraj = M.reference(lambda s: [(counts(res, "BASE15val", 0), 0)] + [(counts(res, "TD8val", st), st) for st in (50, 100, 150)])
+    d = M.compare(arm_points(res, "RTD", (50, 100, 150), "val"), TDtraj, seeds, n, draws)
+    print(M.show("RTD vs TD trajectory", d))
+    if qual.get("RTD"):
+        qual["RTD"] = "estimate" in d and M.clamped_ok(d) and d["estimate"] >= 1.0
+        print(f"   RTD beats TD by at least +1: {qual['RTD']}")
+    if None in qual.values():
+        print("   SELECTION: blocked (missing training log)")
+        return
+    chosen = [a for a in arms if qual[a]]
+    print(f"   SELECTION: {', '.join(chosen) + ' qualify for the three-seed test' if chosen else 'no arm qualifies; the methods are reported as failed pilots'}")
+
+
+def p26_split(res, draws):
+    """Step 1(a), reported: the par/perp/other checkpoints of B1k8's step-150 update on the test problems."""
+    print("Pre-registration 26, step 1(a): par / perp / other (test problems, seed 8)")
+    need = [("BASE15", 0, 1.0)] + [(x, 150, 1.0) for x in ("B1k8_par", "B1k8_perp", "B1k8_other")] + \
+           [("B1k8", st, 1.0) for st in (25, 50, 100, 150)] + [("B1k8", 150, t) for t in (1.15, 1.3)]
+    miss = missing(res, need)
+    if miss:
+        print(f"   incomplete evaluation; missing {miss}")
+        return
+    n = len(counts(res, "BASE15", 0))
+    w = np.ones(n)
+    for x in ("BASE15", "B1k8_other", "B1k8_par", "B1k8_perp", "B1k8"):
+        st = 0 if x == "BASE15" else 150
+        p1, p16 = A.met(counts(res, x, st), w)
+        print(f"   {x}: pass@1 {p1:.2f}, pass@16 {p16:.2f}")
+    c_full, c_par, c_oth = (counts(res, x, 150) for x in ("B1k8", "B1k8_par", "B1k8_other"))
+    rng = np.random.default_rng(26)
+    gains, recov = [], []
+    for _ in range(draws):
+        i = rng.integers(0, n, n)
+        g = (c_full[i] - c_oth[i]).mean() / 32 * 100
+        gains.append(g)
+        recov.append((c_par[i] - c_oth[i]).mean() / 32 * 100 / g if g > 0 else np.nan)
+    g0 = (c_full - c_oth).mean() / 32 * 100
+    r0 = (c_par - c_oth).mean() / 32 * 100 / g0 if g0 > 0 else float("nan")
+    lo, hi = np.percentile(gains, [5, 95])
+    print(f"   B1k8 pass@1 gain over 'other' {g0:+.2f}, 90% [{lo:+.2f}, {hi:+.2f}]; par recovers {100 * r0:.0f}% "
+          f"(90% [{100 * np.nanpercentile(recov, 5):.0f}%, {100 * np.nanpercentile(recov, 95):.0f}%]; registered reading needs >= 80% "
+          f"and a positive gain interval; par is distorted by bf16 rounding, see RESULTS_26_interim)")
+    Benv8 = M.reference(traj(res, "B1k", (25, 50, 100, 150), ""), temps(res, "B1k", ""))
+    t = M.compare(lambda s: [(150, counts(res, "B1k8_perp", 150))], Benv8, (8,), n, draws)
+    print(M.show("perp vs B1k8 envelope (reported)", t))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--draws", type=int, default=2000)
@@ -219,7 +344,7 @@ def main():
     args = ap.parse_args()
     res = load()
     for w in args.which.split(","):
-        {"21": p21, "22": p22, "23": p23}[w](res, args.draws)
+        {"21": p21, "22": p22, "23": p23, "26": p26, "26a": p26_split}[w](res, args.draws)
 
 
 if __name__ == "__main__":
