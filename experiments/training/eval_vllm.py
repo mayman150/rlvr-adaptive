@@ -101,7 +101,7 @@ def evaluate(job):
 
     res = {"tag": job["tag"], "model": job["path"], "n": a["n"], "problems": len(problems), "pass_at_k": {},
            "temperature": job["temperature"], "engine": f"vllm {vllm.__version__}", "evaluator": EVALUATOR,
-           "fingerprint": job["fingerprint"]}
+           "fingerprint": job["fingerprint"], "tp": a.get("tp", 1)}
     if job["sampled"]:
         if job["temperature"] < 0.01:
             raise SystemExit("temperatures below 0.01 are clamped by vLLM; use the greedy path")
@@ -237,6 +237,8 @@ def main():
                 fingerprint["force_answer"] = shared["force_answer"]
             if args.identity:
                 fingerprint["identity"] = args.identity
+            if args.tp > 1:  # tensor parallelism changes numerics: never reuse results across settings
+                fingerprint["tp"] = args.tp
             if done.exists():
                 old = json.loads(done.read_text())
                 if old.get("fingerprint") == fingerprint and old.get("evaluator") == EVALUATOR:

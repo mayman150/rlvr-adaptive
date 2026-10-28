@@ -72,9 +72,9 @@
       "--train",
       "train.json",
       "--steps",
-      "3",
+      "4",
       "--max-new",
-      "512",
+      "1024",
       "--arms",
       "baseline",
       "--param-dtype",
@@ -86,7 +86,7 @@
       "--teacher-lambda",
       "1.0",
       "--teacher-max-success",
-      "8"
+      "2"
      ],
      "independent": true
     },

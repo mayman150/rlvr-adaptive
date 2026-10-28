@@ -209,7 +209,9 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
                 if q["question"] in bank and groups[j][0] <= args.teacher_max_success:
                     t_items[(j, -1)] = bank[q["question"]]
                     adv[(j, -1)] = args.teacher_lambda
-            extra["teacher"] = {"solutions": len(t_items), "tokens": sum(len(v[1]) for v in t_items.values())}
+            extra["teacher"] = {"solutions": len(t_items), "tokens": sum(len(v[1]) for v in t_items.values()),
+                                "by_group_successes": {c: sum(groups[j][0] == c for j, _ in t_items) for c in range(args.teacher_max_success + 1)},
+                                "eligible_in_batch": sum(q["question"] in bank for q in batch)}
         live = sorted(k for k, a in adv.items() if a != 0)
         lengths = {k: stats[k][1] for k in stats}
         lengths.update({k: len(v[1]) for k, v in t_items.items()})
@@ -258,7 +260,7 @@ def train_arm(args, arm, problems, out_dir, rank, world, dev):
                "truncated_rate": sum(1 for v in stats.values() if v[1] >= args.max_new and not v[2]) / len(stats),
                "first_block_reward": sum(first) / len(first), "mixed_groups": sum(0 < c < n for c, n in groups),
                "groups": len(groups), "grad_norm": grad_norm, "answers": len(stats),
-               "tokens": sum(lengths.values()), "mean_length": sum(lengths.values()) / len(stats),
+               "tokens": sum(stats[k][1] for k in stats), "mean_length": sum(stats[k][1] for k in stats) / len(stats),  # rollouts only
                "group_counts": groups, "live": len(live), "micro_batches": n_micro, "peak_gb": float(peak),
                "gen_seconds": gen_seconds, "seconds": time.time() - start, "world": world, **extra}
         log.append(rec)

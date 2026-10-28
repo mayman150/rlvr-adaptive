@@ -20,10 +20,11 @@ ap.add_argument("--out", required=True)
 a = ap.parse_args()
 disc = {d["question"]: d for d in json.loads((HERE / "data" / a.discovery).read_text())}
 train = json.loads((HERE / "data" / "train.json").read_text())
-sols, seen = {}, set()
+sols, seen, n_samples = {}, set(), set()
 for f in a.texts:
     with gzip.open(f, "rt") as fh:
         t = json.load(fh)
+    n_samples.add(t["n"])
     for i, q in enumerate(t["problems"]):
         seen.add(q["question"])
         sols.setdefault(q["question"], [])
@@ -44,6 +45,6 @@ for q in train:
 Path(a.out).write_text(json.dumps(out))
 k = [len(sols[q["question"]]) for q in rare]
 print(json.dumps({"train": len(train), "rare": len(rare), "rare_with_teacher_solution": sum(x > 0 for x in k),
-                  "mean_correct_of_8": sum(k) / len(k),
+                  "samples_per_problem": sorted(n_samples), "mean_verified_per_problem": sum(k) / len(k),
                   "by_base_c": {c: [sum(1 for q, x in zip(rare, k) if disc[q["question"]]["c"] == c and x > 0),
                                     sum(1 for q in rare if disc[q["question"]]["c"] == c)] for c in range(a.max_c + 1)}}, indent=1))
