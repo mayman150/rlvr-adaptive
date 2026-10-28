@@ -57,3 +57,45 @@ Delta = 0, the fraction where W_r is an immediate bf16 neighbour of W_0 and the 
 uniform-cell estimate of rounding-noise energy (sum of q_i^2 / 12, asymmetric cells at exponent boundaries) relative to
 ||Delta||^2. The gradient diagnostic avoids checkpoint differencing, but it measures a different object: the
 conditional (mixed-group) problem-gradient structure within B1k8, in fp32 parameters with bf16 autocast.
+
+# Step 1b: gradient diagnostic
+
+Lane 5 of the same job; raw output `results_p26/dirdiag_g.json`. 32 problems mixed in both groups at each checkpoint
+(58 and 75 problems tried at steps 50 and 150).
+
+## Notation
+
+- S_A, S_B: CountSketch (2^20) of each problem's Dr. GRPO surrogate gradient from group A or group B (8 answers each,
+  T = 1, 1,024 tokens), over the same matrices as the weight diagnostic; parameters fp32, forward in bf16 autocast.
+- One-group shares: eigenvalues of S_A S_A^T (or of the cosine matrix) over their sum. Cross-group shares: eigenvalues
+  of (S_A S_B^T + S_B S_A^T) / 2 over the sum of their absolute values; negative share: the negative eigenvalues' part
+  of that sum.
+- Same-problem cross-group cosine: cosine between a problem's S_A row and its S_B row. Under a signal-plus-independent-
+  noise model it estimates the signal share of a one-group gradient's energy.
+
+## Results
+
+| Quantity | Step 50 | Step 150 |
+|---|---|---|
+| One-group Gram top share (A / B) | 0.075 / 0.077 | 0.057 / 0.106 |
+| One-group cosine-matrix top share (A / B) | 0.046 / 0.048 | 0.039 / 0.038 |
+| Mean pairwise cosine between problems (A / B) | -0.0002 / 0.0006 | 0.0014 / 0.0001 |
+| Batch-mean direction share (A / B) | 0.040 / 0.044 | 0.039 / 0.047 |
+| Cross-group Gram top share; negative share | 0.169; 0.390 | 0.114; 0.373 |
+| Same-problem cross-group cosine, mean (quartiles) | 0.011 (-0.022, 0.014, 0.035) | 0.014 (-0.013, 0.010, 0.035) |
+
+## Readings
+
+- **Whitening reading: not interpretable (noise-dominated).** The amendment's rule uses the cross-group top share at
+  step 150 and declares it not interpretable when the negative share exceeds 0.2; the negative share is 0.37.
+- **Per-problem gradients from one group of 8 are dominated by sampling noise:** the same problem's gradients from two
+  independent groups have mean cosine 0.01, i.e. about 1% of a one-group gradient's energy is reproducible under the
+  signal-plus-noise model. Gradients of different problems are uncorrelated at this resolution (mean pairwise cosine
+  about 0), and no direction dominates (one-group top shares 0.06-0.11, all below the registered 0.3).
+- **Joint picture with Step 1a (descriptive, not registered):** a single step's per-problem gradients show no shared
+  direction, yet the saved cumulative updates of independent Dr. GRPO seeds have cosine 0.34, and the other methods'
+  cumulative updates match B1k8 about as closely as another seed does (0.34-0.47). Any shared component therefore
+  appears only after accumulation over many problems and steps; it is not a property of individual problem gradients.
+- **Implication for the whitening pilot (PW):** its weights alpha are computed from one-group per-problem gradients,
+  which are about 99% noise here, so PW's reweighting is expected to be close to random with respect to the
+  reproducible gradient structure. The pilot's registered rule still decides.
