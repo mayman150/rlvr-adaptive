@@ -88,7 +88,10 @@ def evaluate(job):
     if room > limit:
         raise SystemExit(f"prompt {longest} + max_new {a['max_new']} (+ forced answer) exceeds the model's context {limit}")
     llm = LLM(model=job["path"], tokenizer=tok_dir, dtype="bfloat16", seed=a["seed"], gpu_memory_utilization=0.88,
-              max_model_len=room, enable_prefix_caching=a["prefix_caching"], tensor_parallel_size=a.get("tp", 1))
+              max_model_len=room, enable_prefix_caching=a["prefix_caching"], tensor_parallel_size=a.get("tp", 1),
+              # vLLM's custom all-reduce needs CUDA IPC between GPUs, which SageMaker containers do not allow
+              # ("custom_all_reduce.cuh: invalid argument"); NCCL all-reduce is used instead
+              disable_custom_all_reduce=a.get("tp", 1) > 1)
 
     def decode(o):
         """eval_ckpt.py's accounting on the generated token ids: cut after the first stop token, decode without
