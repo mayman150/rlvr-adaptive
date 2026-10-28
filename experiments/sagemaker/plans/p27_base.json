@@ -1,0 +1,57 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "gpus": [],
+ "eval_lanes": [
+  [
+   {
+    "name": "BASE15lowT",
+    "sub": null,
+    "part": 0,
+    "engine": "vllm",
+    "include_base": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "1024",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--n",
+     "32",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "0.4,0.6,0.8"
+    ]
+   },
+   {
+    "name": "BASE15n128",
+    "sub": null,
+    "part": 1,
+    "engine": "vllm",
+    "include_base": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "1024",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--n",
+     "128",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}
