@@ -28,11 +28,11 @@ if [ -n "${PLAN:-}" ]; then
 fi
 echo "model copy: models/${MODEL_DIR:-Qwen2.5-Math-1.5B}"
 CHANNELS="[{\"ChannelName\": \"model\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"s3://${BUCKET}/models/${MODEL_DIR:-Qwen2.5-Math-1.5B}/\", \"S3DataDistributionType\": \"FullyReplicated\"}}}"
-VOLUME=${VOLUME:-60}
 if [ -n "${CKPT_S3:-}" ]; then
   CHANNELS="${CHANNELS}, {\"ChannelName\": \"ckpts\", \"DataSource\": {\"S3DataSource\": {\"S3DataType\": \"S3Prefix\", \"S3Uri\": \"${CKPT_S3}\", \"S3DataDistributionType\": \"FullyReplicated\"}}}"
-  VOLUME=120
+  VOLUME=${VOLUME:-120}  # an explicit VOLUME is kept
 fi
+VOLUME=${VOLUME:-60}
 CHANNELS="${CHANNELS}]"
 tar -czf "${STAGE}.tar.gz" -C "${STAGE}" .
 ${AWS} s3 cp "${STAGE}.tar.gz" "s3://${BUCKET}/code/${JOB}/sourcedir.tar.gz"
