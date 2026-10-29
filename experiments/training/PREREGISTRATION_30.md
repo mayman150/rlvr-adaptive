@@ -158,3 +158,11 @@ which would leave one distinct solution per problem; T = 0.7/top-p 0.8 keeps sev
 definition, N, R's stratified draw (seed 3030), Stage 1 and Stage 2 are unchanged; p30_select.py is rerun on the new
 pool, and a new random-50 audit is reported before Stage 1. The T = 1 pool and its selections (N = 210) are kept as a
 recorded alternative and not used.
+
+Amendment 3 result (pool regenerated in job worth-p30-teach3-s0-20261029-060407, all eight shards exit 0): pass@1
+by shard 67.7-95.9% (T = 1 pool: 46.4-72.4%), truncation 0.6-3.8% (25-46%); 169 of 15,680 samples degenerate
+(no box and more than 5% stray non-ASCII; T = 1 pool: 5,131). This supports, without controlling for each factor
+separately, the hypothesis that T = 1 sampling caused the earlier degeneration. Survival: 13,035 samples (2,015
+not verified, 357 over 1,023 tokens, 273 duplicates); 3,550 problems keep a solution. H keeps 262 of 456 (c = 0: 26 of
+110; 1-2: 79 of 145; 3-4: 157 of 201), so N = 262 (809 solutions, 3.09 per problem, mean 473 tokens); R has 262
+problems (950 solutions; 18 also in H). Hashes in data/p30_select_report.json; the random-50 audit follows.
