@@ -121,3 +121,13 @@ reported, and the 100-problem rule above still applies). The generation shares t
 Amendment 1 addendum (Codex review): the two generation lanes download the teacher into separate directories (no
 shared-directory race); a gate result is re-checked when a saved evaluation is reused; the two 48-problem gate outputs
 overlap the generation shards and are excluded from pool assembly.
+
+## Amendment 2 (October 29, from the Stage 0 table, before any teacher output was inspected)
+
+Stage 0 (p30_stage0.py -> data/p30_stage0.json; base pass@1 on the 3,920 training problems 30.6% at 64 samples):
+H has 456 problems (c = 0: 110; c = 1-2: 145; c = 3-4: 201); W has 14. Since W has fewer than 100 problems even
+before teacher filtering, W and H \ W are dropped by the registered rule and H is the only targeted arm. With W gone,
+N is redefined as the number of H problems with a surviving teacher solution; R draws N problems from all problems
+with a surviving solution, stratified to H's subject mix (seed 3030). Stage 1 starts: R and H at 0.5M and 2M
+presented tokens, TailSFT on R at 2M, and the base. Stage 2 advances R-2M, TailSFT-2M and H-2M (the targeted start;
+"weak test" if its validation forecast shift is below 2 points). Everything else is unchanged.

@@ -86,3 +86,10 @@ first 48 problems, again with degenerate text, so tensor-parallel generation of 
 container. Only unofficial quantized single-GPU 72B builds exist. The 72B teacher is abandoned; Pre-registration 30
 (Amendment 1) uses Qwen2.5-Math-7B-Instruct, which runs on one GPU. Whether P29b (TD7) runs with that teacher is a
 separate decision, not made here. Lost cost of the five launches: about $70.
+
+## Decision (October 29, 2026): P29b is not run
+
+The project lead decided not to run P29b (TD7) with the substitute 7B-Instruct teacher: a teacher of the trained
+model's own size is a weaker test of the registered question than the 72B teacher, and Pre-registration 30 tests the
+higher-priority question (whether the starting distribution moves the curve). No P29b result exists; the registration
+is closed without data.
