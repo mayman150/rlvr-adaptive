@@ -2,7 +2,7 @@
 about an order of magnitude faster for long answers. Each checkpoint is evaluated in its own subprocess (vLLM does not
 release GPU memory reliably between engines).
 
-Sampling: temperature T, top_p 1, no top-k, up to --max-new tokens, stop at the model's stop tokens, a fixed seed per
+Sampling: temperature T, top_p 1 (or --top-p), no top-k, up to --max-new tokens, stop at the model's stop tokens, a fixed seed per
 request; greedy: temperature 0. Answers are decoded without special tokens, as in eval_ckpt.py; an answer is truncated
 if it ended because of the length limit.
 
@@ -106,12 +106,12 @@ def evaluate(job):
 
     res = {"tag": job["tag"], "model": job["path"], "n": a["n"], "problems": len(problems), "pass_at_k": {},
            "temperature": job["temperature"], "engine": f"vllm {vllm.__version__}", "evaluator": EVALUATOR,
-           "fingerprint": job["fingerprint"], "tp": a.get("tp", 1)}
+           "fingerprint": job["fingerprint"], "tp": a.get("tp", 1), "top_p": a.get("top_p", 1.0)}
     if job["sampled"]:
         if job["temperature"] < 0.01:
             raise SystemExit("temperatures below 0.01 are clamped by vLLM; use the greedy path")
         # one seed per problem (siblings get seed + i inside vLLM), distinct across problems and shards
-        sps = [SamplingParams(n=a["n"], temperature=job["temperature"], top_p=1.0, top_k=-1, max_tokens=a["max_new"],
+        sps = [SamplingParams(n=a["n"], temperature=job["temperature"], top_p=a.get("top_p", 1.0), top_k=-1, max_tokens=a["max_new"],
                               stop_token_ids=stop, ignore_eos=True, seed=a["seed"] * 1000003 + (a["offset"] + i) * a["n"],
                               skip_special_tokens=True, detokenize=False)
                for i in range(len(texts))]
@@ -206,6 +206,7 @@ def main():
     ap.add_argument("--temperatures", default="")
     ap.add_argument("--base-temperatures", default="")
     ap.add_argument("--tp", type=int, default=1, help="tensor-parallel GPUs (large models)")
+    ap.add_argument("--top-p", type=float, default=1.0, help="nucleus sampling (teacher generation only; evaluations use 1)")
     ap.add_argument("--enforce-eager", action="store_true", help="no CUDA graphs (stability with tensor parallelism)")
     ap.add_argument("--min-pass1", type=float, default=0.0, help="fail if sampled pass@1 is below this (sanity gate)")
     ap.add_argument("--identity", default="", help="model identity (e.g. repo@revision), part of the resume fingerprint")
@@ -233,7 +234,7 @@ def main():
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
     shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out",
-                                            "force_answer", "tp", "enforce_eager", "min_pass1")}
+                                            "force_answer", "tp", "enforce_eager", "min_pass1", "top_p")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
@@ -244,6 +245,8 @@ def main():
             fingerprint = {k: shared[k] for k in ("problems", "limit", "offset", "n", "max_new", "seed")}
             if shared["force_answer"]:
                 fingerprint["force_answer"] = shared["force_answer"]
+            if shared["top_p"] != 1.0:  # nucleus sampling changes the samples: never reuse results across settings
+                fingerprint["top_p"] = shared["top_p"]
             if args.identity:
                 fingerprint["identity"] = args.identity
             if args.tp > 1:  # tensor parallelism changes numerics: never reuse results across settings

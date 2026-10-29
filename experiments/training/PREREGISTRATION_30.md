@@ -147,3 +147,14 @@ misses ASCII corruption, so the pool is noisy, not clean. H keeps 210 of 456 pro
 p30_select.py (data/p30_select_report.json, with SHA-256 of the archive and both selections). The validation
 human-NLL corpus (data/val_frontier_256_human.json) takes the MATH test solutions from EleutherAI/hendrycks_math (all
 255 matched).
+
+## Amendment 3 (October 29, project lead's decision after the audit; before any Stage 1 run)
+
+Because the registered audit found damaged text in 14 of 50 archived T = 1 solutions, and Stage 1 presents each H
+solution about 21 times, the teacher pool is regenerated with nucleus sampling: Qwen2.5-Math-7B-Instruct (same
+revision), 4 samples per training problem, T = 0.7, top-p 0.8, 2,048 tokens, seed 3131, eight 490-problem shards
+(single-GPU vLLM; a shard fails if its pass@1 is below 0.4). Qwen recommends greedy decoding for chain-of-thought,
+which would leave one distinct solution per problem; T = 0.7/top-p 0.8 keeps several. The survival rule, H's
+definition, N, R's stratified draw (seed 3030), Stage 1 and Stage 2 are unchanged; p30_select.py is rerun on the new
+pool, and a new random-50 audit is reported before Stage 1. The T = 1 pool and its selections (N = 210) are kept as a
+recorded alternative and not used.

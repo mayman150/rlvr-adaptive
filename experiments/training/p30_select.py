@@ -1,7 +1,8 @@
 """Pre-registration 30 (Amendment 2): teacher archive and selections H and R.
 
-Teacher pool: Qwen2.5-Math-7B-Instruct samples (Amendment 1; eval_vllm texts of the four 980-problem shards, offsets read
-from each shard's eval fingerprint; the two 48-problem gate outputs are not used). A response survives as in
+Teacher pool: Qwen2.5-Math-7B-Instruct samples (Amendment 3: T = 0.7, top-p 0.8, seed 3131, eight 490-problem shards;
+Amendment 1's T = 1 pool with --teacher-seed 2929 --teacher-top-p 1; offsets read from each shard's eval fingerprint;
+gate outputs are not used). A response survives as in
 sft_start.examples (Pre-registration 14's canonicalization): retokenized without special tokens with the 1.5B's
 tokenizer, at most 1,023 tokens, its decoding verifies and has a final box, and it is not a token-level duplicate.
 H = Stage 0's H (c <= 4 of 64) restricted to problems with a surviving solution; N = |H|.
@@ -45,6 +46,8 @@ def main():
     ap.add_argument("--tokenizer-json", default=None)
     ap.add_argument("--model", default=None)
     ap.add_argument("--seed", type=int, default=3030)
+    ap.add_argument("--teacher-seed", type=int, default=3131, help="generation seed of the pool (Amendment 3; 2929 for the T = 1 pool)")
+    ap.add_argument("--teacher-top-p", type=float, default=0.8, help="nucleus parameter of the pool (Amendment 3; 1.0 for the T = 1 pool)")
     ap.add_argument("--out", default=str(HERE / "data"))
     a = ap.parse_args()
     encode, decode = tokenizer(a)
@@ -57,7 +60,8 @@ def main():
     for spec in a.teacher:
         tf, ef = spec.split(":")
         fp = json.loads(Path(ef).read_text())["fingerprint"]
-        assert fp["problems"] == "train.json" and fp["n"] == 4 and fp["max_new"] == 2048 and fp["seed"] == 2929, fp
+        assert fp["problems"] == "train.json" and fp["n"] == 4 and fp["max_new"] == 2048 and fp["seed"] == a.teacher_seed \
+            and fp.get("top_p", 1.0) == a.teacher_top_p, fp
         d = json.load(gzip.open(tf, "rt"))
         off = fp["offset"]
         for i, q in enumerate(d["problems"]):
