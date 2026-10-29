@@ -93,3 +93,9 @@ The project lead decided not to run P29b (TD7) with the substitute 7B-Instruct t
 model's own size is a weaker test of the registered question than the 72B teacher, and Pre-registration 30 tests the
 higher-priority question (whether the starting distribution moves the curve). No P29b result exists; the registration
 is closed without data.
+
+Correction (October 29): the degenerate 72B text was attributed above to corrupted tensor-parallel communication. The
+same degeneration (fluent openings, then random multilingual tokens, no final box) appears in single-GPU generation
+by Qwen2.5-Math-7B-Instruct at T = 1 (a third of its samples; Pre-registration 30, Amendment 2 addendum), whose own
+generation config is greedy. Sampling at T = 1 is therefore the more likely cause of the fourth and fifth launches'
+failures; the cause was not established. The third launch's illegal-memory-access error is a separate failure.

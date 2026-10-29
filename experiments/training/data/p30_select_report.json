@@ -1,0 +1,73 @@
+{
+ "teacher_samples": {
+  "samples": 15680,
+  "not_verified": 5793,
+  "surviving": 9821,
+  "too_long": 62,
+  "duplicate": 4
+ },
+ "problems_with_surviving_solution": 3290,
+ "H_stage0": 456,
+ "H_surviving_by_bin": {
+  "0": "12 of 110",
+  "1-2": "65 of 145",
+  "3-4": "133 of 201"
+ },
+ "N": 210,
+ "H": {
+  "problems": 210,
+  "subjects": {
+   "algebra": 49,
+   "counting_and_probability": 57,
+   "number_theory": 35,
+   "prealgebra": 69
+  },
+  "base_count_bins": {
+   "0": 12,
+   "1-2": 65,
+   "3-4": 133
+  },
+  "solutions": 551,
+  "solutions_per_problem": 2.624,
+  "mean_solution_tokens": 405.6,
+  "levels": {
+   "Level 1": 23,
+   "Level 2": 47,
+   "Level 3": 28,
+   "Level 4": 34,
+   "Level 5": 78
+  }
+ },
+ "R": {
+  "problems": 210,
+  "subjects": {
+   "algebra": 49,
+   "counting_and_probability": 57,
+   "number_theory": 35,
+   "prealgebra": 69
+  },
+  "base_count_bins": {
+   "0": 3,
+   "1-2": 2,
+   "3-4": 11,
+   ">=5": 194
+  },
+  "solutions": 605,
+  "solutions_per_problem": 2.881,
+  "mean_solution_tokens": 396.9,
+  "levels": {
+   "Level 1": 18,
+   "Level 2": 54,
+   "Level 3": 42,
+   "Level 4": 47,
+   "Level 5": 49
+  }
+ },
+ "R_overlap_with_H": 16,
+ "sha256": {
+  "p30_archive.json": "0ac5ccd781c76bb6b2137c682a70f285b81a24b24308e038ef1f484af0d12cfe",
+  "p30_sel_H.json": "271d938cfe8ea5cc9d6279535d596a67e8b00ea787f5e09eec751eaf7b2f6991",
+  "p30_sel_R.json": "bbf3ab76eb2834bfefe0475b711210eef6f878235d697e9ebaf00641af523d4a"
+ },
+ "seed": 3030
+}

@@ -131,3 +131,14 @@ N is redefined as the number of H problems with a surviving teacher solution; R 
 with a surviving solution, stratified to H's subject mix (seed 3030). Stage 1 starts: R and H at 0.5M and 2M
 presented tokens, TailSFT on R at 2M, and the base. Stage 2 advances R-2M, TailSFT-2M and H-2M (the targeted start;
 "weak test" if its validation forecast shift is below 2 points). Everything else is unchanged.
+
+Amendment 2 addendum (teacher pool, after generation): 9,821 of 15,680 teacher samples survive (5,793 not verified,
+62 over 1,023 tokens, 4 duplicates); 3,290 problems keep at least one solution. About a third of all samples
+(5,131) degenerate into random multilingual tokens without a final box, more often on later (harder) shards
+(truncation 25-46% at 2,048 tokens): the model's own generation config is greedy, and T = 1 with top-p 1 lets it
+fall into its low-probability tail. Verified responses are almost all clean (51 of 9,887 contain more than 1%
+non-ASCII characters, mostly Chinese-language solutions); they are kept as registered. H keeps 210 of 456 problems
+(c = 0: 12 of 110; 1-2: 65 of 145; 3-4: 133 of 201), so N = 210; R has 210 problems (16 also in H). Selections:
+p30_select.py (data/p30_select_report.json, with SHA-256 of the archive and both selections). The validation
+human-NLL corpus (data/val_frontier_256_human.json) takes the MATH test solutions from EleutherAI/hendrycks_math (all
+255 matched).
