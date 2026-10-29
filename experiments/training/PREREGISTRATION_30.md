@@ -19,7 +19,7 @@ with the observed post-RL curve shift, and does it rank starts better than simpl
 ## Stage 0: definitions (running)
 
 The 1.5B base, 64 samples per training problem (3,920), T = 1, 1,024 tokens. Per problem: success count c (of 64),
-unfinished count, and final boxed answers grouped by the verifier's normalization (`verifier.normalize`).
+unfinished count, and final boxed answers grouped by the verifier's normalization (`verifier.normalize`); "unfinished" means no final box.
 - **H (low observed success):** c <= 4 of 64 (c = 0 reported separately).
 - **W (concentrated wrong answers):** c <= 4, at most 31 unfinished samples, and the most frequent normalized wrong
   answer appears in at least 16 of 64 samples (ties: lexicographically smallest normalized answer).
@@ -56,7 +56,7 @@ conditional curves f_X(u) and f_B(u) (pass@16 at pass@1 u; law.py, tau = -0.20, 
 differenced, on validation and test; also uniform and affine comparators and a zero-shift predictor. Features for rank
 comparison only: the change in pass@1, pass@32, pass@64, mean NLL on the validation problems' human solutions (one
 frozen corpus: our prompt plus the human solution text truncated to 1,023 tokens, response tokens only, EOS included,
-token-averaged over the corpus), and a frozen power-map (BOPTR-style) forecast from
+token-averaged over the corpus; the appended token is the chat stop token <|im_end|>, as in sft_start.py), and a frozen power-map (BOPTR-style) forecast from
 each start's 64-sample pass@N curve (calibrated on Pre-registration 21's Dr. GRPO checkpoints; unscorable cases
 reported; not full BOPTR).
 
@@ -129,15 +129,20 @@ H has 456 problems (c = 0: 110; c = 1-2: 145; c = 3-4: 201); W has 14. Since W h
 before teacher filtering, W and H \ W are dropped by the registered rule and H is the only targeted arm. With W gone,
 N is redefined as the number of H problems with a surviving teacher solution; R draws N problems from all problems
 with a surviving solution, stratified to H's subject mix (seed 3030). Stage 1 starts: R and H at 0.5M and 2M
-presented tokens, TailSFT on R at 2M, and the base. Stage 2 advances R-2M, TailSFT-2M and H-2M (the targeted start;
-"weak test" if its validation forecast shift is below 2 points). Everything else is unchanged.
+presented tokens, TailSFT on R at 2M, and the base (three SFT trajectories, 6M presented tokens in total;
+five starts plus the base; twelve 64-sample evaluations). Stage 2 advances R-2M, TailSFT-2M and H-2M. H-2M is the
+targeted start unless its validation grid is empty ("no common support": it then cannot advance as the targeted
+start); its forecast shift is the equal-weight mean over the validation grid of f_H(u) - f_B(u), and if the absolute
+value of that mean is below 2 points it advances as a weak test. Everything else is unchanged.
 
 Amendment 2 addendum (teacher pool, after generation): 9,821 of 15,680 teacher samples survive (5,793 not verified,
 62 over 1,023 tokens, 4 duplicates); 3,290 problems keep at least one solution. About a third of all samples
 (5,131) degenerate into random multilingual tokens without a final box, more often on later (harder) shards
 (truncation 25-46% at 2,048 tokens): the model's own generation config is greedy, and T = 1 with top-p 1 lets it
-fall into its low-probability tail. Verified responses are almost all clean (51 of 9,887 contain more than 1%
-non-ASCII characters, mostly Chinese-language solutions); they are kept as registered. H keeps 210 of 456 problems
+fall into its low-probability tail (a hypothesis; no controlled decoding comparison was run). The registered audit
+of 50 archived solutions (uniform, Random(3030), by Codex) found 14 with stray tokens or damaged notation and at
+least one with flawed reasoning behind a verified answer; a non-ASCII count (51 of 9,887 verified responses above 1%)
+misses ASCII corruption, so the pool is noisy, not clean. H keeps 210 of 456 problems
 (c = 0: 12 of 110; 1-2: 65 of 145; 3-4: 133 of 201), so N = 210; R has 210 problems (16 also in H). Selections:
 p30_select.py (data/p30_select_report.json, with SHA-256 of the archive and both selections). The validation
 human-NLL corpus (data/val_frontier_256_human.json) takes the MATH test solutions from EleutherAI/hendrycks_math (all

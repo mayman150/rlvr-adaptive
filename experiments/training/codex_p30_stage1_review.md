@@ -1,0 +1,34 @@
+**The supplied implementation matches Amendment 2.** I found no current selection or plan mismatch for a fresh eight-GPU job. Correct the teacher-quality claim and clarify H’s advancement rule before launch.
+
+1. **Code and runtime**
+
+   Full replay reproduced **H = 456, W = 14, N = 210**, both selections, subject quotas, the 16-problem overlap, and all three hashes. Teacher offsets cover all 3,920 problems exactly; gate outputs are excluded. Ordering and seed-3030 sampling are deterministic. Archive format, length cap, decoded verification, final-box requirement, and token deduplication agree with the loader. The selector additionally prefilters stored rewards; rechecking every sample found no effect from that difference. [Stage 0](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/p30_stage0.py:25), [selector](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/p30_select.py:57), [loader](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/sft_start.py:36).
+
+   **NLL is correct:** all 255 corpus questions/answers match validation; it uses the shared prompt, masks prompt tokens, truncates the body to 1,023 tokens, appends `<|im_end|>` (151645), and averages over **52,350 response tokens**. One human solution is truncated. The causal prediction slice is correct. [Scorer](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/p30_nll.py:19), [response slicing](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:136).
+
+   **Plan is correct:** R/H save both milestones; TailSFT saves only 2M. All five starts and the base receive both evaluations: 255 validation / 511 test, 64 samples, T = 1, 1,024 tokens, seed 3030. Paths, injected script arguments, `include_base`, and evaluation as step 0 work with the stated lane semantics. [Plan](/Users/mmayman/Desktop/adaptive-rlvr/experiments/sagemaker/plans/p30_stage1.json:7), [runner](/Users/mmayman/Desktop/adaptive-rlvr/experiments/sagemaker/entry.py:173), [step discovery](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/eval_vllm.py:227).
+
+   **Conditional reuse bug:** waits accept any existing marker, and evaluation cache fingerprints omit weights and corpus contents. A resumed/reused directory can therefore accept stale starts or evaluations. Fresh job directories avoid this; restart support needs checkpoint/content identity and readiness checks. The marker otherwise follows completed checkpoint/tokenizer saving, and wait failure correctly blocks dependent steps. [Wait](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/p30_wait.py:14), [marker creation](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/sft_start.py:157), [cache check](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/eval_vllm.py:244).
+
+2. **Teacher protocol and recommendation**
+
+   I performed the registered random-50 audit: uniformly sampled archived solutions, flattened in problem/response order, using `Random(3030)`. **14/50 had stray tokens or damaged notation.** Another response, training index **2051, response 0**, argues for equal groups using groups of 10, 10, and 4. Index **2589, response 0** corrupts 223 into `Y`/222 in its equations. The non-ASCII statistic misses ASCII corruption and does **not** establish “almost all clean.” [Archive](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/data/p30_archive.json:1), [quality assertion](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:135).
+
+   **My recommendation: retain T = 1 as the registered primary pool, report this audit, and explicitly scope conclusions to the noisy, teacher-covered intervention.** The rejected degenerate samples do not enter SFT. However, H covers only 210/456 problems and 12/110 base-zero problems; this is a limited test of transfer into that zero stratum.
+
+   Regeneration leaves Stage-0 H membership fixed but can change surviving H, N, R’s subject quotas, solution diversity, and repetition. Improved zero-bin coverage is possible, not guaranteed. Greedy generation gives one distinct response per problem; four nominal draws collapse through deduplication. Qwen recommends greedy for CoT; its T = 0.7/top-p = 0.8 example is for TIR.  A regenerated pool should be a separately declared intervention or sensitivity analysis. The current evaluator hardcodes top-p = 1 and rejects sampled T = 0, so regeneration also requires generator/assembly changes. [Sampling](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/eval_vllm.py:111).
+
+3. **Repetition and remaining Stage-1 work**
+
+   Repetition is **as registered**. CPU replay predicts H’s 2M checkpoint at **2,003,146 tokens: 4,408 visits, 20.99 visits/problem, 551 unique solutions and 3,857 repeat presentations**. All 551 solutions have already been presented by the 0.5M checkpoint. The 406-token mean weights solutions; uniform problem visitation instead averages about 454 tokens including the stop token. Report actual milestone overshoot, visits/repeats, retained tokens—especially for TailSFT—distributions, and compute. [Sampling/accounting](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/sft_start.py:117).
+
+   The plan gathers evaluations and NLL but does **not** write the registered frozen forecasts/comparators. Complete and freeze that artifact before Stage 2, using the **first 32 responses per problem for the law** and all 64 for diagnostics. [Forecast requirement](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:51).
+
+4. **Wording corrections**
+
+   - Amendment 2 should explicitly retain the **empty-common-support-grid exclusion**, specify the grid-shift summary, and apply the 2-point threshold to its **absolute** value. Its current advancement wording reads unconditionally. [Original rule](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:63), [amendment](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:130).
+   - Replace “almost all clean” with the audit findings. Present the low-probability-tail explanation as a hypothesis pending a controlled decoding comparison. [Addendum](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:135).
+   - Update Stage-1 cost counts to **three trajectories, 6M tokens, five starts plus base, twelve evaluations**. [Stale counts](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:105).
+   - Define “unfinished” as **no final box**, and specify “EOS included” as the appended chat stop token. [Definitions](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:21), [NLL wording](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md:58).
+
+Files were unchanged. This was a CPU/data review; no GPU training or evaluation was run.
