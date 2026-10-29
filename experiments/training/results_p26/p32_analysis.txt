@@ -1,0 +1,30 @@
+Pre-registration 32 (outcome-based exploration on the matched-pass@1 curve; 1.5B, 1,024 tokens; vLLM evaluation)
+   OU vs B1k envelope: +0.40, 90% [+0.07, +0.70], 95% [+0.02, +0.76]; per seed 8: +0.56 [+0.09, +1.03], 9: +0.35 [-0.16, +0.89], 10: +0.27 [-0.31, +0.81]; clamped 8: 4.9%, 9: 0.0%, 10: 0.0% -> average equivalence (Holm-adjusted p 0.072)
+      bands: s8 step 25: +1.2 [-0.4, +2.9]; s8 step 50: +1.4 [-0.1, +2.8]; s8 step 100: -0.7 [-2.2, +0.7]; s8 step 150: +0.4 [-1.0, +1.8]; s9 step 25: +0.2 [-1.5, +1.9]; s9 step 50: +0.4 [-1.4, +2.1]; s9 step 100: +0.5 [-1.0, +1.9]; s10 step 25: +0.7 [-1.0, +2.5]; s10 step 50: -0.1 [-1.7, +1.5]; s10 step 100: +0.2 [-1.1, +1.4]
+   OU vs B1k trajectory (reported): +0.40, 90% [+0.08, +0.70], 95% [+0.02, +0.76]; per seed 8: +0.56 [+0.09, +1.03], 9: +0.35 [-0.16, +0.90], 10: +0.27 [-0.29, +0.83]; clamped 8: 4.9%, 9: 0.0%, 10: 0.0%
+      bands: s8 step 25: +1.2 [-0.4, +2.9]; s8 step 50: +1.4 [-0.1, +2.8]; s8 step 100: -0.7 [-2.2, +0.7]; s8 step 150: +0.4 [-1.0, +1.8]; s9 step 25: +0.2 [-1.5, +1.9]; s9 step 50: +0.4 [-1.4, +2.1]; s9 step 100: +0.5 [-1.0, +2.0]; s10 step 25: +0.7 [-1.0, +2.5]; s10 step 50: -0.1 [-1.7, +1.5]; s10 step 100: +0.2 [-1.0, +1.4]
+   OU pass@32 vs B1k envelope (secondary): +0.31, 90% [-0.18, +0.71], 95% [-0.25, +0.78]; per seed 8: +0.63 [-0.07, +1.31], 9: +0.07 [-0.66, +0.73], 10: +0.23 [-0.62, +0.94]; clamped 8: 4.9%, 9: 0.0%, 10: 0.0% -> excludes the +1.7 reference magnitude
+      bands: s8 step 25: +1.0 [-1.4, +3.5]; s8 step 50: +1.4 [-0.6, +3.4]; s8 step 100: -0.9 [-3.2, +1.5]; s8 step 150: +0.9 [-1.1, +3.0]; s9 step 25: -0.3 [-2.8, +2.3]; s9 step 50: -0.4 [-2.8, +2.0]; s9 step 100: +0.9 [-1.1, +2.8]; s10 step 25: +0.8 [-1.8, +3.5]; s10 step 50: +0.0 [-2.3, +2.3]; s10 step 100: -0.1 [-2.0, +1.7]
+   OU step 150 minus B1k (raw): pass@1 +0.28, pass@32 +0.39
+   OUs8 pass@16 minus B1k8 at step 150 by base count: c=0 (74): +2.0, c=1-4 (162): +0.9, c>=5 (275): -0.1
+   OUs9 pass@16 minus B1k9 at step 150 by base count: c=0 (74): +3.2, c=1-4 (162): +1.3, c>=5 (275): -0.2
+   OUs10 pass@16 minus B1k10 at step 150 by base count: c=0 (74): -0.3, c=1-4 (162): -2.1, c>=5 (275): +0.2
+   OU training (450 steps over 3 seeds): nonzero bonuses 86.4/128, positive 42.9, mean bonus +0.0184, all-correct groups 4.22/16 (skipped 4.22), distinct outcomes per group 2.96 (all-wrong groups 5.28), no parsed box 13.4/128, probe entropy 0.3842
+   OB vs B1k envelope: +0.01, 90% [-0.32, +0.35], 95% [-0.38, +0.39]; per seed 8: +0.10 [-0.39, +0.58], 9: -0.08 [-0.62, +0.49], 10: +0.01 [-0.61, +0.59]; clamped 8: 5.6%, 9: 0.0%, 10: 9.0% -> average equivalence (Holm-adjusted p 0.960)
+      bands: s8 step 25: +0.6 [-0.8, +2.0]; s8 step 50: +0.5 [-0.9, +2.0]; s8 step 100: -0.7 [-2.2, +0.7]; s8 step 150: -0.0 [-1.6, +1.6]; s9 step 25: -0.2 [-1.8, +1.5]; s9 step 50: +0.2 [-1.3, +1.7]; s9 step 100: -0.2 [-1.8, +1.4]; s10 step 25: +0.1 [-1.7, +1.9]; s10 step 50: +0.3 [-1.4, +2.1]; s10 step 100: +0.3 [-1.1, +1.8]; s10 step 150: -0.8 [-2.4, +0.9]
+   OB vs B1k trajectory (reported): +0.01, 90% [-0.31, +0.35], 95% [-0.37, +0.40]; per seed 8: +0.10 [-0.39, +0.58], 9: -0.08 [-0.61, +0.50], 10: +0.01 [-0.57, +0.60]; clamped 8: 5.6%, 9: 0.0%, 10: 9.0%
+      bands: s8 step 25: +0.6 [-0.8, +2.0]; s8 step 50: +0.5 [-0.9, +2.0]; s8 step 100: -0.7 [-2.2, +0.7]; s8 step 150: -0.0 [-1.6, +1.6]; s9 step 25: -0.2 [-1.8, +1.5]; s9 step 50: +0.2 [-1.3, +1.7]; s9 step 100: -0.2 [-1.9, +1.4]; s10 step 25: +0.1 [-1.7, +1.9]; s10 step 50: +0.3 [-1.4, +2.1]; s10 step 100: +0.3 [-1.1, +1.7]; s10 step 150: -0.8 [-2.4, +0.8]
+   OB pass@32 vs B1k envelope (secondary): -0.18, 90% [-0.73, +0.32], 95% [-0.84, +0.41]; per seed 8: +0.07 [-0.74, +0.82], 9: -0.19 [-1.09, +0.64], 10: -0.41 [-1.36, +0.44]; clamped 8: 5.6%, 9: 0.0%, 10: 9.0% -> excludes the +1.7 reference magnitude
+      bands: s8 step 25: -0.3 [-2.5, +1.9]; s8 step 50: +0.8 [-1.4, +3.0]; s8 step 100: -0.7 [-2.9, +1.5]; s8 step 150: +0.5 [-2.0, +3.1]; s9 step 25: -0.2 [-2.7, +2.3]; s9 step 50: +0.0 [-2.4, +2.5]; s9 step 100: -0.4 [-2.6, +1.8]; s10 step 25: -0.1 [-3.0, +2.7]; s10 step 50: +0.2 [-2.3, +2.7]; s10 step 100: -0.2 [-2.5, +2.1]; s10 step 150: -1.5 [-4.1, +1.0]
+   OB step 150 minus B1k (raw): pass@1 +0.08, pass@32 -0.13
+   OBs8 pass@16 minus B1k8 at step 150 by base count: c=0 (74): +2.6, c=1-4 (162): -0.7, c>=5 (275): -0.0
+   OBs9 pass@16 minus B1k9 at step 150 by base count: c=0 (74): +0.8, c=1-4 (162): +1.5, c>=5 (275): +0.1
+   OBs10 pass@16 minus B1k10 at step 150 by base count: c=0 (74): +0.2, c=1-4 (162): -3.1, c>=5 (275): +0.3
+   OB training (450 steps over 3 seeds): nonzero bonuses 99.6/128, positive 0.0, mean bonus -0.0983, all-correct groups 3.94/16 (skipped 0.00), distinct outcomes per group 3.00 (all-wrong groups 5.40), no parsed box 13.9/128, probe entropy 0.3890
+Manipulation check (test texts; not multiplicity-adjusted)
+   OU distinct minus B1k at matched pass@1: +0.057, 90% [+0.014, +0.101]; per seed 8: +0.029, 9: +0.115, 10: +0.027; max clamped 4.9% -> diversity increase shown
+   OB distinct minus B1k at matched pass@1: -0.007, 90% [-0.049, +0.034]; per seed 8: +0.018, 9: -0.016, 10: -0.024; max clamped 9.0% -> an increase in the registered diversity metric has not been demonstrated
+   OU collision minus B1k at matched pass@1: -0.003, 90% [-0.007, +0.000]; per seed 8: -0.001, 9: -0.003, 10: -0.005; max clamped 4.9%
+   OB collision minus B1k at matched pass@1: -0.002, 90% [-0.006, +0.001]; per seed 8: -0.001, 9: -0.001, 10: -0.003; max clamped 9.0%
+   OU no-parsed-box share at step 150: 11.6% (B1k 11.5%)
+   OB no-parsed-box share at step 150: 11.4% (B1k 11.5%)
