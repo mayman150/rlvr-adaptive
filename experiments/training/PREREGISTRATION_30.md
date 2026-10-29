@@ -196,3 +196,9 @@ codex_p30_stage2_design.md):
   is reported separately from the post-RL estimate, and per-checkpoint gaps are shown: if only early checkpoints are
   eligible, the claim is about early RL, not persistence through step 150. The targeting claim (H vs R) is read at the
   chosen dose. The 2,048-token sensitivity check is kept.
+
+Amendment 4 dose choice (validation only; job worth-p30-stage1b-s0-20261029-164830): validation pass@1 R 0.462 /
+0.561 / 0.585 and H 0.372 / 0.566 / 0.586 at 25K / 50K / 150K presented tokens (truncation 36-47%). No dose has both
+in [0.35, 0.45] (R at 25K is 0.462), so the fallback applies (a deviation from the primary rule): 25K has the
+smallest summed distance from 0.40 (0.090, against 0.327 and 0.371). D = 25K presented tokens (actual: see the
+starts' start_meta.json); R-25K and H-25K advance, and P34's OPD start uses the same nominal dose.

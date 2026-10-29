@@ -193,8 +193,10 @@ def run_plan(plan):
                            str(HERE / "training" / spec["script"]), *spec["args"], "--out", str(LIVE / spec["name"]), *local]
                     run_one(key, cmd, gpu, status)
                 elif spec["kind"] == "train":
+                    # "model_from": start from a saved model (e.g. an SFT start) instead of the base model channel
+                    start = ["--model", spec["model_from"]] if spec.get("model_from") else local
                     cmd = [sys.executable, str(TRAIN), "--device", "cuda", "--out", str(LIVE / spec["name"]),
-                           *plan["common"], *spec["args"], *local]
+                           *plan["common"], *spec["args"], *start]
                     run_one(key, cmd, gpu, status)
                 elif spec["kind"] == "script":
                     cmd = [sys.executable, str(HERE / "training" / spec["script"]), *spec["args"],

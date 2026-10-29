@@ -32,6 +32,7 @@ VGRID = [round(x, 2) for x in np.arange(0.40, 0.561, 0.02)]
 
 
 def first_k_counts(path, k=32):
+    path = path if Path(path).exists() else HERE / path  # relative paths resolve against this directory
     d = json.load(gzip.open(path, "rt"))
     n_prob = max(s["problem"] for s in d["samples"]) + 1
     seen, c64, ck = np.zeros(n_prob, int), np.zeros(n_prob, int), np.zeros(n_prob, int)
@@ -80,11 +81,16 @@ def main():
     ap.add_argument("--base", required=True)
     ap.add_argument("--nll", nargs="*", default=[])
     ap.add_argument("--out", default=str(HERE / "FORECAST_30.json"))
+    ap.add_argument("--vrange", default=None, help="B1k8's validation pass@1 range lo,hi (default: from results/)")
+    ap.add_argument("--model", default=None, help="ignored (entry.py passes it to script steps)")
     a = ap.parse_args()
-    b1k8 = [np.array(json.load(open(f))["counts"]).mean() / 32
-            for f in glob.glob(str(HERE / "results/worth-v15v-all-*/B1k8val/eval/step*_T1.00_eval.json"))]
-    b0 = np.array(json.load(open(glob.glob(str(HERE / "results/worth-v15v-all-*/BASE15val/eval/step0_T1.00_eval.json"))[0]))["counts"]).mean() / 32
-    vlo, vhi = min(b1k8 + [b0]), max(b1k8 + [b0])
+    if a.vrange:
+        vlo, vhi = (float(x) for x in a.vrange.split(","))
+    else:
+        b1k8 = [np.array(json.load(open(f))["counts"]).mean() / 32
+                for f in glob.glob(str(HERE / "results/worth-v15v-all-*/B1k8val/eval/step*_T1.00_eval.json"))]
+        b0 = np.array(json.load(open(glob.glob(str(HERE / "results/worth-v15v-all-*/BASE15val/eval/step0_T1.00_eval.json"))[0]))["counts"]).mean() / 32
+        vlo, vhi = min(b1k8 + [b0]), max(b1k8 + [b0])
     nll = {}
     for f in a.nll:
         nll.update({k: v["mean_token_nll"] for k, v in json.load(open(f)).items()})
@@ -123,7 +129,12 @@ def main():
         print(f"{name}: val start pass@1 {rec['val']['start_pass@1']:.1f}; grid {rec['validation_grid']}; "
               f"forecast shift {rec['forecast_shift'] if rec['forecast_shift'] is None else round(rec['forecast_shift'], 2)}; "
               f"test features {({k: round(v, 2) for k, v in rec['test']['feature_changes'].items()})}; NLL {rec['nll']}")
-    Path(a.out).write_text(json.dumps(out))
+    dest = Path(a.out)
+    if dest.suffix != ".json":  # a directory (entry.py's --out for script steps)
+        dest.mkdir(parents=True, exist_ok=True)
+        dest = dest / "FORECAST.json"
+    dest.write_text(json.dumps(out))
+    print(f"forecast written to {dest}", flush=True)
 
 
 if __name__ == "__main__":
