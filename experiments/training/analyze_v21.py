@@ -20,7 +20,8 @@ SEEDS = (8, 9, 10)
 PACK = {"OD": "OD8val", "PW": "PW8val", "TD": "TD8val", "RTD": "RTD8val"}  # Pre-registration 26 pilots (validation)
 
 
-def load(patterns=("results/worth-v15v-*/*/eval/step*_T*_eval.json", "results/worth-p26-pack-*/*/eval/step*_T*_eval.json")):
+def load(patterns=("results/worth-v15v-*/*/eval/step*_T*_eval.json", "results/worth-p26-pack-*/*/eval/step*_T*_eval.json",
+                   "results/worth-p31-flat-*/FL*/eval/step*_T*_eval.json")):
     out = {}
     for f in (f for pat in patterns for f in sorted(glob.glob(pat))):
         name = f.split("/")[-3]
@@ -337,6 +338,41 @@ def p26_split(res, draws):
     print(M.show("perp vs B1k8 envelope (reported)", t))
 
 
+def p31(res, draws):
+    """Pre-registration 31: Flat-RLVR's SAM step on Dr. GRPO (FL10: every 10 steps; FL5: every 5), seeds 8-10, against
+    B1k's trajectory-and-temperature envelope (primary) and trajectory (reported); Holm over the two arms."""
+    print("Pre-registration 31 (Flat-RLVR on the matched-pass@1 curve; 1.5B, 1,024 tokens; vLLM evaluation)")
+    S = (25, 50, 100, 150)
+    need = B_NEED + [(f"{a}s{sd}", st, 1.0) for a in ("FL10", "FL5") for sd in SEEDS for st in S]
+    miss = missing(res, need)
+    if miss:
+        print(f"   incomplete evaluation; missing {miss}")
+        return
+    n = len(counts(res, "BASE15", 0))
+    Benv = M.reference(traj(res, "B1k", (25, 50, 100, 150), ""), temps(res, "B1k", ""))
+    B = M.reference(traj(res, "B1k", (25, 50, 100, 150), ""))
+    tests = {f"{a} vs B1k envelope": M.compare(arm_points(res, f"{a}s", S), Benv, SEEDS, n, draws) for a in ("FL10", "FL5")}
+    h = M.holm(tests)
+    w = np.ones(n)
+    for k, t in tests.items():
+        a = k.split()[0]
+        if "estimate" in t and M.clamped_ok(t):
+            v = "moves the curve" if M.moves(t, h[k][1]) else "average equivalence" if M.equivalent(t) else "inconclusive"
+        else:
+            v = t.get("verdict", "not interpreted (more than 10% clamped)")
+        p1 = np.mean([A.met(counts(res, f"{a}s{sd}", 150), w)[0] - A.met(counts(res, f"B1k{sd}", 150), w)[0] for sd in SEEDS])
+        print(M.show(k, t, v + f" (Holm-adjusted p {h[k][0]:.3f}); step-150 pass@1 minus B1k {p1:+.2f}"))
+        print(M.show(f"{a} vs B1k trajectory (reported)", M.compare(arm_points(res, f"{a}s", S), B, SEEDS, n, draws)))
+        sam = []
+        for sd in SEEDS:
+            f = glob.glob(f"results/worth-p31-flat-*/{a}s{sd}/baseline_train.json")
+            if f:
+                sam += [r["sam"] for r in json.loads(open(f[0]).read()) if r.get("sam", {}).get("applied")]
+        if sam:
+            print(f"   {a} SAM steps applied: {len(sam)} over 3 seeds; mean radius {np.mean([x['rho_eff'] for x in sam]):.4f}; "
+                  f"max |ratio - 1| {max(x['max_abs_ratio_minus_1'] for x in sam):.4f}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--draws", type=int, default=2000)
@@ -344,7 +380,7 @@ def main():
     args = ap.parse_args()
     res = load()
     for w in args.which.split(","):
-        {"21": p21, "22": p22, "23": p23, "26": p26, "26a": p26_split}[w](res, args.draws)
+        {"21": p21, "22": p22, "23": p23, "26": p26, "26a": p26_split, "31": p31}[w](res, args.draws)
 
 
 if __name__ == "__main__":
