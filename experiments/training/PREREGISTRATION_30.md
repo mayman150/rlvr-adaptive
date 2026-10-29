@@ -166,3 +166,7 @@ separately, the hypothesis that T = 1 sampling caused the earlier degeneration. 
 not verified, 357 over 1,023 tokens, 273 duplicates); 3,550 problems keep a solution. H keeps 262 of 456 (c = 0: 26 of
 110; 1-2: 79 of 145; 3-4: 157 of 201), so N = 262 (809 solutions, 3.09 per problem, mean 473 tokens); R has 262
 problems (950 solutions; 18 also in H). Hashes in data/p30_select_report.json; the random-50 audit follows.
+Audit (Codex, random 50 of the 13,035 archived responses, Random(3030); codex_p30_audit_amendment3.md): 47 clean,
+1 damaged notation (an ASCII number-list typo), 2 flawed explanations behind verified answers, 0 language switches;
+over the whole archive, 9 responses contain short Chinese insertions and none contains a run of 5 or more non-ASCII
+characters. The residual defects are documented as teacher noise; Stage 1 proceeds on this pool.
