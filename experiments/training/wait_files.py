@@ -2,6 +2,7 @@
 saved its last checkpoint and exited). Fails after --timeout seconds. Usage: python wait_files.py --files F1 F2 ...
 [--grace 180] [--timeout 14400] (--out and --model are accepted and ignored, for entry.py's script steps)"""
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -13,9 +14,20 @@ ap.add_argument("--out", default=None)
 ap.add_argument("--model", default=None)
 a = ap.parse_args()
 t0 = time.time()
-while not all(Path(f).exists() for f in a.files):
+def ready(f):
+    if not Path(f).exists():
+        return False
+    if f.endswith(".json"):  # a JSON marker must be complete
+        try:
+            json.loads(Path(f).read_text())
+        except ValueError:
+            return False
+    return True
+
+
+while not all(ready(f) for f in a.files):
     if time.time() - t0 > a.timeout:
-        raise SystemExit(f"timed out waiting for {[f for f in a.files if not Path(f).exists()]}")
+        raise SystemExit(f"timed out waiting for {[f for f in a.files if not ready(f)]}")
     time.sleep(30)
 time.sleep(a.grace)
 print("ready:", a.files, flush=True)

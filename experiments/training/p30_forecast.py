@@ -18,6 +18,7 @@ import argparse
 import glob
 import gzip
 import json
+import os
 from math import comb
 from pathlib import Path
 
@@ -133,7 +134,9 @@ def main():
     if dest.suffix != ".json":  # a directory (entry.py's --out for script steps)
         dest.mkdir(parents=True, exist_ok=True)
         dest = dest / "FORECAST.json"
-    dest.write_text(json.dumps(out))
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(out))
+    os.replace(tmp, dest)  # atomic: a waiting lane never sees a partial file
     print(f"forecast written to {dest}", flush=True)
 
 
