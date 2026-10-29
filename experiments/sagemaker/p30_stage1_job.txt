@@ -1,0 +1,2 @@
+us-east-1:worth-p30-stage1-s0-20261029-084045
+us-west-2:worth-p30-stage1-s0-20261029-084113
