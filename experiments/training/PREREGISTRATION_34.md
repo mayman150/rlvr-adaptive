@@ -59,3 +59,10 @@ T = 1, 1,024 tokens) and its validation human-solution NLL is scored (p30_nll.py
 OPD start (student generation plus teacher scoring, about 20-60 minutes on one GPU), its two 64-sample evaluations,
 and three RL runs with evaluations (about 5 hours each on one GPU), packed with Pre-registration 30's Stage 2: about
 16-18 GPU-hours, about $65-70 at the packed rate.
+
+## Launch note (October 29)
+
+Seeds 8 and 9 run in job worth-p30-stage2-s0-20261029-182830 (8 x A100) together with Pre-registration 30's Stage 2;
+the OPD start, its evaluations, NLL and its frozen forecast (FORECAST34/FORECAST.json, written by the committed
+p30_forecast.py before either RL run starts) come first in that job. Seed 10 runs in a separate one-GPU job (an L40S,
+not an A100: a hardware difference stated here) that waits for the forecast and for the verified start in S3.

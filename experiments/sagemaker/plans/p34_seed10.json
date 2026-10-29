@@ -1,0 +1,104 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "script",
+    "name": "FETCH_OPD",
+    "script": "s3_fetch_wait.py",
+    "args": [
+     "--bucket",
+     "stop-rl-165919938845-us-west-2",
+     "--marker",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/FORECAST34/FORECAST.json",
+     "--prefix",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/OPD_R/start_25000",
+     "--dest",
+     "/opt/ml/opd_start",
+     "--timeout",
+     "21600"
+    ]
+   },
+   {
+    "kind": "train",
+    "name": "P34OPD25s10",
+    "args": [
+     "--arms",
+     "baseline",
+     "--seed",
+     "10",
+     "--steps",
+     "150",
+     "--group",
+     "8",
+     "--prompts-per-step",
+     "16",
+     "--max-new",
+     "1024",
+     "--lr",
+     "1e-6",
+     "--gen-batch",
+     "192",
+     "--calib-prompts",
+     "16",
+     "--eval-steps",
+     "150",
+     "--entropy-every",
+     "5",
+     "--save-steps",
+     "1,2,5,10,25,50,100,150",
+     "--train",
+     "train.json"
+    ],
+    "model_from": "/opt/ml/opd_start"
+   },
+   {
+    "kind": "eval",
+    "name": "P34OPD25s10",
+    "live": "P34OPD25s10",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "1,2,5,10,25,50,100,150",
+     "--temperatures",
+     "1.0"
+    ],
+    "part": 0
+   },
+   {
+    "kind": "eval",
+    "name": "P34OPD25s10",
+    "live": "P34OPD25s10",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.15,1.3"
+    ],
+    "part": 1
+   }
+  ]
+ ]
+}
