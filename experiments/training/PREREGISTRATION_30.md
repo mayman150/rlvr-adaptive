@@ -170,3 +170,29 @@ Audit (Codex, random 50 of the 13,035 archived responses, Random(3030); codex_p3
 1 damaged notation (an ASCII number-list typo), 2 flawed explanations behind verified answers, 0 language switches;
 over the whole archive, 9 responses contain short Chinese insertions and none contains a run of 5 or more non-ASCII
 characters. The residual defects are documented as teacher noise; Stage 1 proceeds on this pool.
+
+## Amendment 4 (October 29, after inspecting Stage 1's validation and test results; before any Stage 2 run)
+
+Stage 1's starts all begin above B1k's support (test pass@1 61.6-69.1 against B1k's 21.6-58.1; validation 60.0-67.1),
+so the registered validation grid (0.40-0.56) is empty for every start and no Stage 2 checkpoint could be compared
+with RL from the base at matched pass@1. Two more long Dr. GRPO seeds would not fix this (P27's LH1 reaches 67.2 after
+1,000 steps; RL from the 2M starts would likely exceed it). The design is therefore narrowed (Codex's recommendation,
+codex_p30_stage2_design.md):
+- **Stage 1b (screening, no RL):** sft_start.py with the same selections, settings and SFT seed 3030, saving starts at
+  25K, 50K and 150K presented tokens for R and for H (a new trajectory: GPU nondeterminism makes it a replicate of
+  Stage 1's, not a copy). Each start is evaluated on the 255 validation and 511 test problems (64 samples, T = 1,
+  1,024 tokens).
+- **Dose choice (validation only):** the largest of 25K, 50K, 150K at which both R's and H's validation pass@1 lie in
+  [0.35, 0.45] and at least four points of the registered grid (0.40, 0.42, ..., 0.56) survive its filters for both
+  starts; if none qualifies, the dose whose R and H validation pass@1 are both closest to 0.40 (sum of absolute
+  differences), reported as a deviation.
+- **Stage 2:** R and H at the chosen dose advance (seeds 8, 9, 10; Pre-registration 21's recipe); R-2M and
+  TailSFT-2M no longer advance automatically (their Stage 1 results are reported; high-dose RL is a separate,
+  unregistered extension). Checkpoints 1, 2, 5, 10, 25, 50, 100, 150 on the 511 test problems (32 samples, T = 1),
+  step 150 also at T = 1.15 and 1.3. Reference: B1k seeds 8-10 (primary), with P27's LH1 (seed 8) reported as a
+  single-seed extension beyond B1k's support; LH3 (lr 3e-6) only as a sensitivity comparison.
+- **Readings:** as registered (same-seed reference, equal seed weights, joint bootstrap, at least two eligible
+  checkpoints per seed, the 10% support rule, the +2 threshold, frozen forecasts before RL). Step 0 (the start itself)
+  is reported separately from the post-RL estimate, and per-checkpoint gaps are shown: if only early checkpoints are
+  eligible, the claim is about early RL, not persistence through step 150. The targeting claim (H vs R) is read at the
+  chosen dose. The 2,048-token sensitivity check is kept.

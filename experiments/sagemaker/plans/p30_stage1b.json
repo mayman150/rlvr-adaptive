@@ -1,0 +1,428 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "script",
+    "name": "SFT1b_R",
+    "script": "sft_start.py",
+    "args": [
+     "--archive",
+     "p30_archive.json",
+     "--problems",
+     "p30_sel_R.json",
+     "--milestones",
+     "25000,50000,150000",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R025_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_25000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R025_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_25000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "WAIT_R050",
+    "script": "p30_wait.py",
+    "args": [
+     "--dirs",
+     "/opt/ml/checkpoints/SFT1b_R/start_50000"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R050_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_50000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R050_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_50000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "WAIT_R150",
+    "script": "p30_wait.py",
+    "args": [
+     "--dirs",
+     "/opt/ml/checkpoints/SFT1b_R/start_150000"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R150_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_150000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "R150_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_R/start_150000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "SFT1b_H",
+    "script": "sft_start.py",
+    "args": [
+     "--archive",
+     "p30_archive.json",
+     "--problems",
+     "p30_sel_H.json",
+     "--milestones",
+     "25000,50000,150000",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H025_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_25000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H025_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_25000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "WAIT_H050",
+    "script": "p30_wait.py",
+    "args": [
+     "--dirs",
+     "/opt/ml/checkpoints/SFT1b_H/start_50000"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H050_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_50000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H050_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_50000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "WAIT_H150",
+    "script": "p30_wait.py",
+    "args": [
+     "--dirs",
+     "/opt/ml/checkpoints/SFT1b_H/start_150000"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H150_val",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_150000",
+     "--problems",
+     "val_frontier_256.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "H150_test",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--base",
+     "/opt/ml/checkpoints/SFT1b_H/start_150000",
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "64",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--seed",
+     "3030"
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "script",
+    "name": "WAIT_ALL1b",
+    "script": "p30_wait.py",
+    "args": [
+     "--dirs",
+     "/opt/ml/checkpoints/SFT1b_R/start_25000",
+     "/opt/ml/checkpoints/SFT1b_R/start_50000",
+     "/opt/ml/checkpoints/SFT1b_R/start_150000",
+     "/opt/ml/checkpoints/SFT1b_H/start_25000",
+     "/opt/ml/checkpoints/SFT1b_H/start_50000",
+     "/opt/ml/checkpoints/SFT1b_H/start_150000"
+    ]
+   },
+   {
+    "kind": "script",
+    "name": "NLL1b",
+    "script": "p30_nll.py",
+    "args": [
+     "--starts",
+     "R025=/opt/ml/checkpoints/SFT1b_R/start_25000",
+     "R050=/opt/ml/checkpoints/SFT1b_R/start_50000",
+     "R150=/opt/ml/checkpoints/SFT1b_R/start_150000",
+     "H025=/opt/ml/checkpoints/SFT1b_H/start_25000",
+     "H050=/opt/ml/checkpoints/SFT1b_H/start_50000",
+     "H150=/opt/ml/checkpoints/SFT1b_H/start_150000"
+    ]
+   }
+  ]
+ ]
+}
