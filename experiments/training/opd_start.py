@@ -2,10 +2,10 @@
 
 The student samples one answer per problem at its own current policy (T = 1, up to max_new tokens, stop at the stop
 tokens); the teacher scores the same prompt-plus-answer; the loss is the per-token reverse KL between the student's
-and the teacher's full next-token distributions at the student's prefixes,
+and the teacher's next-token distributions at the student's prefixes (the teacher's restricted to the student's
+151,936 output rows and renormalized; its extra rows are padding),
     KL(pi_s(. | prefix) || pi_t(. | prefix)) = sum_v pi_s(v) (log pi_s(v) - log pi_t(v)),
 averaged over the batch's response tokens (gradient through the student only). Student and teacher share the
-vocabulary (the teacher's extra rows beyond the student's vocabulary, if any, are dropped).
 Problems are visited uniformly in shuffled passes (as in sft_start.py); optimizer and batch as sft_start.py
 (AdamW 1e-5, betas 0.9/0.99, no weight decay, batches of 8, clip 1). Milestones count presented (generated) response
 tokens. Usage:
@@ -56,12 +56,14 @@ def main():
     train = {q["question"]: q for q in json.loads((HERE / "data" / "train.json").read_text())}
     sel = Path(a.problems) if Path(a.problems).exists() else HERE / "data" / a.problems
     questions = json.loads(sel.read_text())
-    if len(set(questions)) != len(questions) or any(q not in train for q in questions):
-        raise SystemExit("selection has duplicates or questions outside train.json")
+    if not questions or len(set(questions)) != len(questions) or any(q not in train for q in questions):
+        raise SystemExit("selection is empty, has duplicates or questions outside train.json")
     tok = runner.tok
     prompts = [build_prompt(tok, q) for q in questions]
     vs = runner.model.get_output_embeddings().weight.shape[0]
-    milestones = sorted(int(x) for x in a.milestones.split(","))
+    milestones = sorted(int(x) for x in a.milestones.split(",") if x)
+    if not (milestones and milestones[0] > 0 and a.batch >= 1 and a.max_new >= 1 and a.lr > 0 and a.clip > 0):
+        raise SystemExit("invalid milestones, batch, max_new, lr or clip")
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(a.seed)
@@ -79,6 +81,8 @@ def main():
         gens = runner.generate([prompts[i] for i in batch], 1, a.max_new, a.seed * 100003 + steps)
         runner.model.train()
         n_tok = sum(len(r) for _, r in gens)
+        if n_tok == 0:
+            raise SystemExit(f"OPD step {steps + 1}: every sampled answer is empty")
         opt.zero_grad(set_to_none=True)
         kl_sum, correct = 0.0, 0
         for (p_ids, r_ids), i in zip(gens, batch):
@@ -116,6 +120,7 @@ def main():
             meta = {"milestone": milestones[mi], "presented_tokens": presented, "steps": steps, "problems": len(questions),
                     "problem_visits": sum(visits), "teacher": a.teacher, "objective": "reverse KL, full distributions, student prefixes",
                     "sha256": h.hexdigest()}
+            (out / "opd_log.json").write_text(json.dumps(log, indent=1))  # persisted at every milestone
             (path / "start_meta.json").write_text(json.dumps(meta, indent=1))
             print(f"saved {path}: {meta}", flush=True)
             mi += 1
