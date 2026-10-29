@@ -1,0 +1,53 @@
+
+== 1.5B, 1,024 tokens: pass@2 minus reference at matched pass@1 (pp); implied change in Var_x(p) = -gain/100
+   control: Dr. GRPO seed 0 steps vs other seeds: mean +0.25 over 3 checkpoints
+   control: Dr. GRPO seed 1 steps vs other seeds: mean +0.12 over 4 checkpoints
+   control: Dr. GRPO seed 2 steps vs other seeds: mean +0.02 over 4 checkpoints
+   ExGRPO-Qwen25-Math-15B-Zero_1k                             pass@1  47.2  pass@2 gain +0.52 90% [+0.12, +0.97]  [correctness-only]
+   LUFFY-Qwen-Math-15B-Zero_1k                                pass@1  38.0  pass@2 gain -0.19 90% [-0.60, +0.21]  [external]
+   One-Shot-RLVR-Qwen25-Math-15B-75k-MATH_1k                  pass@1  68.2  outside the reference's range [correctness-only]
+   One-Shot-RLVR-Qwen25-Math-15B-pi1_1k                       pass@1  57.4  pass@2 gain -1.42 90% [-1.91, -1.01] (dropped 13%)  [correctness-only]
+   Qwen25-Math-15B-Base-GRPO_1k                               pass@1  38.8  pass@2 gain +0.79 90% [+0.47, +1.11]  [correctness-only]
+   Qwen25-Math-15B-DAPO-easy_1k                               pass@1  71.8  outside the reference's range [correctness-only]
+   Qwen25-Math-15B-GRPO-n8-easy_1k                            pass@1  64.7  outside the reference's range [correctness-only]
+   Qwen25-Math-15B-Oat-Zero_1k                                pass@1  72.4  outside the reference's range [correctness-only]
+   RELEX-Qwen25-Math-15B_1k                                   pass@1  67.6  outside the reference's range [correctness-only]
+   RLVR-Qwen25-Math-15B_1k                                    pass@1  67.3  outside the reference's range [correctness-only]
+   ReLIFT-Qwen25-Math-15B-Zero_1k                             pass@1  28.7  pass@2 gain +1.20 90% [+0.92, +1.51]  [external]
+   Zero-Solver-Qwen25-Math-15B-L_1k                           pass@1  68.1  outside the reference's range [correctness-only]
+   Qwen25-Math-15B-DeepMath-1024samples-GRPO_1k               protocol failure
+   Qwen25-Math-15B-DeepMath-1024samples-RePO_1k               protocol failure
+
+== 7B, 2,048 tokens: pass@2 minus reference at matched pass@1 (pp); implied change in Var_x(p) = -gain/100
+   control: Dr. GRPO seed 0 steps vs other seeds: mean +0.12 over 4 checkpoints
+   control: Dr. GRPO seed 1 steps vs other seeds: mean +0.02 over 3 checkpoints
+   LUFFY-Qwen-Math-7B-Zero-On-Policy_2k                       pass@1  46.9  pass@2 gain +1.14 90% [+0.58, +1.63]  [correctness-only (LUFFY's on-policy baseline)]
+   LUFFY-Qwen-Math-7B-Zero_2k                                 pass@1  56.4  pass@2 gain +0.68 90% [+0.16, +1.13]  [external]
+   One-Shot-RLVR-Qwen25-Math-7B-pi1_2k                        pass@1  48.4  pass@2 gain +2.50 90% [+2.08, +2.90]  [correctness-only]
+   Qwen-25-Math-7B-SimpleRL-Zero_2k                           pass@1  68.8  pass@2 gain -3.08 90% [-4.15, -2.06]  [correctness-only]
+   Qwen-25-Math-7B-SimpleRL-Zoo_2k                            pass@1  70.3  pass@2 gain +0.15 90% [-0.34, +0.52]  [correctness-only]
+   Qwen25-Math-7B-Oat-Zero_2k                                 pass@1  86.3  outside the reference's range [correctness-only]
+   Qwen25-Math-7B-Zero-RAFTpp_2k                              pass@1  80.1  outside the reference's range [correctness-only]
+   rethink_rlvr_reproduce-ground_truth-qwen25_math__2k        pass@1  77.0  outside the reference's range [correctness-only]
+   rethink_rlvr_reproduce-random-qwen25_math_7b-lr5_2k        pass@1  57.3  pass@2 gain +2.20 90% [+1.77, +2.58]  [random reward]
+   ExGRPO-LUFFY-7B-Continual_2k                               pass@1  62.8  pass@2 gain -0.27 90% [-0.83, +0.49]  [external lineage (start is not the base)]
+   ExGRPO-Qwen25-Math-7B-Zero_2k                              pass@1  49.5  pass@2 gain +1.23 90% [+0.72, +1.69]  [correctness-only]
+   Qwen25-Math-7B-DeepMath-1024samples-GRPO_2k                pass@1  72.9  outside the reference's range [correctness-only]
+   Qwen25-Math-7B-DeepMath-1024samples-RePO_2k                pass@1  74.1  outside the reference's range [correctness-only]
+   ReLIFT-Qwen25-Math-7B-Zero_2k                              pass@1  79.1  outside the reference's range [external]
+
+== 1.5B, 3,072 tokens (vs frozen law): pass@2 minus reference at matched pass@1 (pp); implied change in Var_x(p) = -gain/100
+   ExGRPO-Qwen25-Math-15B-Zero_3k                             pass@1  50.5  pass@2 gain +1.95 90% [+1.26, +2.74]  [correctness-only]
+   LUFFY-Qwen-Math-15B-Zero_3k                                pass@1  41.8  pass@2 gain +2.19 90% [+1.54, +2.91]  [external]
+   One-Shot-RLVR-Qwen25-Math-15B-75k-MATH_3k                  pass@1  71.2  pass@2 gain -1.79 90% [-2.77, -0.99]  [correctness-only]
+   One-Shot-RLVR-Qwen25-Math-15B-pi1_3k                       pass@1  59.9  pass@2 gain -2.18 90% [-3.02, -1.24]  [correctness-only]
+   Qwen25-Math-15B-Base-GRPO_3k                               pass@1  40.2  pass@2 gain +1.79 90% [+1.22, +2.27]  [correctness-only]
+   Qwen25-Math-15B-DAPO-easy_3k                               pass@1  74.7  pass@2 gain -1.59 90% [-2.32, -0.92]  [correctness-only]
+   Qwen25-Math-15B-GRPO-n8-easy_3k                            pass@1  68.2  pass@2 gain -1.28 90% [-2.24, -0.21]  [correctness-only]
+   Qwen25-Math-15B-Oat-Zero_3k                                pass@1  75.8  pass@2 gain -2.23 90% [-2.98, -1.49]  [correctness-only]
+   RELEX-Qwen25-Math-15B_3k                                   pass@1  70.2  pass@2 gain -1.62 90% [-2.52, -0.74]  [correctness-only]
+   RLVR-Qwen25-Math-15B_3k                                    pass@1  69.6  pass@2 gain -1.69 90% [-2.58, -0.83]  [correctness-only]
+   ReLIFT-Qwen25-Math-15B-Zero_3k                             pass@1  29.2  pass@2 gain +1.26 90% [+0.81, +1.68]  [external]
+   Zero-Solver-Qwen25-Math-15B-L_3k                           pass@1  71.5  pass@2 gain -1.33 90% [-2.23, -0.50]  [correctness-only]
+   Qwen25-Math-15B-DeepMath-1024samples-GRPO_3k               pass@1   0.1  outside the reference's range [correctness-only]
+   Qwen25-Math-15B-DeepMath-1024samples-RePO_3k               pass@1   0.1  outside the reference's range [correctness-only]
