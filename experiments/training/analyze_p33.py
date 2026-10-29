@@ -30,8 +30,14 @@ def counts(f):
     return np.array(d["counts"]), d["n"], d
 
 
+_PK = {}
+
+
 def pk(c, n, k):
-    return float(np.mean([1 - comb(n - int(x), k) / comb(n, k) for x in c]))
+    """Unbiased pass@k from per-problem counts (a cached per-count table; the same values as the direct formula)."""
+    if (n, k) not in _PK:
+        _PK[(n, k)] = np.array([1 - comb(n - x, k) / comb(n, k) for x in range(n + 1)])
+    return float(np.mean(_PK[(n, k)][np.asarray(c, int)]))
 
 
 def one(pattern):
