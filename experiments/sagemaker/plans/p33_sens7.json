@@ -1,0 +1,1038 @@
+{
+ "model": "Qwen/Qwen2.5-Math-7B",
+ "model_dir": "Qwen2.5-Math-7B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  {
+   "gpus": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "steps": [
+    {
+     "kind": "torchrun",
+     "name": "B7e8",
+     "script": "train_dist.py",
+     "args": [
+      "--seed",
+      "8",
+      "--prompts-per-step",
+      "16",
+      "--group",
+      "8",
+      "--lr",
+      "1e-6",
+      "--train",
+      "train.json",
+      "--steps",
+      "25",
+      "--max-new",
+      "2048",
+      "--gen-batch",
+      "32",
+      "--train-batch",
+      "2",
+      "--param-dtype",
+      "fp32",
+      "--save-steps",
+      "3,6,12,25",
+      "--arms",
+      "baseline"
+     ],
+     "independent": true
+    },
+    {
+     "kind": "script",
+     "name": "DONE_B7e8",
+     "script": "mark_done.py",
+     "independent": true,
+     "args": [
+      "--check",
+      "/opt/ml/checkpoints/B7e8/ckpt_step3/tokenizer.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step3/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step3/config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step6/tokenizer.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step6/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step6/config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step12/tokenizer.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step12/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step12/config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step25/tokenizer.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step25/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e8/ckpt_step25/config.json"
+     ]
+    }
+   ]
+  },
+  {
+   "gpus": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "steps": [
+    {
+     "kind": "torchrun",
+     "name": "B7e9",
+     "script": "train_dist.py",
+     "args": [
+      "--seed",
+      "9",
+      "--prompts-per-step",
+      "16",
+      "--group",
+      "8",
+      "--lr",
+      "1e-6",
+      "--train",
+      "train.json",
+      "--steps",
+      "25",
+      "--max-new",
+      "2048",
+      "--gen-batch",
+      "32",
+      "--train-batch",
+      "2",
+      "--param-dtype",
+      "fp32",
+      "--save-steps",
+      "3,6,12,25",
+      "--arms",
+      "baseline"
+     ],
+     "independent": true
+    },
+    {
+     "kind": "script",
+     "name": "DONE_B7e9",
+     "script": "mark_done.py",
+     "independent": true,
+     "args": [
+      "--check",
+      "/opt/ml/checkpoints/B7e9/ckpt_step3/tokenizer.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step3/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step3/config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step6/tokenizer.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step6/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step6/config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step12/tokenizer.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step12/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step12/config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step25/tokenizer.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step25/tokenizer_config.json",
+      "/opt/ml/checkpoints/B7e9/ckpt_step25/config.json"
+     ]
+    }
+   ]
+  },
+  {
+   "gpus": [
+    0
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "3",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8hard",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "3",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_rethink_rlvr_reproduce-random-qwen25_math_7b-lr5_hard",
+     "hub_model": "stellalisy/rethink_rlvr_reproduce-random-qwen2.5_math_7b-lr5e-7-kl0.00-step150",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "stellalisy/rethink_rlvr_reproduce-random-qwen2.5_math_7b-lr5e-7-kl0.00-step150@b1586243edcd4c6770a9db8ba4aee9235370eb22"
+     ],
+     "independent": true,
+     "revision": "b1586243edcd4c6770a9db8ba4aee9235370eb22",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_rethink_rlvr_reproduce-ground_truth-qwen25_math__hard",
+     "hub_model": "stellalisy/rethink_rlvr_reproduce-ground_truth-qwen2.5_math_7b-lr5e-7-kl0.00-step150",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "stellalisy/rethink_rlvr_reproduce-ground_truth-qwen2.5_math_7b-lr5e-7-kl0.00-step150@1665099c4baa52d51b0daedb687d622b8b584a0d"
+     ],
+     "independent": true,
+     "revision": "1665099c4baa52d51b0daedb687d622b8b584a0d",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    1
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "6",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8hard",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "6",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen25-Math-7B-Oat-Zero_hard",
+     "hub_model": "sail/Qwen2.5-Math-7B-Oat-Zero",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "sail/Qwen2.5-Math-7B-Oat-Zero@9830f56c4b418de8c11cb809d3cc3c483a03afd3"
+     ],
+     "independent": true,
+     "revision": "9830f56c4b418de8c11cb809d3cc3c483a03afd3",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_ExGRPO-Qwen25-Math-7B-Zero_hard",
+     "hub_model": "rzzhan/ExGRPO-Qwen2.5-Math-7B-Zero",
+     "revision": "8ae957c4e881dcba895d40f6748a3c47dc3dfe8a",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "rzzhan/ExGRPO-Qwen2.5-Math-7B-Zero@8ae957c4e881dcba895d40f6748a3c47dc3dfe8a"
+     ],
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    2
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "12",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8hard",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "12",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_LUFFY-Qwen-Math-7B-Zero-On-Policy_hard",
+     "hub_model": "Elliott/LUFFY-Qwen-Math-7B-Zero-On-Policy",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "Elliott/LUFFY-Qwen-Math-7B-Zero-On-Policy@912dbdf781570f8888cb9348c4eff75da8d64324"
+     ],
+     "independent": true,
+     "revision": "912dbdf781570f8888cb9348c4eff75da8d64324",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_ReLIFT-Qwen25-Math-7B-Zero_hard",
+     "hub_model": "RoadQAQ/ReLIFT-Qwen2.5-Math-7B-Zero",
+     "revision": "6d06289176b18ba93cc514eded1934ae11282893",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "RoadQAQ/ReLIFT-Qwen2.5-Math-7B-Zero@6d06289176b18ba93cc514eded1934ae11282893"
+     ],
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    3
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "25",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e8hard",
+     "live": "B7e8",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "25",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen-25-Math-7B-SimpleRL-Zoo_hard",
+     "hub_model": "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zoo",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zoo@c9e929d486f51408b17ff4ab778036903a37e8a7"
+     ],
+     "independent": true,
+     "revision": "c9e929d486f51408b17ff4ab778036903a37e8a7",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_ExGRPO-LUFFY-7B-Continual_hard",
+     "hub_model": "rzzhan/ExGRPO-LUFFY-7B-Continual",
+     "revision": "e64ce26b9eaea555226692afc9e9ef0fb1a4ff6f",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "rzzhan/ExGRPO-LUFFY-7B-Continual@e64ce26b9eaea555226692afc9e9ef0fb1a4ff6f"
+     ],
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    4
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "3",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9hard",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "3",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen25-Math-7B-Zero-RAFTpp_hard",
+     "hub_model": "RLHFlow/Qwen2.5-Math-7B-Zero-RAFTpp",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "RLHFlow/Qwen2.5-Math-7B-Zero-RAFTpp@14f6172f62fab2ea18aa65ac8ae8d2fb0daeaa0d"
+     ],
+     "independent": true,
+     "revision": "14f6172f62fab2ea18aa65ac8ae8d2fb0daeaa0d",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen25-Math-7B-DeepMath-1024samples-RePO_hard",
+     "hub_model": "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-RePO",
+     "revision": "2f37559575eeee988c9e9952219793ec6c584e00",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-RePO@2f37559575eeee988c9e9952219793ec6c584e00"
+     ],
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    5
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "6",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9hard",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "6",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen-25-Math-7B-SimpleRL-Zero_hard",
+     "hub_model": "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zero",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "hkust-nlp/Qwen-2.5-Math-7B-SimpleRL-Zero@9e4c08e5fcb43d0ce86b020d2229b33f08098a0a"
+     ],
+     "independent": true,
+     "revision": "9e4c08e5fcb43d0ce86b020d2229b33f08098a0a",
+     "keep_hub": false
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_Qwen25-Math-7B-DeepMath-1024samples-GRPO_hard",
+     "hub_model": "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-GRPO",
+     "revision": "596f54e6c38642985031b053be8e09b5c791736e",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "Siheng99/Qwen2.5-Math-7B-DeepMath-1024samples-GRPO@596f54e6c38642985031b053be8e09b5c791736e"
+     ],
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    6
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "12",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9hard",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "12",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_One-Shot-RLVR-Qwen25-Math-7B-pi1_hard",
+     "hub_model": "ypwang61/One-Shot-RLVR-Qwen2.5-Math-7B-pi1",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "ypwang61/One-Shot-RLVR-Qwen2.5-Math-7B-pi1@f48a66bd642bdf46e000520acf690bf4d2419b73"
+     ],
+     "independent": true,
+     "revision": "f48a66bd642bdf46e000520acf690bf4d2419b73",
+     "keep_hub": false
+    }
+   ]
+  },
+  {
+   "gpus": [
+    7
+   ],
+   "steps": [
+    {
+     "kind": "script",
+     "name": "WAIT_B7e",
+     "script": "wait_files.py",
+     "independent": false,
+     "args": [
+      "--files",
+      "/opt/ml/checkpoints/DONE_B7e8/DONE",
+      "/opt/ml/checkpoints/DONE_B7e9/DONE",
+      "--grace",
+      "30",
+      "--timeout",
+      "12600"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "eval_frontier_512.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "25",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "B7e9hard",
+     "live": "B7e9",
+     "engine": "vllm",
+     "independent": true,
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--expect-steps",
+      "3,6,12,25",
+      "--sampled-steps",
+      "25",
+      "--temperatures",
+      "1.0"
+     ]
+    },
+    {
+     "kind": "eval",
+     "name": "PUB_LUFFY-Qwen-Math-7B-Zero_hard",
+     "hub_model": "Elliott/LUFFY-Qwen-Math-7B-Zero",
+     "tokenizer_from": "Qwen/Qwen2.5-Math-7B",
+     "engine": "vllm",
+     "args": [
+      "--problems",
+      "hard7_cohort.json",
+      "--n",
+      "32",
+      "--max-new",
+      "2048",
+      "--temperatures",
+      "1.0",
+      "--base-temperatures",
+      "1.0",
+      "--sampled-steps",
+      "0",
+      "--expect-steps",
+      "0",
+      "--identity",
+      "Elliott/LUFFY-Qwen-Math-7B-Zero@22278332d2eab6b0e6df139be0ec5bb7ec12ebea"
+     ],
+     "independent": true,
+     "revision": "22278332d2eab6b0e6df139be0ec5bb7ec12ebea",
+     "keep_hub": false
+    }
+   ]
+  }
+ ]
+}
