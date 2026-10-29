@@ -110,9 +110,15 @@ def ref(base, seeds, kind, u, idx, k=16):
     return float(np.mean(vals)) if vals else None
 
 
+_LAW = {}
+
+
 def law_ref(base, u, idx, k=16):
     c, n = base[0][idx], base[1]
-    tr = law.trajectory(law.initial_theta(c, n, law.fit_prior(c, n)), -0.20)
+    key = (id(base[0]), idx.tobytes())  # the law's trajectory depends only on the resampled base counts: cache it
+    if key not in _LAW:
+        _LAW[key] = law.trajectory(law.initial_theta(c, n, law.fit_prior(c, n)), -0.20)
+    tr = _LAW[key]
     try:
         return law.pass_k_true(law.at_pass1(tr, u, strict=True), k)
     except ValueError:
