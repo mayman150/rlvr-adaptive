@@ -1,0 +1,2 @@
+us-east-1:worth-p32-oe-s0-20261029-005852
+us-west-2:worth-p32-oe-s0-20261029-005906

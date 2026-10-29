@@ -31,7 +31,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from verifier import last_boxed, reward  # noqa: E402
+from verifier import as_number, last_boxed, normalize, reward  # noqa: E402
 import policy_table  # noqa: E402
 
 SYSTEM = "Please reason step by step, and put your final answer within \\boxed{}."
@@ -133,8 +133,10 @@ class Runner:
                     entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return torch.stack(sums)
 
-    def token_logprobs(self, pairs):
-        """Differentiable per-token response log-probabilities for each (prompt_ids, response_ids) pair."""
+    def token_logprobs(self, pairs, entropy=None):
+        """Differentiable per-token response log-probabilities for each (prompt_ids, response_ids) pair.
+
+        If `entropy` is a list, the summed token entropies of each response are appended to it."""
         seqs = [torch.cat([p, r]) for p, r in pairs]
         width = max(len(s) for s in seqs)
         ids = torch.full((len(seqs), width), self.pad_id, dtype=torch.long, device=self.device)
@@ -147,7 +149,12 @@ class Runner:
         out = []
         for i, (p, r) in enumerate(pairs):
             rows = logits[i, len(p) - 1: len(p) - 1 + len(r)].float()
-            out.append(rows.gather(1, r[:, None]).squeeze(1) - torch.logsumexp(rows, dim=-1))
+            lse = torch.logsumexp(rows, dim=-1)
+            out.append(rows.gather(1, r[:, None]).squeeze(1) - lse)
+            if entropy is not None:
+                with torch.no_grad():
+                    z = rows.detach()
+                    entropy.append(float((lse.detach() - (torch.softmax(z, dim=-1) * z).sum(-1)).sum()))
         return out
 
     def logprob_and_entropy(self, pairs):
@@ -954,6 +961,74 @@ def teacher_backward(runner, args, items, norm):
     return {"solutions": len(items), "tokens": sum(len(b) for _, b in items)}
 
 
+def oe_outcome(text, rewarded):
+    """Outcome class of a response: ("correct",) if the verifier accepts it; ("none",) if it has no parsed final box;
+    otherwise its last boxed answer after the verifier's normalization, rationals compared by value."""
+    if rewarded:
+        return ("correct",)
+    b = last_boxed(text)
+    if b is None:
+        return ("none",)
+    v = as_number(normalize(b))
+    return ("number", v) if v is not None else ("text", normalize(b))
+
+
+def answer_start(runner, ids):
+    """Number of leading response tokens wholly before the last final-answer marker "\\boxed" (all if there is none)."""
+    full = runner.tok.decode(ids)
+    pos = full.rfind("\\boxed")
+    return len(ids) if pos < 0 else text_cut(runner, ids, pos)
+
+
+def oe_bonuses(runner, args, answers, rewards, keys, G, counts):
+    """Outcome-based exploration (Song et al. 2025, arXiv 2509.06941) for fixed groups, with outcomes from oe_outcome
+    (verifier-accepted answers form one class; answers without a parsed final box form one class).
+    UCB-Con (sec. 3.2): b = min{1, N(x, a)^-1/2} - b0, N the run's count of outcome a on problem x including this group,
+    and b = 0 for every answer of a group whose answers are all correct. Batch (sec. 3.3): b = -(1/G) #{j != i: a_j = a_i}
+    in every group. The bonus is c * b. Returns the bonuses and group statistics."""
+    finals = [oe_outcome(runner.tok.decode(r), rw) for (_, r), rw in zip(answers, rewards)]
+    bon, distinct, distinct_wrong, skipped, all_correct = [0.0] * len(answers), [], [], 0, 0
+    for j in range(len(keys)):
+        idx = list(range(j * G, (j + 1) * G))
+        distinct.append(len({finals[k] for k in idx}))
+        if not any(rewards[k] for k in idx):
+            distinct_wrong.append(distinct[-1])
+        all_correct += all(rewards[k] for k in idx)
+        if args.oe_mode == "ucb":
+            for k in idx:
+                counts[(keys[j], finals[k])] = counts.get((keys[j], finals[k]), 0) + 1
+            if all(rewards[k] for k in idx):
+                skipped += 1
+                continue
+            for k in idx:
+                bon[k] = args.oe_c * (min(1.0, counts[(keys[j], finals[k])] ** -0.5) - args.oe_b0)
+        else:
+            for k in idx:
+                bon[k] = -args.oe_c * sum(finals[m] == finals[k] for m in idx if m != k) / G
+    nz = [b for b in bon if b != 0]
+    return bon, {"groups_all_correct": all_correct, "groups_all_correct_skipped": skipped, "bonus_nonzero": len(nz),
+                 "mean_nonzero_bonus": sum(nz) / len(nz) if nz else 0.0, "mean_bonus": sum(bon) / len(bon),
+                 "positive_bonus": sum(b > 0 for b in nz), "no_answer": sum(f == ("none",) for f in finals),
+                 "distinct_answers": sum(distinct) / len(distinct),
+                 "distinct_answers_all_wrong_groups": sum(distinct_wrong) / len(distinct_wrong) if distinct_wrong else None}
+
+
+def oe_backward(runner, args, answers, idx, adv, bon, norm, entropy=None):
+    """Gradient of -sum_k [adv_k sum_t log pi_t + bon_k sum_{t < s_k} log pi_t] / norm, s_k = answer_start: the
+    correctness advantage on every response token, the exploration bonus only on tokens wholly before the last box
+    marker (an adaptation of the paper's final-answer masking, sec. 3.1; a response without a marker has every token
+    unmasked). `entropy` collects token-entropy sums of the same responses, as in logprob_sum."""
+    for s in range(0, len(idx), args.train_batch):
+        chunk = idx[s:s + args.train_batch]
+        lps = runner.token_logprobs([answers[k] for k in chunk], entropy)
+        loss = 0.0
+        for k, lp in zip(chunk, lps):
+            loss = loss - adv[k] * lp.sum()
+            if bon[k]:
+                loss = loss - bon[k] * lp[: answer_start(runner, answers[k][1])].sum()
+        (loss / norm).backward()
+
+
 def centralize_grads(params):
     """Gradient centralization (Yong et al. 2020; as in Flat-RLVR, Appendix B.2): each row of a weight gradient (one
     output unit's incoming weights, all trailing dimensions) has its mean removed."""
@@ -1522,6 +1597,14 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
             and not (args.od_beta < 1.0 and args.pw_lambda > 0), \
             "off-direction updates and problem-space whitening are implemented, one at a time, for plain on-policy Dr. GRPO"
+    oe_counts = {}
+    if args.oe_mode != "none":
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
+            and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
+            and args.od_beta == 1.0 and args.pw_lambda == 0 and not args.teacher_archive and args.sam_period == 0 \
+            and math.isfinite(args.oe_c) and math.isfinite(args.oe_b0) and args.oe_c > 0, \
+            "outcome-based exploration is implemented for plain on-policy Dr. GRPO"
     if args.sam_period > 0:
         assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
             and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
@@ -1697,7 +1780,7 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                           "cumulative_answers": spent, "abandoned": abandoned})
         runner.model.train()
         opt.zero_grad(set_to_none=True)
-        n_teacher = 0
+        n_teacher, ent_idx = 0, None
         if teacher is not None and arm in FIXED_ARMS:
             t_items = [teacher[keys[j]] for j in range(len(keys)) if keys[j] in teacher]
             if t_items:
@@ -1749,7 +1832,13 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     mult, extra["pw"] = whitening_weights(runner, args, answers, adv, owner, norm, pw_tables)
                     adv = [a * m_ for a, m_ in zip(adv, mult)]
                     live = [k for k, a in enumerate(adv) if a != 0]
-                backward_weighted(runner, args, answers, live, adv, norm, entropy)
+                if args.oe_mode != "none" and arm in FIXED_ARMS:
+                    bon, extra["oe"] = oe_bonuses(runner, args, answers, rewards, keys, G, oe_counts)
+                    live = [k for k in range(len(answers)) if adv[k] != 0 or bon[k] != 0]
+                    oe_backward(runner, args, answers, live, adv, bon, norm, entropy)
+                    ent_idx = live
+                else:
+                    backward_weighted(runner, args, answers, live, adv, norm, entropy)
                 n_live = len(live)
             n_live = max(n_live, n_teacher)
             if arm in FIXED_ARMS and injected:
@@ -1769,7 +1858,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             if tar is not None:
                 extra["tar"] = tar_backward(runner, args, tar, mem_rng)
                 n_live = max(n_live, extra["tar"]["active"])
-        live_tokens = sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)
+        live_tokens = sum(len(answers[k][1]) for k in ent_idx) if ent_idx is not None else \
+            sum(len(answers[k][1]) for k, a in enumerate(adv) if a != 0)  # the responses whose entropy was collected
         if args.entropy_every and step % args.entropy_every == 0:
             extra["probe"] = probe_entropy(runner, args, answers, rewards, owner)
         seen, first_block = {}, []
@@ -1923,6 +2013,10 @@ def main():
     parser.add_argument("--od-warmup", type=int, default=10)
     parser.add_argument("--pw-lambda", type=float, default=0.0, help="problem-space whitening ridge, times tr(G)/m (0: off)")
     parser.add_argument("--pw-dim", type=int, default=1 << 20, help="CountSketch dimension for problem-space whitening")
+    parser.add_argument("--oe-mode", default="none", choices=("none", "ucb", "batch"),
+                        help="outcome-based exploration (arXiv 2509.06941): UCB-Con or Batch bonus on final answers")
+    parser.add_argument("--oe-c", type=float, default=0.2, help="exploration bonus coefficient (the paper's Qwen value)")
+    parser.add_argument("--oe-b0", type=float, default=0.5, help="UCB-Con constant baseline")
     parser.add_argument("--sam-period", type=int, default=0, help="Flat-RLVR: a SAM step every this many steps (0: off)")
     parser.add_argument("--sam-rho-init", type=float, default=0.01)
     parser.add_argument("--sam-rho-min", type=float, default=0.002)

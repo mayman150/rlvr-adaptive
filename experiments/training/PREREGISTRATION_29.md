@@ -80,3 +80,9 @@ the 3,920 problems in four sequential parts sharing one download, so a failure l
 sampling seeds unchanged.
 
 Third addendum: the fourth launch produced degenerate text (fluent openings followed by random tokens; 71% truncated, pass@1 28.7% on the first 980 problems), consistent with corrupted tensor-parallel communication; it was stopped and its samples are discarded. Fifth launch: NCCL peer-to-peer disabled for tensor-parallel engines, and a 48-problem gate that aborts the lane if pass@1 is below 0.6.
+
+Fourth addendum: the fifth launch (worth-p29a5-teacher-s0-20261028-213520) stopped at its gate: pass@1 0.34 on the
+first 48 problems, again with degenerate text, so tensor-parallel generation of the 72B model is unreliable in this
+container. Only unofficial quantized single-GPU 72B builds exist. The 72B teacher is abandoned; Pre-registration 30
+(Amendment 1) uses Qwen2.5-Math-7B-Instruct, which runs on one GPU. Whether P29b (TD7) runs with that teacher is a
+separate decision, not made here. Lost cost of the five launches: about $70.

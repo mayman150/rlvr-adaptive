@@ -109,3 +109,15 @@ nine starts plus the base, about 10M presented tokens, initial TailSFT and human
 evaluations: about 13 GPU-hours, about 2 hours of one 8 x A100 machine (about $65). Stage 2: nine RL runs, their 9 x 8
 evaluations, and the 2,048-token check (eight evaluations): about 65 GPU-hours, about 8 hours of one machine (about
 $260). Total about $330, plus setup and idle tails; timing is validated on the first SFT trajectory.
+
+## Amendment 1 (October 28, before any teacher sample of this pool was produced)
+
+The 72B teacher pool could not be produced (Pre-registration 29, fourth addendum). The teacher becomes
+Qwen2.5-Math-7B-Instruct (revision ef9926d75ab1d54532f6a30dd5e760355eb9aa4d), single-GPU vLLM, 4 samples per training
+problem, T = 1, 2,048 tokens, seed 2929, our prompt; each lane first runs a 48-problem gate that stops it if pass@1 is
+below 0.6. Filtering, retokenization, the 1,023-token cap and the selections are unchanged. The teacher is weaker than
+the 72B model and was itself trained with RL, so W and H \ W may keep fewer problems (survival by selection is
+reported, and the 100-problem rule above still applies). The generation shares the machine of Pre-registration 32.
+Amendment 1 addendum (Codex review): the two generation lanes download the teacher into separate directories (no
+shared-directory race); a gate result is re-checked when a saved evaluation is reused; the two 48-problem gate outputs
+overlap the generation shards and are excluded from pool assembly.

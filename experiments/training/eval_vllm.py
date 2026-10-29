@@ -251,6 +251,8 @@ def main():
             if done.exists():
                 old = json.loads(done.read_text())
                 if old.get("fingerprint") == fingerprint and old.get("evaluator") == EVALUATOR:
+                    if args.min_pass1 and sampled and old["pass_at_k"].get("1", old["pass_at_k"].get(1, 0)) < args.min_pass1:
+                        raise SystemExit(f"{full}: saved pass@1 below the gate {args.min_pass1}")  # a gate also holds on reuse
                     print(f"{full}: already done", flush=True)
                     continue
             job = {"path": str(path), "tag": full, "temperature": 1.0 if t is None else t, "sampled": sampled, "fingerprint": fingerprint,
