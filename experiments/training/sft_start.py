@@ -33,7 +33,25 @@ from train_grpo import Runner, build_prompt, save_bf16, stop_token_ids  # noqa: 
 from verifier import last_boxed, reward  # noqa: E402
 
 
-def examples(runner, archive, questions, max_new):
+def marker_mask(tok, resp, ids):
+    """1 for response tokens overlapping the last final-answer box's opening "\\boxed{" or its matching closing brace
+    (Pre-registration 35's format-only control); the stop token appended later is also supervised."""
+    start = resp.rfind("\\boxed{")
+    if start < 0:
+        return None
+    depth, i = 1, start + len("\\boxed{")
+    while i < len(resp) and depth:
+        depth += {"{": 1, "}": -1}.get(resp[i], 0)
+        i += 1
+    if depth:
+        return None
+    spans = [(start, start + len("\\boxed{")), (i - 1, i)]
+    offs = tok(resp, add_special_tokens=False, return_offsets_mapping=True).offset_mapping
+    assert len(offs) == len(ids)
+    return [int(any(a < e and b > s0 for s0, e in spans)) for a, b in offs]
+
+
+def examples(runner, archive, questions, max_new, verify="correct", loss_mask="all"):
     tok = runner.tok
     im_end = tok.convert_tokens_to_ids("<|im_end|>")
     stop = im_end if isinstance(im_end, int) and im_end in runner.stop_ids else runner.stop_ids[0]
@@ -46,7 +64,7 @@ def examples(runner, archive, questions, max_new):
     missing = [q for q in questions if q not in recs]
     if missing:
         raise SystemExit(f"{len(missing)} selected questions are not in the archive")
-    out, dropped = [], {"too_long": 0, "unverified": 0, "duplicate": 0, "no_solution": 0}
+    out, dropped = [], {"too_long": 0, "unverified": 0, "duplicate": 0, "no_solution": 0, "no_marker": 0}
     for q in questions:
         d = recs[q]
         sols, seen = [], set()
@@ -55,13 +73,20 @@ def examples(runner, archive, questions, max_new):
             text = tok.decode(ids, skip_special_tokens=True)
             if len(ids) > max_new - 1:
                 dropped["too_long"] += 1
-            elif not (reward(text, d["answer"]) and last_boxed(text) is not None):
+            elif last_boxed(text) is None or (verify == "correct" and not reward(text, d["answer"])):
                 dropped["unverified"] += 1
             elif tuple(ids) in seen:
                 dropped["duplicate"] += 1
             else:
+                m = marker_mask(tok, resp, ids) if loss_mask == "format" else None
+                if loss_mask == "format" and (m is None or not any(m)):
+                    dropped["no_marker"] += 1
+                    continue
                 seen.add(tuple(ids))
-                sols.append(torch.tensor(ids + [stop]))
+                t = torch.tensor(ids + [stop])
+                if m is not None:
+                    t.mask = torch.tensor(m + [1], dtype=torch.float32)  # marker tokens and the stop token
+                sols.append(t)
         if sols:
             out.append((torch.tensor(tok(build_prompt(tok, q)).input_ids), sols))
         else:
@@ -71,10 +96,12 @@ def examples(runner, archive, questions, max_new):
     return out, dropped
 
 
-def token_nll(runner, pairs):
-    """Per-example (summed NLL, token count) of the responses."""
+def token_nll(runner, pairs, masks=None):
+    """Per-example (summed NLL, token count) of the responses; with masks, over the masked tokens only."""
     lps = runner.token_logprobs(pairs)
-    return [(-lp.sum(), lp.numel()) for lp in lps]
+    if masks is None:
+        return [(-lp.sum(), lp.numel()) for lp in lps]
+    return [(-(lp * m.to(lp.device)).sum(), int(m.sum())) for lp, m in zip(lps, masks)]
 
 
 def main():
@@ -90,12 +117,18 @@ def main():
     ap.add_argument("--seed", type=int, default=3030)
     ap.add_argument("--tail", action="store_true", help="TailSFT filtering")
     ap.add_argument("--tail-max-drop", type=float, default=0.5)
+    ap.add_argument("--verify", default="correct", choices=("correct", "boxed"),
+                    help="keep verifier-correct responses (default) or any response with a final box (P35 controls)")
+    ap.add_argument("--loss-mask", default="all", choices=("all", "format"),
+                    help="supervise every response token (default) or only the final box's markers and the stop token")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     runner = Runner(argparse.Namespace(model=a.model, device="cuda", gen_batch=8, prefill_tokens=256, max_new=a.max_new, train_batch=a.batch))
     p = Path(a.problems) if Path(a.problems).exists() else HERE / "data" / a.problems
     arch = Path(a.archive) if Path(a.archive).exists() else HERE / "data" / a.archive
-    data, dropped = examples(runner, arch, json.loads(p.read_text()), a.max_new)
+    data, dropped = examples(runner, arch, json.loads(p.read_text()), a.max_new, a.verify, a.loss_mask)
+    if a.loss_mask == "format" and a.tail:
+        raise SystemExit("--loss-mask format is not combined with --tail")
     if not (a.batch >= 1 and a.lr > 0 and 0 <= a.tail_max_drop < 1 and data):
         raise SystemExit("invalid settings or empty selection")
     milestones = sorted(int(x) for x in a.milestones.split(","))
@@ -128,11 +161,13 @@ def main():
             j = rot[i] % len(data[i][1])
             rot[i] += 1
             items.append((i, j))
-        res = token_nll(runner, [(data[i][0].to("cuda"), data[i][1][j].to("cuda")) for i, j in items])
+        masks = [data[i][1][j].mask for i, j in items] if a.loss_mask == "format" else None
+        res = token_nll(runner, [(data[i][0].to("cuda"), data[i][1][j].to("cuda")) for i, j in items], masks)
+        lengths = [len(data[i][1][j]) for i, j in items]  # presented response tokens (the dose), mask or not
         keep = list(range(len(items)))
         if a.tail:
             # progress counts this batch's tokens, so the schedule reaches max_drop on the final batch
-            frac = a.tail_max_drop * min(1.0, (presented + sum(n for _, n in res)) / total)
+            frac = a.tail_max_drop * min(1.0, (presented + sum(lengths)) / total)
             n_drop = math.floor(frac * len(items) + 1e-9)
             margins = [float(nll) / n - l0[it] for (nll, n), it in zip(res, items)]
             drop = sorted(range(len(items)), key=lambda k: (margins[k], -k))[:n_drop]  # ties: the lower index is kept
@@ -148,8 +183,8 @@ def main():
         opt.step()
         opt.zero_grad(set_to_none=True)
         steps += 1
-        presented += sum(n for _, n in res)
-        retained += sum(res[k][1] for k in keep)
+        presented += sum(lengths)
+        retained += sum(res[k][1] for k in keep)  # supervised tokens (equal to presented without TailSFT or masks)
         if steps % 20 == 0:
             log.append({"step": steps, "loss": float(loss), "presented": presented, "retained": retained, "grad_norm": gn,
                         "peak_gb": torch.cuda.max_memory_allocated() / 1e9})
