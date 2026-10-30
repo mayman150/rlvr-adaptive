@@ -12,7 +12,7 @@ tokens, a final box, token-level duplicates removed; "verified" additionally mea
   the two sides of the same pairs.
 - FMT (format-only): on the H problems, up to three finished base responses in sample order, regardless of
   correctness, that either have a final box or state an explicit final answer ("the answer is ..."), which is then
-  boxed deterministically (answer text preserved); trained with sft_start --verify boxed --loss-mask format (only
+  boxed deterministically (numeric answers only; answer text preserved); trained with sft_start --verify boxed --loss-mask format (only
   tokens entirely inside the final box's markers, and the stop token, are supervised).
 - CORR (corrupted answer key): teacher responses on H with the content of the last box replaced by a wrong answer
   (a number n becomes n + 1; any other answer gets "+1" appended), kept only if the verifier rejects the result;
@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 MAXT = 1023
 FINISHED = 1000  # completion proxy for base samples (texts carry no finish flag): at most 1,000 retokenized tokens
 BINS = [0, 200, 400, 600, 800, 1024]
-ANSWER_RE = re.compile(r"(?:final answer|the answer) is[:\s]*\$?([^$\n]{1,40}?)\$?\s*(?:\.|\n|$)", re.I)
+ANSWER_RE = re.compile(r"(?:final answer|the answer) is[:\s]*\$?(-?\d+(?:\.\d+)?(?:/\d+)?)(?![\d.]\d)\$?", re.I)  # numeric answers only
 
 
 def bin_of(L):
@@ -85,6 +85,8 @@ def main():
         i, ans = qi[q], train[qi[q]]["answer"]
         seen, sols = set(), []
         for r in base[i]:
+            if len(enc(r)) > FINISHED:  # completion proxy on the original sample, before cropping
+                continue
             r = terminal(r) if last_boxed(r) is not None else r
             ids = canon(r, ans, True, finished=True)
             if ids is not None and tuple(ids) not in seen:
@@ -131,6 +133,8 @@ def main():
         i, ans = qi[q], train[qi[q]]["answer"]
         seen, sols = set(), []
         for r in base[i]:
+            if len(enc(r)) > FINISHED:  # completion proxy on the original sample, before cropping or boxing
+                continue
             kind = "boxed"
             if last_boxed(r) is None:  # an explicit final answer without a box: box it deterministically
                 m = None

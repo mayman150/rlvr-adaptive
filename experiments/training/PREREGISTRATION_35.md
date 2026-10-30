@@ -19,13 +19,13 @@ Archives and selections from p35_prepare.py (data/p35_prepare_report.json; hashe
 - **SELF (self-SFT) / TEACHF (teacher on the same prompts):** each finished (at most 1,000 retokenized tokens, a
   proxy: the stored texts carry no finish flag), verified base response (Stage 0's 64 samples) on an H problem is
   paired with an unused verified teacher response of the same problem in the same length bin (0-199, ..., 800-1,023
-  tokens); SELF and TEACHF hold the two sides of the 296 pairs on F = 172 problems (mean 478 vs 480 tokens; mean
-  absolute paired difference 48). Excluded: 27 H problems without a finished verified base response and 63 without a
+  tokens; the 1,000-token proxy is applied to the original sample, before cropping); SELF and TEACHF hold the two sides of the 256 pairs on F = 163 problems (mean 466 vs 470 tokens; mean
+  absolute paired difference 49). Excluded: 34 H problems without a finished verified base response and 65 without a
   same-bin teacher response. TEACHF minus SELF compares the source of the solutions on identical prompts with matched
   lengths; it does not equalize style.
-- **FMT (format-only):** up to three finished base responses per H problem regardless of correctness (786; 11%
-  correct; 760 already boxed, 26 with an explicit "the answer is ..." that is boxed deterministically, answer text
-  preserved), with the loss only on tokens lying entirely inside the final box's opening "\boxed{" or its closing
+- **FMT (format-only):** up to three finished base responses per H problem regardless of correctness (786; 14.5%
+  correct; 775 already boxed, 11 with an explicit numeric "the answer is ..." that is boxed deterministically, answer
+  text preserved), with the loss only on tokens lying entirely inside the final box's opening "\boxed{" or its closing
   brace, and on the stop token (--verify boxed --loss-mask format); a token that merges a brace with answer text is
   not supervised, and reasoning and answer tokens are masked. Manipulation check: the start's
   boxed rate must rise and its truncation fall relative to the base at 1,024 tokens; otherwise a null from FMT is not
@@ -54,7 +54,8 @@ Each start: the 511 test problems, 64 samples, T = 1, at 1,024 and at 2,048 toke
 - **Readings fixed in advance (descriptive in phase 1; no Holm family until phase 2; a reading uses an estimate only
   if it is supported, i.e. passes the support rule):**
   finishing/format explains at least half of H25's effect if FMT's early-RL gap is >= +0.96 and its manipulation
-  check passes; the answer key is not what transfers if CORR's gap is within 0.5 points of H25 seed 8's; the offset is
+  check passes; the gap survives corrupted final-box labels if CORR's gap is within 0.5 points of H25 seed 8's (intact reasoning
+  and earlier answers remain); the offset is
   reproducible across SFT seeds if H25b's gap is within 0.5 points of H25 seed 8's; at 2,048 tokens, the start
   offsets are compared with the 1,024-token offsets (a large drop indicates budget sensitivity, attributed to
   finishing only with truncation and extraction evidence).

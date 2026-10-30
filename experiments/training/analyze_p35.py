@@ -78,7 +78,8 @@ def main():
         om = [x for x in om if x is not None]
         print(f"   start, 1,024 tokens: pass@1 {100 * A.pk(c, n, 1, full):.1f}, pass@16 {100 * A.pk(c, n, 16, full):.1f}, "
               f"pass@64 {100 * A.pk(c, n, 64, full):.1f}, {diag(d)}; offset vs B1k8 "
-              f"{'n/a' if o8 is None else f'{o8:+.2f}'}; mean over B1k seeds {np.mean(om):+.2f}" if om else "")
+              f"{'n/a (outside support)' if o8 is None else f'{o8:+.2f}'}; mean over B1k seeds "
+              f"{f'{np.mean(om):+.2f}' if om else 'n/a (outside support)'}")
         if X == "FMT":
             bt, bb = base1k[2].get("truncated_rate"), base1k[2].get("boxed_rate")
             ok = (d.get("truncated_rate") is not None and bt is not None and d["truncated_rate"] < bt
@@ -92,8 +93,8 @@ def main():
                 json.dump([samples[k] for k in pick], open("results_p26/p35_fmt_extraction_audit_sample.json", "w"))
                 print("   wrote results_p26/p35_fmt_extraction_audit_sample.json (50 random FMT-start answers for the audit)")
         s2 = A.one(f"{d2k}/eval/step0_T1.00_eval.json", need=False)
-        if s2 is not None and have2k:
-            o2 = offset(s2, b2k, full)
+        if s2 is not None:
+            o2 = offset(s2, b2k, full) if have2k else None
             c2, n2, d2 = s2
             print(f"   start, 2,048 tokens: pass@1 {100 * A.pk(c2, n2, 1, full):.1f}, pass@16 {100 * A.pk(c2, n2, 16, full):.1f}, "
                   f"{diag(d2)}; offset vs B1k8 at 2,048 {'n/a (outside support)' if o2 is None else f'{o2:+.2f}'}"
