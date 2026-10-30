@@ -1,0 +1,54 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "eval",
+    "name": "P34OPD25s10",
+    "sub": "P34OPD25s10",
+    "engine": "vllm",
+    "independent": true,
+    "part": 0,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "25,50,100,150",
+     "--temperatures",
+     "1.0"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "P34OPD25s10",
+    "sub": "P34OPD25s10",
+    "engine": "vllm",
+    "independent": true,
+    "part": 1,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150",
+     "--temperatures",
+     "1.15,1.3"
+    ]
+   }
+  ]
+ ]
+}
