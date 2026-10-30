@@ -1,0 +1,657 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "script",
+    "name": "COPY2K",
+    "script": "s3_copy.py",
+    "independent": false,
+    "args": [
+     "--bucket",
+     "stop-rl-165919938845-us-west-2",
+     "--region",
+     "us-west-2",
+     "--pairs",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/S2R25s9=/opt/ml/checkpoints/S2R25s9",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/S2R25s10=/opt/ml/checkpoints/S2R25s10",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/S2H25s9=/opt/ml/checkpoints/S2H25s9",
+     "checkpoints/worth-p30-stage2-s0-20261029-182830/S2H25s10=/opt/ml/checkpoints/S2H25s10"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "B1k9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "sub": "B1k9"
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "live": "S2R25s9"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "live": "S2H25s9"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "sub": "B1k9"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_1",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "live": "S2R25s9"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "live": "S2H25s9"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "sub": "B1k9"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_2",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "live": "S2R25s9"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "live": "S2H25s9"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "sub": "B1k9"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_3",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "live": "S2R25s9"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s9_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "live": "S2H25s9"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "sub": "B1k10"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_4",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "live": "S2R25s10"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "25"
+    ],
+    "live": "S2H25s10"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "sub": "B1k10"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_5",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "live": "S2R25s10"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "50"
+    ],
+    "live": "S2H25s10"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "sub": "B1k10"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_6",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "live": "S2R25s10"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "100"
+    ],
+    "live": "S2H25s10"
+   }
+  ],
+  [
+   {
+    "kind": "eval",
+    "name": "B1k10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "sub": "B1k10"
+   },
+   {
+    "kind": "script",
+    "name": "WAIT2K_7",
+    "script": "wait_files.py",
+    "args": [
+     "--files",
+     "/opt/ml/checkpoints/S2R25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2R25s10/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s9/ckpt_step150/config.json",
+     "/opt/ml/checkpoints/S2H25s10/ckpt_step150/config.json",
+     "--grace",
+     "30",
+     "--timeout",
+     "7200"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "S2R25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "live": "S2R25s10"
+   },
+   {
+    "kind": "eval",
+    "name": "S2H25s10_2k",
+    "engine": "vllm",
+    "independent": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--n",
+     "32",
+     "--expect-steps",
+     "1,2,5,10,25,50,100,150",
+     "--sampled-steps",
+     "150"
+    ],
+    "live": "S2H25s10"
+   }
+  ]
+ ]
+}
