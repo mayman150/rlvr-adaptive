@@ -1,0 +1,64 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "train",
+    "name": "B1kL8",
+    "args": [
+     "--arms",
+     "baseline",
+     "--seed",
+     "8",
+     "--steps",
+     "700",
+     "--group",
+     "8",
+     "--prompts-per-step",
+     "16",
+     "--max-new",
+     "1024",
+     "--lr",
+     "1e-6",
+     "--gen-batch",
+     "192",
+     "--calib-prompts",
+     "16",
+     "--eval-steps",
+     "150",
+     "--entropy-every",
+     "5",
+     "--save-steps",
+     "25,50,100,150,200,300,400,500,600,700",
+     "--train",
+     "train.json"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "B1kL8",
+    "live": "B1kL8",
+    "engine": "vllm",
+    "independent": true,
+    "part": 0,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--expect-steps",
+     "25,50,100,150,200,300,400,500,600,700",
+     "--sampled-steps",
+     "25,50,100,150,200,300,400,500,600,700",
+     "--temperatures",
+     "1.0"
+    ]
+   }
+  ]
+ ]
+}

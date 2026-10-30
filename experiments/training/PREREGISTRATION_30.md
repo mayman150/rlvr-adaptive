@@ -202,3 +202,13 @@ Amendment 4 dose choice (validation only; job worth-p30-stage1b-s0-20261029-1648
 in [0.35, 0.45] (R at 25K is 0.462), so the fallback applies (a deviation from the primary rule): 25K has the
 smallest summed distance from 0.40 (0.090, against 0.327 and 0.371). D = 25K presented tokens (actual: see the
 starts' start_meta.json); R-25K and H-25K advance, and P34's OPD start uses the same nominal dose.
+
+## Amendment 5 (October 30, after Stage 2's registered analysis; recommended by the three-way review)
+
+Stage 2's checkpoints 100 and 150 lie beyond B1k's pass@1 support, and R25's contrasts were not interpreted for lack
+of support. To extend the empirical reference, Dr. GRPO from the base is rerun with B1k's exact recipe and hardware
+(train_grpo.py, one L40S, seeds 8, 9, 10) for 700 steps, saving and evaluating steps 25, 50, 100, 150, 200, 300,
+400, 500, 600, 700 (511 test problems, 32 samples, T = 1, 1,024 tokens). These long runs (B1kL) are replicates of B1k,
+not copies: the steps up to 150 are compared with B1k's for reproducibility, and an extended analysis (registered
+before their results are inspected) reads R25 and H25's checkpoints 1-150 against each seed's B1kL trajectory, with
+Stage 2's rules. The primary Stage 2 verdicts above are unchanged by this extension.
