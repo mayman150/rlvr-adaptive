@@ -240,19 +240,20 @@ def main():
         data[X] = (pts, sc)
         out = {}
         for kind in ("traj", "env"):
-            per_draw, full, per_ckpt = {}, {}, {}
+            per_draw, full, per_ckpt, Rs, el = {}, {}, {}, {}, {}
+            laws = (lawX, lawB) if kind == "traj" else None
             for s in SEEDS:
                 traj, temps = refs[s]
-                R = interp_ref(traj, temps if kind == "env" else None)
+                Rs[s] = interp_ref(traj, temps if kind == "env" else None)
                 xs, _ = curve(traj, full_idx)
-                elig = [st for st in STEPS if xs[0] <= pk(*pts[s][st], 1, full_idx) <= xs[-1]]
-                if len(elig) < 2:
-                    full[s] = None
-                    continue
-                full[s] = gaps_for(pts[s], R, full_idx, elig, (lawX, lawB) if kind == "traj" else None, ("full", s))
-                per_draw[s] = [gaps_for(pts[s], R, i, elig, (lawX, lawB) if kind == "traj" else None, (k, s))
-                               for k, i in enumerate(draws)]
+                el[s] = [st for st in STEPS if xs[0] <= pk(*pts[s][st], 1, full_idx) <= xs[-1]]
+                full[s] = gaps_for(pts[s], Rs[s], full_idx, el[s], laws, "full") if len(el[s]) >= 2 else None
                 per_ckpt[s] = full[s]
+                per_draw[s] = []
+            if all(full[s] is not None for s in SEEDS):
+                for k, i in enumerate(draws):  # draw-major, so each draw's laws are fitted once for all seeds
+                    for s in SEEDS:
+                        per_draw[s].append(gaps_for(pts[s], Rs[s], i, el[s], laws, k))
             if any(v is None for v in full.values()):
                 out[kind] = {"verdict": "insufficient overlap", "elig": {s: (list(full[s]) if full[s] else []) for s in SEEDS}}
                 continue
