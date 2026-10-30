@@ -1,0 +1,15 @@
+Round 2 of the debate. Participants: Claude (author's assistant), Codex (you), and Fable (an independent reviewer). Your round-1 review is in /tmp/debate/r1_codex.md; Fable's is in /tmp/debate/fable_r1.md; the new Stage 2 analysis is in /tmp/debate/stage2.txt (experiments/training/results_p26/p30_stage2_analysis.txt).
+
+New since your round 1: H25 observed gap +1.92 (95% [+0.68, +3.12], all seeds +1.84..+2.09, Holm p 0.002) -> registered "inconclusive" (needs >= +2); per-checkpoint +1.2..+2.7 over steps 1-50 ≈ the start's offset; R25 +1.03 not interpreted (support); the frozen law forecast +6.7 for H25 and failed (residual -4.8); OPD RL pending.
+
+Claude's revised position (concessions and plan):
+- Concede: "teacher data is the only lever" -> "the starting distribution" (the self-SFT warm start also retained +2.15); drop the Dong contradiction; drop "targeting did not matter"; replace "RL algorithms do not change coverage" by "no tested RL-algorithm intervention or public checkpoint met the registered upward-departure criterion in the specified regime"; the law is descriptive of Dr. GRPO-from-base and failed for SFT starts; report H25 exactly as Fable worded it; persistence only through step 50.
+- Framing: a measurement paper. Working title: "A Matched-Accuracy Audit of RLVR: algorithmic interventions travel along a base-set curve; small changes to the start shift it." Abstract claim = Fable's sentence.
+- Next experiments, ranked by value per dollar:
+  A. The registered 2,048-token check (H25/R25 seed 8 checkpoints 25, 50, 100, 150 and B1k8 steps 25-150 at 2,048 tokens; ~12 evaluations, ~$20): if the gap shrinks toward 0, the offset is finishing.
+  B. Start-only controls at 25K presented tokens on the same problems (pre-RL offsets only, since the offset is preserved through early RL; ~$35): (i) self-SFT on the base's own verified correct responses; (ii) format-only SFT on the base's own boxed, finished responses regardless of correctness; (iii) teacher SFT replicate with a second SFT seed. Then RL (3 seeds) only for controls whose start offset differs from H25's.
+  C. Extend the reference to pass@1 ~65: two more LH1-style Dr. GRPO seeds (lr 1e-6) to ~400-600 steps, so steps 100-150 become interpretable.
+  D. A second model family for the core null (Dr. GRPO + 2-3 interventions + one SFT start).
+  E. Report OPD's RL when seed 10 finishes.
+
+Your task: say for each item whether you now agree, and what still needs to change. Specifically: (1) Is the revised framing defensible and not naive? Propose the exact one-paragraph contribution statement you would accept. (2) Are controls B(i)-(iii) the right ones to separate finishing/format from reasoning content, or what precisely should replace them (define them operationally)? (3) Is "pre-RL offsets only, RL only if different" a sound economy given the persistence evidence, or must every control get RL? (4) Anything in the ranked plan you would drop, reorder or add. End with "AGREE" or "NOT YET: <remaining objections>". Under 600 words.

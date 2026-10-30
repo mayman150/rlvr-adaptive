@@ -1,0 +1,21 @@
+I agree with all concessions. The measurement framing is defensible; initialization dependence already has prior art. ([arxiv.org](https://arxiv.org/abs/2506.20512)) Soften the title to *A Matched-Accuracy Audit of RLVR and Initialization*: “travel along” implies equivalence for comparisons that remain inconclusive.
+
+1. I would accept this contribution paragraph, using the [Stage 2 results](/tmp/debate/stage2.txt):
+
+   > We audit pass@16 at matched pass@1 in the tested Qwen2.5-Math/MATH regime, using registered tolerances and explicit support checks. No tested RL algorithm intervention or public checkpoint met the registered upward-departure criterion; equivalent, inconclusive, and unsupported outcomes are distinguished. Following a disclosed dose amendment after Stage 1 inspection, H25 at 25K presented tokens showed +1.92 percentage points (95% CI [+0.68, +3.12]; seed estimates +1.84–2.09; Holm p = 0.002) across eligible checkpoints at steps 1–50. A positive gap is detected, but its magnitude remains inconclusive against the registered 2-point threshold (one-sided test of exceeding 2: p = 0.56). Its approximate agreement with the starting offset suggests early preservation. The frozen base-start law forecast +6.69 and failed, with residual −4.77. R25 was not interpreted because of insufficient support. These measurements concern finite-budget sampled performance; intervals condition on the trained starts and seeds.
+
+2. **B(i): agree with corrected matching.** Use archived, complete, verifier-correct frozen-base responses. Rerun the teacher comparison on the identical feasible prompt subset, with common terminal formatting and matched length bins. Report exclusions: some H25 prompts have no correct response in the archived base samples. The [selection record](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_30.md) makes this consequential.
+
+   **B(ii): replace.** Freeze base responses containing an explicit final answer, irrespective of correctness. Preserve reasoning and answer tokens verbatim; deterministically add boxing and EOS, and supervise only those markers, masking reasoning and answer losses. Never supply missing answers. Report exclusions, supervised-token counts, optimizer updates, and actual presentations. This targets serialization and termination. Check that it actually improves finishing before interpreting a null; solution-length compression requires separate diagnostics.
+
+   **B(iii): agree.** Use a second prespecified SFT seed on the frozen teacher pool and protocol; report the realized examples. Three RL seeds from one start do not establish robustness across SFT starts.
+
+3. **“RL only if different”: disagree as a mechanism test.** Equal starting summaries do not establish equal learning dynamics; Dong provides a relevant empirical warning. ([arxiv.org](https://arxiv.org/html/2609.28145)) Start-only screening is economical for claims explicitly confined to initialization. Every control used to explain the post-RL gap should receive a short RL trajectory—one common seed through step 50 initially, then three seeds for confirmatory contrasts, irrespective of whether starting offsets match. Every control need not receive three full-length runs.
+
+4. **Plan:** A first; E immediately when available; C alongside revised B; D last.
+
+   A must rebuild the 2,048-token reference, rematch pass@1, and enforce support. Shrinkage establishes budget sensitivity; attributing it to finishing requires truncation and extraction evidence. Replicate across seeds if the single-seed check determines the conclusion. C improves interpretability of R25 and later persistence. D is valuable after the existing comparisons become interpretable.
+
+   Add matched pass@64 and base-count-stratum diagnostics at selected eligible checkpoints, extraction audits, and complete verdict tallies. Retain the amendments and failed forecast prominently.
+
+**NOT YET: soften the headline, complete A, revise the format control, and replace offset-based RL selection.**
