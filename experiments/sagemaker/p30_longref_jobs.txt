@@ -1,0 +1,3 @@
+us-west-2:worth-p30-longref8-s8-20261030-061141
+us-east-1:worth-p30-longref9-s9-20261030-061205
+us-east-2:worth-p30-longref10-s10-20261030-061234

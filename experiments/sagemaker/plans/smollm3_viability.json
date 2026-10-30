@@ -1,0 +1,58 @@
+{
+ "model": "HuggingFaceTB/SmolLM3-3B-Base",
+ "model_dir": "SmolLM3-3B-Base",
+ "architecture": "SmolLM3ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "eval",
+    "name": "SMOL_BASE_1k",
+    "engine": "vllm",
+    "independent": true,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "1024",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--plain-prompt"
+    ]
+   },
+   {
+    "kind": "eval",
+    "name": "SMOL_BASE_2k",
+    "engine": "vllm",
+    "independent": true,
+    "include_base": true,
+    "args": [
+     "--problems",
+     "eval_frontier_512.json",
+     "--n",
+     "32",
+     "--max-new",
+     "2048",
+     "--temperatures",
+     "1.0",
+     "--base-temperatures",
+     "1.0",
+     "--sampled-steps",
+     "0",
+     "--expect-steps",
+     "0",
+     "--plain-prompt"
+    ]
+   }
+  ]
+ ]
+}
