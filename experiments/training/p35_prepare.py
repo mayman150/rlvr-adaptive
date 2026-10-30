@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 MAXT = 1023
 FINISHED = 1000  # completion proxy for base samples (texts carry no finish flag): at most 1,000 retokenized tokens
 BINS = [0, 200, 400, 600, 800, 1024]
-ANSWER_RE = re.compile(r"(?:final answer|the answer) is[:\s]*\$?(-?\d+(?:\.\d+)?(?:/\d+)?)(?![\d.]\d)\$?", re.I)  # numeric answers only
+ANSWER_RE = re.compile(r"(?:final answer|the answer) is[:\s]*\$?(-?\d+(?:\.\d+)?(?:/\d+)?)\$?(?=[ \t]*(?:[.,;][ \t]*(?:\n|$)|\n|$))", re.I | re.M)  # a complete numeric answer: only line end or final punctuation may follow
 
 
 def bin_of(L):

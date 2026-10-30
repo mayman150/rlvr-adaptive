@@ -20,18 +20,18 @@
  "teachF_mean_tokens": 469.515625,
  "Hfmt": 262,
  "format_kinds": {
-  "boxed": 775,
-  "boxing_added": 11
+  "boxed": 778,
+  "boxing_added": 8
  },
  "format_responses": 786,
- "format_correct_share": 0.1450381679389313,
+ "format_correct_share": 0.14376590330788805,
  "corr_problems_with_solution": 262,
  "sha256": {
   "p35_sel_F.json": "d8f29512b413216e869345675e23122fd9803bf7b51595aa40bafcc4a795e27f",
   "p35_sel_Hfmt.json": "86271b0f7f1ffb35a8c713f3b6a596f004f8bde3e15b57beee061868ab4c4694",
   "p35_archive_self.json": "a2707a960d54775c1f4c660af795f1e09fa5533f660b0bd59b2b99efff1aae4e",
   "p35_archive_teachF.json": "8c480349b2306e2421f0e0be6700a178b5ec502b903fa87f3b19fe18e3ec2395",
-  "p35_archive_format.json": "56844d5855a53829b5452db6eb8497f4e26588555a5b9d349c7ee8832ad731ce",
+  "p35_archive_format.json": "a4200ff72652c981d900092c5a6f8897222d9aa1cc607521866eeae1d2d1526e",
   "p35_archive_corr.json": "eb7e6bab5d61c5f0737f6280b566996f67eed75025cad3974eeb4979bbcc3636"
  }
 }

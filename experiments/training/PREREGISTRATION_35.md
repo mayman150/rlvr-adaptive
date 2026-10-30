@@ -23,8 +23,8 @@ Archives and selections from p35_prepare.py (data/p35_prepare_report.json; hashe
   absolute paired difference 49). Excluded: 34 H problems without a finished verified base response and 65 without a
   same-bin teacher response. TEACHF minus SELF compares the source of the solutions on identical prompts with matched
   lengths; it does not equalize style.
-- **FMT (format-only):** up to three finished base responses per H problem regardless of correctness (786; 14.5%
-  correct; 775 already boxed, 11 with an explicit numeric "the answer is ..." that is boxed deterministically, answer
+- **FMT (format-only):** up to three finished base responses per H problem regardless of correctness (786; 14.4%
+  correct; 778 already boxed, 8 with an explicit, complete numeric "the answer is ..." that is boxed deterministically, answer
   text preserved), with the loss only on tokens lying entirely inside the final box's opening "\boxed{" or its closing
   brace, and on the stop token (--verify boxed --loss-mask format); a token that merges a brace with answer text is
   not supervised, and reasoning and answer tokens are masked. Manipulation check: the start's
