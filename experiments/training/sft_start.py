@@ -34,8 +34,8 @@ from verifier import last_boxed, reward  # noqa: E402
 
 
 def marker_mask(tok, resp, ids):
-    """1 for response tokens overlapping the last final-answer box's opening "\\boxed{" or its matching closing brace
-    (Pre-registration 35's format-only control); the stop token appended later is also supervised."""
+    """1 for response tokens lying entirely inside the last final-answer box's opening "\\boxed{" or its matching
+    closing brace (Pre-registration 35's format-only control); the stop token appended later is also supervised."""
     start = resp.rfind("\\boxed{")
     if start < 0:
         return None
@@ -48,7 +48,12 @@ def marker_mask(tok, resp, ids):
     spans = [(start, start + len("\\boxed{")), (i - 1, i)]
     offs = tok(resp, add_special_tokens=False, return_offsets_mapping=True).offset_mapping
     assert len(offs) == len(ids)
-    return [int(any(a < e and b > s0 for s0, e in spans)) for a, b in offs]
+    # supervise only tokens lying entirely inside a marker span: a token that merges a brace with answer or
+    # reasoning characters (e.g. "{x" or "}}") is not supervised
+    m = [int(b > a and any(s0 <= a and b <= e for s0, e in spans)) for a, b in offs]
+    answer = (start + len("\\boxed{"), i - 1)
+    assert not any(k and a < answer[1] and b > answer[0] for k, (a, b) in zip(m, offs)), "a supervised token overlaps the answer"
+    return m
 
 
 def examples(runner, archive, questions, max_new, verify="correct", loss_mask="all"):
