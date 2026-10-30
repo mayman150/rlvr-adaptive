@@ -980,6 +980,50 @@ def answer_start(runner, ids):
     return len(ids) if pos < 0 else text_cut(runner, ids, pos)
 
 
+class InterleavedSFT:
+    """Pre-registration 36's timing ablation: the SFT start's data and update rule applied during RL instead of before it.
+    Every `every` RL steps (starting at step 0), one SFT batch (sft_start.py's stream: shuffled passes over the
+    selection, rotating through each problem's solutions; mean token NLL; its own AdamW at lr, betas 0.9/0.99, no weight
+    decay; clip 1) is applied before the RL step, until `tokens` presented response tokens are reached."""
+
+    def __init__(self, runner, args):
+        from sft_start import examples  # sft_start imports this module, so import lazily
+        sel = Path(args.isft_problems) if Path(args.isft_problems).exists() else HERE / "data" / args.isft_problems
+        arc = Path(args.isft_archive) if Path(args.isft_archive).exists() else HERE / "data" / args.isft_archive
+        self.data, self.dropped = examples(runner, arc, json.loads(sel.read_text()), args.max_new)
+        self.opt = torch.optim.AdamW(runner.params, lr=args.isft_lr, betas=(0.9, 0.99), weight_decay=0.0)
+        self.rng, self.order, self.rot = random.Random(args.isft_seed), [], [0] * len(self.data)
+        self.presented, self.updates, self.args = 0, 0, args
+
+    def maybe_step(self, runner, step):
+        a = self.args
+        if self.presented >= a.isft_tokens or step % a.isft_every:
+            return None
+        while len(self.order) < a.isft_batch:
+            nxt = list(range(len(self.data)))
+            self.rng.shuffle(nxt)
+            self.order += nxt
+        items = []
+        for i in [self.order.pop(0) for _ in range(a.isft_batch)]:
+            j = self.rot[i] % len(self.data[i][1])
+            self.rot[i] += 1
+            items.append((i, j))
+        runner.model.train()
+        self.opt.zero_grad(set_to_none=True)
+        lps = runner.token_logprobs([(self.data[i][0].to(runner.device), self.data[i][1][j].to(runner.device)) for i, j in items])
+        n_tok = sum(lp.numel() for lp in lps)
+        loss = -sum(lp.sum() for lp in lps) / n_tok
+        loss.backward()
+        gn = float(torch.nn.utils.clip_grad_norm_(runner.params, 1.0))
+        if not math.isfinite(gn):
+            raise SystemExit(f"non-finite interleaved-SFT gradient at RL step {step}")
+        self.opt.step()
+        self.opt.zero_grad(set_to_none=True)
+        self.presented += n_tok
+        self.updates += 1
+        return {"loss": float(loss), "presented": self.presented, "updates": self.updates, "grad_norm": gn}
+
+
 def oe_bonuses(runner, args, answers, rewards, keys, G, counts):
     """Outcome-based exploration (Song et al. 2025, arXiv 2509.06941) for fixed groups, with outcomes from oe_outcome
     (verifier-accepted answers form one class; answers without a parsed final box form one class).
@@ -1597,6 +1641,16 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
             and not (args.od_beta < 1.0 and args.pw_lambda > 0), \
             "off-direction updates and problem-space whitening are implemented, one at a time, for plain on-policy Dr. GRPO"
+    isft = None
+    if args.isft_archive:
+        assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
+            and args.mh_mode == "none" and args.prefix_rollouts == 0 and not args.complete_groups and not interventions \
+            and args.bbg_k == 0 and not args.rescue_archive and args.shift == 0 and not args.shadow_arm \
+            and args.od_beta == 1.0 and args.pw_lambda == 0 and not args.teacher_archive and args.sam_period == 0 \
+            and args.oe_mode == "none" and args.isft_tokens > 0 and args.isft_every >= 1, \
+            "interleaved SFT is implemented for plain on-policy Dr. GRPO"
+        isft = InterleavedSFT(runner, args)
+        print(f"[{arm}] interleaved SFT: {len(isft.data)} problems, {args.isft_tokens} tokens, every {args.isft_every} steps", flush=True)
     oe_counts = {}
     if args.oe_mode != "none":
         assert args.reuse == 1 and not surrogate_flags(args) and not args.diagnostics and args.alloc_first == 0 and arm == "baseline" \
@@ -1683,6 +1737,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             torch.cuda.reset_peak_memory_stats()
         start = time.time()
         extra = {}
+        if isft is not None:
+            r = isft.maybe_step(runner, step)
+            if r is not None:
+                extra["isft"] = r
         if arm in FIXED_ARMS:
             pps, G = args.prompts_per_step, args.group
             if step % args.reuse == 0:
@@ -2013,6 +2071,13 @@ def main():
     parser.add_argument("--od-warmup", type=int, default=10)
     parser.add_argument("--pw-lambda", type=float, default=0.0, help="problem-space whitening ridge, times tr(G)/m (0: off)")
     parser.add_argument("--pw-dim", type=int, default=1 << 20, help="CountSketch dimension for problem-space whitening")
+    parser.add_argument("--isft-archive", default="", help="interleaved SFT during RL (Pre-registration 36 timing ablation)")
+    parser.add_argument("--isft-problems", default="", help="selection (JSON list of questions) for interleaved SFT")
+    parser.add_argument("--isft-tokens", type=int, default=25000, help="presented response tokens of interleaved SFT")
+    parser.add_argument("--isft-every", type=int, default=5, help="one SFT batch every this many RL steps, from step 0")
+    parser.add_argument("--isft-lr", type=float, default=1e-5)
+    parser.add_argument("--isft-batch", type=int, default=8)
+    parser.add_argument("--isft-seed", type=int, default=3030)
     parser.add_argument("--oe-mode", default="none", choices=("none", "ucb", "batch"),
                         help="outcome-based exploration (arXiv 2509.06941): UCB-Con or Batch bonus on final answers")
     parser.add_argument("--oe-c", type=float, default=0.2, help="exploration bonus coefficient (the paper's Qwen value)")

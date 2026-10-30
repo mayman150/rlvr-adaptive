@@ -126,12 +126,22 @@ def main():
                     help="keep verifier-correct responses (default) or any response with a final box (P35 controls)")
     ap.add_argument("--loss-mask", default="all", choices=("all", "format"),
                     help="supervise every response token (default) or only the final box's markers and the stop token")
+    ap.add_argument("--weights", default=None, help="JSON {question: weight}: draw problems with replacement in proportion "
+                    "to the weight (Pre-registration 36's coverage-targeted stream) instead of shuffled passes")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     runner = Runner(argparse.Namespace(model=a.model, device="cuda", gen_batch=8, prefill_tokens=256, max_new=a.max_new, train_batch=a.batch))
     p = Path(a.problems) if Path(a.problems).exists() else HERE / "data" / a.problems
     arch = Path(a.archive) if Path(a.archive).exists() else HERE / "data" / a.archive
-    data, dropped = examples(runner, arch, json.loads(p.read_text()), a.max_new, a.verify, a.loss_mask)
+    questions = json.loads(p.read_text())
+    data, dropped = examples(runner, arch, questions, a.max_new, a.verify, a.loss_mask)
+    wts = None
+    if a.weights:
+        wp = Path(a.weights) if Path(a.weights).exists() else HERE / "data" / a.weights
+        wmap = json.loads(wp.read_text())
+        wts = [float(wmap[q]) for q in questions]  # data[i] belongs to questions[i] (a problem without a solution aborts)
+        if not all(math.isfinite(w) and w >= 0 for w in wts) or sum(wts) <= 0:
+            raise SystemExit("invalid weights")
     if a.loss_mask == "format" and a.tail:
         raise SystemExit("--loss-mask format is not combined with --tail")
     if not (a.batch >= 1 and a.lr > 0 and 0 <= a.tail_max_drop < 1 and data):
@@ -156,6 +166,8 @@ def main():
     order, presented, retained, steps, log, mi = [], 0, 0, 0, [], 0
     total = milestones[-1]
     while mi < len(milestones):
+        while wts is not None and len(order) < a.batch:  # weighted draws with replacement
+            order += rng.choices(range(len(data)), weights=wts, k=256)
         while len(order) < a.batch:  # refill with shuffled passes (also for selections smaller than a batch)
             nxt = list(range(len(data)))
             rng.shuffle(nxt)
