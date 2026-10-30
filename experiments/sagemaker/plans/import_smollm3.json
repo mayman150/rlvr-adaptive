@@ -1,0 +1,27 @@
+{
+ "model": "Qwen/Qwen2.5-Math-1.5B",
+ "model_dir": "Qwen2.5-Math-1.5B",
+ "architecture": "Qwen2ForCausalLM",
+ "common": [],
+ "lanes": [
+  [
+   {
+    "kind": "script",
+    "name": "IMPORT_SMOLLM3",
+    "script": "import_model.py",
+    "args": [
+     "--repo",
+     "HuggingFaceTB/SmolLM3-3B-Base",
+     "--revision",
+     "d78a42f79198603e614095753484a04c10c2b940",
+     "--bucket",
+     "stop-rl-165919938845-us-west-2",
+     "--prefix",
+     "models/SmolLM3-3B-Base",
+     "--region",
+     "us-west-2"
+    ]
+   }
+  ]
+ ]
+}

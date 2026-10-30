@@ -73,7 +73,8 @@ def evaluate(job):
     problems = load_problems(a["problems"], a["limit"], a["offset"])
     tok_dir = compat_tokenizer(job["path"])
     tok = AutoTokenizer.from_pretrained(tok_dir)
-    assert tok.chat_template is not None, f"{job['path']}: no chat template (prompts would differ from eval_ckpt.py)"
+    assert tok.chat_template is not None or a.get("plain_prompt"), \
+        f"{job['path']}: no chat template (prompts would differ from eval_ckpt.py); pass --plain-prompt for base models without one"
     stop = stop_token_ids(tok)
     pad = tok.pad_token_id if tok.pad_token_id is not None else stop[0]
     texts = [build_prompt(tok, q["question"]) for q in problems] if job["sampled"] else []
@@ -207,6 +208,8 @@ def main():
     ap.add_argument("--base-temperatures", default="")
     ap.add_argument("--tp", type=int, default=1, help="tensor-parallel GPUs (large models)")
     ap.add_argument("--top-p", type=float, default=1.0, help="nucleus sampling (teacher generation only; evaluations use 1)")
+    ap.add_argument("--plain-prompt", action="store_true", help="allow models without a chat template (train_grpo.build_prompt's "
+                    "plain fallback: the instruction, a blank line, the question, a blank line)")
     ap.add_argument("--enforce-eager", action="store_true", help="no CUDA graphs (stability with tensor parallelism)")
     ap.add_argument("--min-pass1", type=float, default=0.0, help="fail if sampled pass@1 is below this (sanity gate)")
     ap.add_argument("--identity", default="", help="model identity (e.g. repo@revision), part of the resume fingerprint")
@@ -234,7 +237,7 @@ def main():
     temps = [float(t) for t in args.temperatures.split(",") if t] or [None]
     base_temps = [float(t) for t in args.base_temperatures.split(",") if t] or temps
     shared = {k: getattr(args, k) for k in ("problems", "limit", "offset", "n", "greedy_problems", "max_new", "prefix_caching", "seed", "out",
-                                            "force_answer", "tp", "enforce_eager", "min_pass1", "top_p")}
+                                            "force_answer", "tp", "enforce_eager", "min_pass1", "top_p", "plain_prompt")}
     for path, tag, step in jobs:
         sampled = not sampled_steps or step in sampled_steps
         if not sampled and step not in greedy_steps:
@@ -247,6 +250,8 @@ def main():
                 fingerprint["force_answer"] = shared["force_answer"]
             if shared["top_p"] != 1.0:  # nucleus sampling changes the samples: never reuse results across settings
                 fingerprint["top_p"] = shared["top_p"]
+            if shared["plain_prompt"]:
+                fingerprint["plain_prompt"] = True
             if args.identity:
                 fingerprint["identity"] = args.identity
             if args.tp > 1:  # tensor parallelism changes numerics: never reuse results across settings
