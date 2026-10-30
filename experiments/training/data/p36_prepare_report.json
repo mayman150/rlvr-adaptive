@@ -1,0 +1,36 @@
+{
+ "pool_problems": 3795,
+ "responses": 27185,
+ "prior": [
+  1.3695019872396577,
+  3.1095700594658404
+ ],
+ "draw_shares": {
+  "c=1-4": {
+   "problems": 331,
+   "cws": 0.5540756494572612,
+   "uniform": 0.08722002635046114
+  },
+  "c=5-16": {
+   "problems": 1397,
+   "cws": 0.4311328271460385,
+   "uniform": 0.3681159420289855
+  },
+  "c=17-32": {
+   "problems": 1365,
+   "cws": 0.014774234093312872,
+   "uniform": 0.35968379446640314
+  },
+  "c>32": {
+   "problems": 702,
+   "cws": 1.7289303387335548e-05,
+   "uniform": 0.18498023715415018
+  }
+ },
+ "sha256": {
+  "p36_self_archive.json": "7d552b5f9c6d91da362e2f26d5db5b704f7fc7bcfa7d3110878b134a3193bc6a",
+  "p36_self_pool.json": "011c85af6693b9d7a0cacf620371a0add2297f41977d96b02dfc27d53efa70b3",
+  "p36_w_cws.json": "d1cdf5224582776a9b05d91447186cdc98f1e6d4df0a28ff3c8fd07e6f84d0a8",
+  "p36_w_uniform.json": "da18febb691c0e35c933a19a3359e643a7bd3ffbd02eda41cd35fd7524ce9bfe"
+ }
+}

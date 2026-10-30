@@ -1,0 +1,53 @@
+Pre-registration 35, phase 1
+Base at 1,024 tokens (Stage 1, 64 samples): pass@1 21.4, truncated 36.0%, boxed 57.3%, mean length 676.1619373776908
+
+== SELF
+   SFT: presented 28041, supervised 28041, updates 7, problems 163, solutions 256, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0, 'no_marker': 0}
+   start, 1,024 tokens: pass@1 23.8, pass@16 81.4, pass@64 89.6, truncated 48.2%, boxed 67.3%, mean length 777.1096807729941; offset vs B1k8 +2.61; mean over B1k seeds +2.58
+   start, 2,048 tokens: pass@1 21.2, pass@16 82.2, truncated 25.9%, boxed 77.1%, mean length 1129.9457558708416; offset vs B1k8 at 2,048 n/a (outside support) (at 1,024: +2.61)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 24.3/82.2 (truncated 47.7%, boxed 67.1%, mean length 773.7699363992173); 2: 24.6/82.3 (truncated 48.5%, boxed 67.2%, mean length 778.2238258317026); 5: 25.3/82.9 (truncated 47.4%, boxed 67.7%, mean length 774.9865459882583); 10: 26.4/82.5 (truncated 47.1%, boxed 68.3%, mean length 769.7484711350294); 25: 32.4/84.8 (truncated 44.2%, boxed 74.4%, mean length 758.7665728962818); 50: 41.4/84.7 (truncated 37.9%, boxed 82.0%, mean length 721.1525195694717)
+   early-RL gap vs B1k8 (checkpoints [1, 2, 5, 10, 25, 50]): +2.41, 90% [+1.35, +3.45], 95% [+1.13, +3.63], draws affected 0.0% -> ok
+
+== TEACHF
+   SFT: presented 27886, supervised 27886, updates 7, problems 163, solutions 256, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0, 'no_marker': 0}
+   start, 1,024 tokens: pass@1 38.6, pass@16 86.6, pass@64 93.3, truncated 46.8%, boxed 69.3%, mean length 770.0085310665362; offset vs B1k8 +2.00; mean over B1k seeds +2.01
+   start, 2,048 tokens: pass@1 34.7, pass@16 88.3, truncated 25.7%, boxed 78.9%, mean length 1119.3265961350294; offset vs B1k8 at 2,048 +3.16 (at 1,024: +2.00)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 39.2/87.9 (truncated 46.7%, boxed 70.4%, mean length 770.204011741683); 2: 39.4/87.2 (truncated 46.5%, boxed 70.5%, mean length 769.8383072407045); 5: 39.1/86.4 (truncated 46.3%, boxed 70.5%, mean length 768.8363502935421); 10: 40.3/87.5 (truncated 46.1%, boxed 71.5%, mean length 770.1076932485323); 25: 43.7/87.6 (truncated 45.0%, boxed 75.1%, mean length 762.022810665362); 50: 51.1/87.9 (truncated 40.2%, boxed 81.3%, mean length 738.0465998043053)
+   early-RL gap vs B1k8 (checkpoints [1, 2, 5, 10, 25, 50]): +2.23, 90% [+1.12, +3.38], 95% [+0.81, +3.66], draws affected 0.0% -> ok
+
+== FMT
+   SFT: presented 26530, supervised 194, updates 7, problems 262, solutions 786, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0, 'no_marker': 0}
+   start, 1,024 tokens: pass@1 11.7, pass@16 70.0, pass@64 86.9, truncated 59.5%, boxed 40.0%, mean length 791.3791279354208; offset vs B1k8 n/a (outside support); mean over B1k seeds n/a (outside support)
+   FMT manipulation check (boxed up and truncation down vs the base): FAILED
+   wrote results_p26/p35_fmt_extraction_audit_sample.json (50 random FMT-start answers for the audit)
+   start, 2,048 tokens: pass@1 10.9, pass@16 69.2, truncated 48.0%, boxed 43.0%, mean length 1336.8354023972602; offset vs B1k8 at 2,048 n/a (outside support) (at 1,024: n/a)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 11.1/68.3 (truncated 60.4%, boxed 40.0%, mean length 795.8010029354208); 2: 11.2/68.3 (truncated 59.9%, boxed 39.9%, mean length 795.9163405088062); 5: 11.9/70.4 (truncated 59.4%, boxed 40.9%, mean length 792.1558219178082); 10: 12.8/71.0 (truncated 57.8%, boxed 42.5%, mean length 782.1695205479452); 25: 18.4/78.4 (truncated 50.5%, boxed 52.6%, mean length 752.4624510763209); 50: 34.6/84.1 (truncated 32.3%, boxed 75.3%, mean length 665.8688233855186)
+   early RL: insufficient overlap (eligible [50])
+
+== CORR
+   SFT: presented 27196, supervised 27196, updates 6, problems 262, solutions 809, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0, 'no_marker': 0}
+   start, 1,024 tokens: pass@1 38.0, pass@16 86.0, pass@64 92.2, truncated 44.5%, boxed 67.1%, mean length 742.0497186888454; offset vs B1k8 +1.67; mean over B1k seeds +1.56
+   start, 2,048 tokens: pass@1 33.4, pass@16 87.2, truncated 25.3%, boxed 76.1%, mean length 1079.5867172211351; offset vs B1k8 at 2,048 +2.64 (at 1,024: +1.67)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 38.0/86.6 (truncated 44.5%, boxed 67.6%, mean length 740.8290728962818); 2: 38.1/86.5 (truncated 44.3%, boxed 68.0%, mean length 741.9436154598826); 5: 38.6/86.1 (truncated 44.0%, boxed 68.4%, mean length 739.6585127201565); 10: 38.9/86.9 (truncated 43.8%, boxed 69.1%, mean length 738.6686643835617); 25: 42.9/87.7 (truncated 41.3%, boxed 73.4%, mean length 730.0218933463797); 50: 51.2/87.7 (truncated 36.7%, boxed 81.0%, mean length 707.5352250489237)
+   early-RL gap vs B1k8 (checkpoints [1, 2, 5, 10, 25, 50]): +2.03, 90% [+0.94, +3.12], 95% [+0.76, +3.32], draws affected 0.0% -> ok
+
+== H25b
+   SFT: presented 25477, supervised 25477, updates 6, problems 262, solutions 809, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0, 'no_marker': 0}
+   start, 1,024 tokens: pass@1 39.0, pass@16 86.7, pass@64 92.8, truncated 48.0%, boxed 65.7%, mean length 763.612340998043; offset vs B1k8 +1.99; mean over B1k seeds +2.06
+   start, 2,048 tokens: pass@1 35.3, pass@16 88.4, truncated 29.0%, boxed 74.3%, mean length 1138.991040851272; offset vs B1k8 at 2,048 +3.07 (at 1,024: +1.99)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 39.3/86.5 (truncated 47.5%, boxed 66.1%, mean length 762.936093444227); 2: 39.2/86.5 (truncated 48.6%, boxed 65.9%, mean length 766.3918175146771); 5: 39.6/86.7 (truncated 48.0%, boxed 66.4%, mean length 763.5292930528376); 10: 40.7/86.1 (truncated 47.7%, boxed 67.6%, mean length 761.3751223091976); 25: 44.9/86.8 (truncated 46.0%, boxed 72.1%, mean length 758.2184442270059); 50: 53.8/87.9 (truncated 41.1%, boxed 80.9%, mean length 739.4846501956947)
+   early-RL gap vs B1k8 (checkpoints [1, 2, 5, 10, 25, 50]): +1.44, 90% [+0.36, +2.50], 95% [+0.18, +2.69], draws affected 0.0% -> ok
+
+== H25
+   SFT: presented 27166, supervised 27166, updates 6, problems 262, solutions 809, dropped at load {'too_long': 0, 'unverified': 0, 'duplicate': 0, 'no_solution': 0}
+   start, 1,024 tokens: pass@1 37.8, pass@16 86.2, pass@64 92.8, truncated 47.3%, boxed 64.7%, mean length 756.1318493150685; offset vs B1k8 +1.90; mean over B1k seeds +1.77
+   start, 2,048 tokens: pass@1 33.5, pass@16 87.9, truncated 28.8%, boxed 72.8%, mean length 1127.9921110567514; offset vs B1k8 at 2,048 +3.32 (at 1,024: +1.90)
+   checkpoints (pass@1/pass@16; diagnostics): 1: 37.8/86.3 (truncated 48.2%, boxed 64.5%, mean length 759.8301125244618); 2: 38.0/86.4 (truncated 47.4%, boxed 65.1%, mean length 755.5036692759295); 5: 38.4/86.4 (truncated 46.9%, boxed 65.3%, mean length 755.379586594912); 10: 39.1/86.3 (truncated 46.9%, boxed 66.6%, mean length 755.0349804305283); 25: 43.6/87.0 (truncated 45.0%, boxed 71.4%, mean length 746.9956580234833); 50: 52.6/88.1 (truncated 39.6%, boxed 80.5%, mean length 727.3064456947162)
+   early-RL gap vs B1k8 (checkpoints [1, 2, 5, 10, 25, 50]): +1.84, 90% [+0.73, +2.93], 95% [+0.51, +3.18], draws affected 0.0% -> ok
+
+Phase-1 readings (registered; descriptive; only supported estimates are used)
+   SELF: early-RL gap +2.41; phase 2 triggered
+   TEACHF: early-RL gap +2.23; phase 2 triggered
+   FMT: no supported early-RL gap (insufficient overlap); no reading
+   CORR: early-RL gap +2.03; phase 2 triggered; within 0.5 of H25 seed 8 (+1.84): True
+   H25b: early-RL gap +1.44; phase 2 triggered; within 0.5 of H25 seed 8 (+1.84): True
