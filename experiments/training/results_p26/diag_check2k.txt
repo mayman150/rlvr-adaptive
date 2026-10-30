@@ -1,0 +1,46 @@
+B1k8 reference at 2,048 tokens: step 0: 21.2/79.8 (trunc 17.8%), step 25: 38.9/86.8 (trunc 11.8%), step 50: 52.8/88.6 (trunc 7.5%), step 100: 57.3/89.1 (trunc 4.9%), step 150: 59.6/89.3 (trunc 4.6%)
+B1k8 reference at 1,024 tokens: step 0: 21.6/78.0 (trunc 35.8%), step 25: 40.0/85.1 (trunc 26.7%), step 50: 52.6/86.1 (trunc 19.7%), step 100: 56.4/87.4 (trunc 16.1%), step 150: 58.1/86.5 (trunc 15.2%)
+
+H25 start
+   1,024: : pass@1 37.8, pass@16 86.2, truncated 47.3%; gap +1.90 [+0.71, +3.07]
+   2,048: : pass@1 33.5, pass@16 87.9, truncated 28.8%; gap +3.32 [+2.17, +4.47]
+
+R25 start
+   1,024: : pass@1 47.5, pass@16 86.6, truncated 45.5%; gap +0.85 [-0.36, +2.17]
+   2,048: : pass@1 40.8, pass@16 88.8, truncated 25.9%; gap +1.81 [+0.57, +3.00]
+
+OPD25 start
+   1,024: : pass@1 52.8, pass@16 86.5, truncated 23.3%; gap +0.34 [-0.73, +1.34]
+   2,048: : pass@1 52.7, pass@16 88.5, truncated 10.2%; gap -0.06 [-1.08, +0.96]
+
+S2H25s8
+   step 25 1,024: : pass@1 43.6, pass@16 87.0, truncated 45.0%; gap +1.57 [+0.15, +2.94]
+   step 25 2,048: : pass@1 38.6, pass@16 87.5, truncated 26.0%; gap +0.87 [-0.59, +2.41]
+   step 50 1,024: : pass@1 52.6, pass@16 88.1, truncated 39.6%; gap +1.95 [+0.47, +3.30]
+   step 50 2,048: : pass@1 47.7, pass@16 90.3, truncated 21.4%; gap +2.31 [+1.07, +3.46]
+   step 100 1,024: : outside the reference's support (pass@1 62.2)
+   step 100 2,048: : outside the reference's support (pass@1 60.7)
+   step 150 1,024: : outside the reference's support (pass@1 65.2)
+   step 150 2,048: : outside the reference's support (pass@1 65.3)
+
+S2R25s8
+   step 25 1,024: : pass@1 51.4, pass@16 87.5, truncated 42.1%; gap +1.45 [+0.11, +2.88]
+   step 25 2,048: : pass@1 44.9, pass@16 88.9, truncated 23.8%; gap +1.35 [+0.02, +2.64]
+   step 50 1,024: : pass@1 57.2, pass@16 87.8, truncated 37.5%; gap +0.79 [-0.83, +2.16]
+   step 50 2,048: : pass@1 52.0, pass@16 90.3, truncated 19.5%; gap +1.81 [+0.58, +3.04]
+   step 100 1,024: : outside the reference's support (pass@1 62.4)
+   step 100 2,048: : outside the reference's support (pass@1 60.8)
+   step 150 1,024: : outside the reference's support (pass@1 64.4)
+   step 150 2,048: : outside the reference's support (pass@1 64.6)
+
+Extraction diagnostic (descriptive): share of samples with two or more boxed answers, and with differing first and last boxed answers
+   base 1,024: 14.8% with >= 2 boxes; 12.0% with first != last; mean length 2017 chars
+   base 2,048: 22.0% with >= 2 boxes; 19.0% with first != last; mean length 2753 chars
+   H25 start 1,024: 12.9% with >= 2 boxes; 8.1% with first != last; mean length 2348 chars
+   H25 start 2,048: 24.1% with >= 2 boxes; 18.6% with first != last; mean length 3544 chars
+   R25 start 1,024: 13.3% with >= 2 boxes; 9.3% with first != last; mean length 2198 chars
+   R25 start 2,048: 29.3% with >= 2 boxes; 24.4% with first != last; mean length 3279 chars
+   OPD25 start 1,024: 4.5% with >= 2 boxes; 3.2% with first != last; mean length 1866 chars
+   OPD25 start 2,048: 9.7% with >= 2 boxes; 7.9% with first != last; mean length 2344 chars
+   H25 seed 8 step 50, 1,024: 14.4% with >= 2 boxes; 8.5% with first != last; mean length 2118 chars
+   H25 seed 8 step 50, 2,048: 26.7% with >= 2 boxes; 20.2% with first != last; mean length 2998 chars
