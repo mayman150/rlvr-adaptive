@@ -21,10 +21,11 @@ ap.add_argument("--marker", required=True, help="object key that must exist befo
 ap.add_argument("--prefix", required=True, help="key prefix of the saved start directory")
 ap.add_argument("--dest", required=True)
 ap.add_argument("--timeout", type=int, default=14400)
+ap.add_argument("--region", default="us-west-2", help="the bucket's region (the job may run elsewhere)")
 ap.add_argument("--out", default=None)
 ap.add_argument("--model", default=None)
 a = ap.parse_args()
-s3 = boto3.client("s3")
+s3 = boto3.client("s3", region_name=a.region)
 prefix = a.prefix.rstrip("/") + "/"
 dest = Path(a.dest)
 t0 = time.time()
