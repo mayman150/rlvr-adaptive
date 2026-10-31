@@ -1,0 +1,6 @@
+SmolLM3-3B-Base viability (job worth-smollm3-viab-s0-20261031-013219, us-east-1, ml.g6e.2xlarge; 511 test problems,
+32 samples, T = 1, plain prompt; descriptive, no registered criterion). Qwen2.5-Math-1.5B base (BASE15) for comparison.
+SmolLM3 1,024 tokens: pass@1 44.3, pass@16 79.1, pass@32 84.3; zero of 32: 15.7%, all 32: 3.7%; truncated 18%, boxed 82%, mean 467 tokens
+SmolLM3 2,048 tokens: pass@1 48.1, pass@16 81.0, pass@32 85.7; zero 14.3%, all 5.3%; truncated 12%, boxed 89%, mean 611 tokens
+Qwen 1,024 tokens:    pass@1 21.6, pass@16 78.0, pass@32 85.5; zero 14.5%, all 0.0%; truncated 36%, boxed 57%, mean 676 tokens
+Qwen 2,048 tokens:    pass@1 21.2, pass@16 79.8, pass@32 87.9; zero 12.1%, all 0.0%; truncated 18%, boxed 67%, mean 925 tokens
