@@ -1,0 +1,8 @@
+Stratum share of test problems (base 64-sample count): c=0 51, c=1-8 157, c=9-32 256, c>32 47
+Gap contribution (share x stratum gap) in pass@16 points, mean over seeds; early = steps 1-10, late = steps 50-150
+   CWS  early total +1.96 (12 checkpoints) | c=0 +0.35, c=1-8 +1.36, c=9-32 +0.25, c>32 -0.00
+   CWS  late  total +0.20 (9 checkpoints) | c=0 +0.08, c=1-8 +0.19, c=9-32 -0.06, c>32 +0.00
+   UNI  early total +1.81 (9 checkpoints) | c=0 +0.08, c=1-8 +1.71, c=9-32 +0.02, c>32 -0.00
+   UNI  late  total +0.63 (9 checkpoints) | c=0 +0.33, c=1-8 +0.31, c=9-32 -0.01, c>32 -0.00
+   H25  early total +1.90 (12 checkpoints) | c=0 +0.86, c=1-8 +1.05, c=9-32 -0.02, c>32 -0.00
+   H25  late  total +2.01 (3 checkpoints) | c=0 +1.52, c=1-8 +0.46, c=9-32 +0.03, c>32 -0.00
