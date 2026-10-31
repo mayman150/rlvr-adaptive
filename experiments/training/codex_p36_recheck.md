@@ -1,0 +1,23 @@
+**Hold launch.** Earlier points 1, 3, 5, 7 and 9 are addressed; 2, 4, 6 and 8 retain the issues below.
+
+Three issues must be fixed before launch:
+
+1. **Missing seeds silently disappear.** [analyze_p36.py:94](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:94) filters out missing pairs before estimation. A synthetic contrast requesting seeds 8–10 returned **“beats” using only seed 8**. CWS–UNI can similarly omit seed 11. **Fix:** require every registered seed pair and checkpoint set; otherwise make the whole contrast unavailable, entering Holm with p = 1.
+
+2. **Unavailable comparisons can trigger paper decisions.** [analyze_p36.py:366](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:366), following [PREREGISTRATION_36.md:106](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_36.md:106), treats unavailable HARD as “not beaten” and unavailable UNI as “does not beat.” I reproduced both paper classifications with missing comparisons. **Fix:** require interpretable results for all decision-relevant contrasts; otherwise return “decision unavailable.” Replace “without a targeting benefit” with “without a demonstrated targeting benefit” unless equivalence is established.
+
+3. **Equivalence bypasses Holm, and outcome priority is unspecified.** [analyze_p36.py:167](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:167) declares equivalence using an unadjusted 90% interval regardless of q, although [PREREGISTRATION_36.md:80](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_36.md:80) declares a primary family of four. Superiority and equivalence can both hold; code silently prioritizes superiority. **Fix:** either label equivalence descriptive and unadjusted, or specify and implement multiplicity-adjusted equivalence tests. Explicitly register outcome priority.
+
+Non-blocking findings:
+
+- **TIME’s boundary wording disagrees with checkpoint ordering.** [PREREGISTRATION_36.md:89](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_36.md:89) says “at or after”; [analyze_p36.py:295](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:295) uses strictly after. Checkpoints are saved before that iteration’s SFT update, so **retain `>` and correct the registration**. The current stream completes at logged step 30, with 28,041 tokens; checkpoint 50 is correctly first. Orientation and mirror labels match the registration.
+
+- **Support rejection disappears from descriptive output.** [analyze_p36.py:172](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:172) omits status when an estimate exists. R25’s reproduced **+1.03 is “not interpreted (support)”**, with unavailable draws of 13.5%, 21.3% and 42.0%. **Fix:** print status on every summary. Also, [line 347](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:347) converts a legitimate zero boxed rate to NaN; use `get("boxed_rate", np.nan)`.
+
+- **The 2k fallback changes the registered reference.** [analyze_p36.py:326](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/analyze_p36.py:326) substitutes the old 32-sample base if job 4’s 64-sample evaluation is missing. **Fix:** report unavailable, or explicitly label that fallback exploratory.
+
+- **Registered mechanism diagnostics lack P36 wiring.** [diversity_decomposition.py:109](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/diversity_decomposition.py:109) loads older arms and uses a different bootstrap schedule. **Fix:** add the P36 manifest and shared seed-36/2,000-draw schedule.
+
+- **TCWS–CWS compares different recipes.** [PREREGISTRATION_36.md:85](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_36.md:85) compares different pools, zero-success support and solution processing. Matched teacher-UNI remains absent. **Fix:** explicitly describe C as a recipe comparison; add matched controls before claiming a teacher-source or teacher-weighting effect.
+
+Job 4’s names, paths, seed pairs and evaluation routing match jobs 1–3 and the analyzer. HARD has exactly 331 positive weights; loader checks retained all selected self and teacher problems. Both stated estimates reproduced; fixed-checkpoint support handling, interpolation ties and Holm calculations matched the specification. No GPU execution; no files modified.
