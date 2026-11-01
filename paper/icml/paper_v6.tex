@@ -55,8 +55,8 @@ before RL are the only lever we found that lifts the curve: teacher solutions ra
 over early RL, beat the base model's own solutions on identical prompts ($+1.53$, 95\% $[+0.34,+2.76]$), and keep
 their effect with corrupted final answers; coverage weighting, TailSFT-style filtering, hard-only selection and
 interleaving the same data during RL do not add to this. Against 700-step Dr.\ GRPO references, however, every start's
-advantage decays by step 150 (descriptive, two seeds): starts accelerate progress along the frontier and make a
-transient excursion above it. Per-problem decompositions locate teacher gains on problems the base model never
+advantage decays to about $+0.4$ points by step 150 (three seeds, descriptive): starts accelerate progress along the
+frontier and make a transient excursion above it. Per-problem decompositions locate teacher gains on problems the base model never
 solves. We conclude that, in these settings, RLVR's coverage at a given accuracy is a property of the starting model,
 and we outline what a method would have to do to change it.
 \end{abstract}
@@ -259,19 +259,21 @@ keeps $+1.72$ [$+0.61$, $+2.83$] while SELF ($-0.03$), CWS ($+0.27$) and UNI ($-
 
 \section{The excursion is transient}\label{sec:persist}
 Teacher starts reach pass@1 63--65 by step 150, beyond the 150-step reference's range (about 58), so their late
-checkpoints could not be read in \cref{tab:starts}. Two 700-step Dr.\ GRPO replicates (seeds 8 and 10; the third is
-running) reproduce the 150-step references within 1 point of pass@1 and reach pass@1 $65.5$/$65.2$ and pass@16
-$88.5$/$88.4$ at step 700. Against them (\cref{fig:persist}; descriptive), every start's gap decays: TEACHF is $+2.0$
-at steps 1--50, $+1.5$/$+0.9$ at step 100 and $+0.8$/$-0.4$ at step 150; H25 $+0.1$/$+0.6$, CORR $-0.1$/$+0.8$, SELF
-$+0.3$/$0.0$ at step 150. Self starts decay by step 50, teacher starts by step 150. Teacher starts end where Dr.\ GRPO
-arrives after 700 steps, with the same pass@16: they move faster along the frontier and leave it only transiently.
-\pending{third seed; registered reading A$'$ once B1kL seed 9 completes}
+checkpoints could not be read in \cref{tab:starts}. Three 700-step Dr.\ GRPO replicates (seeds 8--10) reproduce the
+150-step references within 2 points of pass@1 and reach pass@1 $65.2$--$65.5$ and pass@16 $88.4$--$89.0$ at step 700.
+The registered extension of the H25 and R25 contrasts to these references is not interpretable (support fails in two
+seeds; H25's estimate is $+1.54$). Descriptively (\cref{fig:persist}), every start's gap decays. Averaged over seeds,
+TEACHF is $+2.1$ at steps 1--10, $+1.3$ at step 50, $+1.2$ at step 100 and $+0.5$ at step 150; CORR $+2.3$, $+1.8$,
+$+0.3$, $+0.4$; H25 $+1.8$, $+1.9$, $+0.4$, $+0.4$; SELF $+2.8$, $+0.6$, $+0.6$, $+0.5$. Self starts decay by step 50,
+teacher starts by steps 100--150. Teacher starts end where Dr.\ GRPO arrives after about 700 steps, with the same
+pass@16: they move faster along the frontier and leave it only transiently. The registered P36 secondary reading
+against these references (six arms, Holm) raises no curve; all estimates are $+0.7$ to $+1.6$.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{start_trajectories.pdf}
 \caption{Matched-pass@1 pass@16 gap by RL step after four warm starts, against 700-step Dr.\ GRPO replicates (mean
-of seeds 8 and 10; descriptive). Points lie inside the replicate's pass@1 range in both seeds.}
+of seeds 8--10; descriptive). Points lie inside the replicate's pass@1 range in all three seeds.}
 \label{fig:persist}
 \end{figure}
 
@@ -326,7 +328,7 @@ Models are Qwen2.5-Math 1.5B and 7B on MATH-style problems with binary verificat
 tokens are part of the estimand. Bootstrap intervals cover test-problem sampling conditional on the trained seeds.
 Average equivalence within $\pm2$ points permits smaller effects; several comparisons are inconclusive or lack
 reference support rather than being equivalent. Warm-start arms ran on A100s and the Dr.\ GRPO references on L40S;
-within-hardware contrasts (TEACHF vs SELF, CWS vs baselines) are unaffected. The persistence analysis uses two
+within-hardware contrasts (TEACHF vs SELF, CWS vs baselines) are unaffected. The persistence analysis uses three
 700-step replicates and is descriptive. pass@16 near 87--89 limits headroom; the base-zero test stratum has 51
 problems. A second model family is being prepared.
 
@@ -381,7 +383,7 @@ Between the base and step 25, correct answers rise by 18.4 points while unfinish
 22.0 to 27.7 (22.3 with the same extra tokens and no cue).
 
 \section{Long references}\label{app:long}
-The 700-step replicates B1kL8 and B1kL10 (L40S, the B1k recipe) reach pass@1/pass@16 of $39.2/84.9$, $51.7/85.7$,
+The 700-step replicates B1kL8--10 (L40S, the B1k recipe) reach pass@1/pass@16 of $39.2/84.9$, $51.7/85.7$,
 $56.4/86.3$, $58.3/86.7$ (seed 8) at steps 25, 50, 100, 150, against $40.0/85.1$, $52.6/86.1$, $56.4/87.4$, $58.1/86.5$
 for B1k8; at steps 200--700 seed 8 reaches $59.7/87.6$, $60.9/87.8$, $61.8/87.9$, $63.2/88.1$, $63.7/87.7$, $65.5/88.5$.
 
