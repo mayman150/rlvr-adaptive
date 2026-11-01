@@ -69,3 +69,12 @@ One 8 x A100 job (plans/p39b_addon.json; channel p39-stage0-ckpts, now also hold
   a 2,048-token SFT start trains and RL runs from it; SmolLM3 completes 3 RL steps at 2,048 and at 4,096 tokens, with
   peak memory and seconds per step recorded.
 Cost: about 3.5 hours on one machine, about $110.
+
+## Results: Gate H (November 1; analyze_p39.py output in results_p26/p39_analysis.txt; audit labels in
+results_p26/p39_audit_harvest_labels.json)
+Blind audit (Codex) of up to two verified, finished harvested solutions per problem (shortest first), 172 solutions on
+the 92 problems with any: 57 valid, 98 flawed (correct final answer, substantively wrong derivation), 17 guesses.
+Problems with at least one audited-valid solution: 40 of 109, below the registered 44. **Gate H fails: HARVEST is
+dropped** as registered; PEER can proceed. Descriptively, deep sampling reaches the reference answer on 92 of 109
+zero-observed-success problems, mostly without a valid derivation; only the two shortest solutions per problem were
+audited.

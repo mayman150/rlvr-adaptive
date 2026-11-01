@@ -1,0 +1,1042 @@
+{
+"labels": [
+{
+"index": 0,
+"solution": 0,
+"label": "guess",
+"reason": "Only a boxed answer is supplied; there is no mathematical derivation."
+},
+{
+"index": 0,
+"solution": 1,
+"label": "flawed",
+"reason": "The intersection counts and height intervals are incorrect, and the claimed integer sum does not follow."
+},
+{
+"index": 1,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses unrelated rational integrals, false identities, and a divergent endpoint instead of the given circular graphs."
+},
+{
+"index": 1,
+"solution": 1,
+"label": "flawed",
+"reason": "Misidentifies the enclosed region and reverses a negative area by taking its absolute value without justification."
+},
+{
+"index": 2,
+"solution": 0,
+"label": "flawed",
+"reason": "Claims intersections at 0 and 3 without an available graph or supporting equations."
+},
+{
+"index": 2,
+"solution": 1,
+"label": "flawed",
+"reason": "Invents segment intervals and intersection counts, then sums duplicated coordinates inconsistently."
+},
+{
+"index": 3,
+"solution": 0,
+"label": "guess",
+"reason": "Lists boxed numbers without deriving any intersection coordinates or their sum."
+},
+{
+"index": 3,
+"solution": 1,
+"label": "flawed",
+"reason": "The stated intersection coordinates are wrong; their sum matches the answer only by coincidence."
+},
+{
+"index": 4,
+"solution": 0,
+"label": "valid",
+"reason": "Correct conjugate multiplications give the rationalized expression and the required coefficient sum."
+},
+{
+"index": 4,
+"solution": 1,
+"label": "flawed",
+"reason": "Drops the constant term in the conjugate denominator and assigns a nonexistent sqrt(7) coefficient."
+},
+{
+"index": 6,
+"solution": 0,
+"label": "flawed",
+"reason": "The initial calculation is correct, but the subsequent monic quadratic and fabricated evaluation substantively contradict it."
+},
+{
+"index": 6,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly expands the quadratic supplied in the diagram code and evaluates it at 15."
+},
+{
+"index": 7,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses the number of quarters as the total coin count, followed by invalid algebra and modular claims."
+},
+{
+"index": 7,
+"solution": 1,
+"label": "flawed",
+"reason": "Claims all four coins are quarters despite their total value being 80 cents; the dime count is unjustified."
+},
+{
+"index": 9,
+"solution": 0,
+"label": "flawed",
+"reason": "The claim that diagonal subdivision halves the perimeter is false and does not establish 26."
+},
+{
+"index": 9,
+"solution": 1,
+"label": "guess",
+"reason": "Asserts the perimeter after an unsupported sketch, without counting boundary edges."
+},
+{
+"index": 10,
+"solution": 0,
+"label": "guess",
+"reason": "States the area without any computation or geometric justification."
+},
+{
+"index": 10,
+"solution": 1,
+"label": "flawed",
+"reason": "Treats the stepped shaded polygon as a triangle with invented dimensions."
+},
+{
+"index": 11,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses invented vertices, ignores the grid scale, and reports results inconsistent with the supplied area calculation."
+},
+{
+"index": 11,
+"solution": 1,
+"label": "guess",
+"reason": "Garbled diagrams and an unrelated replacement problem provide no derivation of the boxed area."
+},
+{
+"index": 12,
+"solution": 0,
+"label": "flawed",
+"reason": "Counts nonexistent square sizes and overlapping combinations; the additions and subtraction have no valid counting basis."
+},
+{
+"index": 12,
+"solution": 1,
+"label": "flawed",
+"reason": "Counts a complete 5-by-5 grid instead of the actual figure; the code would return 55."
+},
+{
+"index": 13,
+"solution": 0,
+"label": "flawed",
+"reason": "Counts repeated coordinates as distinct choices, omits tilted rectangles, and changes a computed 30 to 10."
+},
+{
+"index": 13,
+"solution": 1,
+"label": "guess",
+"reason": "Unrelated sticker instructions and incoherent arithmetic provide no rectangle-counting derivation."
+},
+{
+"index": 15,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts every digit in both apartment ranges and takes the maximum required count."
+},
+{
+"index": 15,
+"solution": 1,
+"label": "valid",
+"reason": "Correct exhaustive digit counts establish that 52 packages are necessary and sufficient."
+},
+{
+"index": 16,
+"solution": 0,
+"label": "guess",
+"reason": "Only the rounded value is asserted, with no rounding explanation."
+},
+{
+"index": 16,
+"solution": 1,
+"label": "guess",
+"reason": "Only the final rounded answer is given."
+},
+{
+"index": 17,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly adds the trapezoid area and the right triangle area using perpendicular legs 15 and 20."
+},
+{
+"index": 18,
+"solution": 0,
+"label": "guess",
+"reason": "Asserts 50 degrees without any coherent angle relationship."
+},
+{
+"index": 18,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly uses the triangle angle sum and the complementary angle formed by the perpendicular lines."
+},
+{
+"index": 19,
+"solution": 0,
+"label": "flawed",
+"reason": "Invents inner dimensions, omits the lower extension, and finishes with arithmetic that does not equal 14."
+},
+{
+"index": 19,
+"solution": 1,
+"label": "flawed",
+"reason": "Invents rectangle dimensions and mixes areas with perimeters; the final arithmetic does not produce 14."
+},
+{
+"index": 20,
+"solution": 0,
+"label": "flawed",
+"reason": "Misidentifies the target angle and invents angle relationships involving nonexistent triangle vertices."
+},
+{
+"index": 20,
+"solution": 1,
+"label": "flawed",
+"reason": "Treats collinear A, C, and E as a triangle and assigns incorrect angles."
+},
+{
+"index": 21,
+"solution": 0,
+"label": "valid",
+"reason": "The code correctly adds the numbers and rounds to three decimal places."
+},
+{
+"index": 21,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly obtains 66.4503 and rounds it to the nearest thousandth."
+},
+{
+"index": 22,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses an incorrect shorter-leg ratio and mislabels the computed length; the claimed output also contradicts the code."
+},
+{
+"index": 22,
+"solution": 1,
+"label": "flawed",
+"reason": "The triangle ratios and intermediate hypotenuse are incorrect; the final expression is unsupported."
+},
+{
+"index": 23,
+"solution": 0,
+"label": "guess",
+"reason": "Presents a feasible number without explaining why it is the largest."
+},
+{
+"index": 23,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly maximizes digit count and places the single 3 first; the displayed verification has an extra 2."
+},
+{
+"index": 24,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly converts both operands to decimal, multiplies, and converts the product back to base five."
+},
+{
+"index": 24,
+"solution": 1,
+"label": "flawed",
+"reason": "The multiplication uses the wrong digit and combines partial products incorrectly; 216 is then asserted."
+},
+{
+"index": 25,
+"solution": 0,
+"label": "flawed",
+"reason": "Finds a feasible digit set but does not establish maximum digit count or rule out larger numbers."
+},
+{
+"index": 26,
+"solution": 0,
+"label": "guess",
+"reason": "Only unrelated text and boxed candidate answers are supplied."
+},
+{
+"index": 26,
+"solution": 1,
+"label": "guess",
+"reason": "Asserts incompatible answers and changes the series without any factorial or last-two-digit calculation."
+},
+{
+"index": 27,
+"solution": 0,
+"label": "valid",
+"reason": "Exhaustively checks the correct number for divisibility by 8 and 9 and deduplicates the products."
+},
+{
+"index": 27,
+"solution": 1,
+"label": "flawed",
+"reason": "Constructs a different number, misplacing G and omitting the final 6, so its enumeration does not apply."
+},
+{
+"index": 28,
+"solution": 0,
+"label": "valid",
+"reason": "Correct factorization identifies 37 and 23 as the largest prime factors and subtracts them."
+},
+{
+"index": 28,
+"solution": 1,
+"label": "valid",
+"reason": "Correct factorization and subtraction establish 14; the reported intermediate 26 is a harmless output typo."
+},
+{
+"index": 29,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly shifts the repeating decimal by two places and subtracts to obtain 99x=28."
+},
+{
+"index": 29,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly derives 99x=28 and returns the exact reduced fraction."
+},
+{
+"index": 30,
+"solution": 0,
+"label": "flawed",
+"reason": "Tests the thousandths digit instead of the hundredths digit; its code returns 20, not 11."
+},
+{
+"index": 30,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly checks terminating denominators and the hundredths digit through 100; larger denominators have zero hundredths digits."
+},
+{
+"index": 31,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses incorrect Boolean logic and counts each exponent triple once rather than counting all valid six-exponent combinations."
+},
+{
+"index": 31,
+"solution": 1,
+"label": "valid",
+"reason": "Correct exponent constraints and exhaustive enumeration count all ordered triples."
+},
+{
+"index": 32,
+"solution": 0,
+"label": "flawed",
+"reason": "Its divisibility test does not encode prism similarity, and the arbitrary search bound cannot establish the count."
+},
+{
+"index": 32,
+"solution": 1,
+"label": "flawed",
+"reason": "Searches c below b while simultaneously requiring b\u2264c, so no candidate can satisfy its conditions."
+},
+{
+"index": 33,
+"solution": 0,
+"label": "flawed",
+"reason": "Incorrectly transforms the quadratic, gives wrong solutions, and asserts 38 for divisors whose listed positive sum is 28."
+},
+{
+"index": 33,
+"solution": 1,
+"label": "flawed",
+"reason": "Miscomputes the discriminant and assumes an unjustified finite search covers all positive integers."
+},
+{
+"index": 35,
+"solution": 0,
+"label": "flawed",
+"reason": "Incorrectly calls 29 the next-largest divisor and supplies elements that violate the required congruence and endpoint."
+},
+{
+"index": 35,
+"solution": 1,
+"label": "flawed",
+"reason": "Rejects larger set sizes without proof and gives a purported 30-element witness containing over a thousand elements."
+},
+{
+"index": 36,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly represents the numbers as 1111a\u2212123 and sums their seven distinct residues modulo 37."
+},
+{
+"index": 36,
+"solution": 1,
+"label": "valid",
+"reason": "Correct modular reduction covers every possible leading digit and yields the seven distinct remainders."
+},
+{
+"index": 38,
+"solution": 0,
+"label": "flawed",
+"reason": "Misallocates banana shares, uses incorrect ratio equations, and rounds fractional bananas despite the integrality requirement."
+},
+{
+"index": 39,
+"solution": 0,
+"label": "flawed",
+"reason": "Distributes prime exponents within each factor instead of across factors, so the counted configurations do not satisfy the product."
+},
+{
+"index": 39,
+"solution": 1,
+"label": "valid",
+"reason": "Correct divisor bounds, divisor-count equation, and stars-and-bars count give 54 possibilities."
+},
+{
+"index": 40,
+"solution": 0,
+"label": "flawed",
+"reason": "Confuses the largest power below x with its power-of-two divisor and uses invalid sums and stopping logic."
+},
+{
+"index": 42,
+"solution": 0,
+"label": "valid",
+"reason": "Exact rational summation and denominator decomposition correctly compute a=4010, b=1, and ab/10=401."
+},
+{
+"index": 42,
+"solution": 1,
+"label": "valid",
+"reason": "The corrected iterative double-factorial computation and exact fraction reduction establish the required denominator and result."
+},
+{
+"index": 45,
+"solution": 0,
+"label": "flawed",
+"reason": "Returns the first pair ordered by n rather than minimizing m+n, and misstates the prime-exponent condition."
+},
+{
+"index": 45,
+"solution": 1,
+"label": "flawed",
+"reason": "The search order does not establish minimum m+n, and the final verification incorrectly treats the sum as m."
+},
+{
+"index": 46,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly finds the minimal prime exponents and subtracts the divisors divisible by 10."
+},
+{
+"index": 46,
+"solution": 1,
+"label": "valid",
+"reason": "Correct exponent conditions and inclusion-exclusion count divisors lacking at least one of the primes 2 and 5."
+},
+{
+"index": 47,
+"solution": 0,
+"label": "flawed",
+"reason": "Sums coefficients at even indices instead of indices divisible by three; the code yields remainder 64."
+},
+{
+"index": 47,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly sums every specified binomial coefficient and computes the exact remainder."
+},
+{
+"index": 48,
+"solution": 0,
+"label": "flawed",
+"reason": "Assumes base ten despite the unknown base and reports digits that do not satisfy its own equation."
+},
+{
+"index": 49,
+"solution": 0,
+"label": "valid",
+"reason": "Exhaustively minimizes LCMs after omitting consecutive pairs; the minimum is divisible by everything except 16 and 17."
+},
+{
+"index": 49,
+"solution": 1,
+"label": "valid",
+"reason": "The exhaustive LCM minimum is correct and has exactly the two required consecutive nondivisors, 16 and 17."
+},
+{
+"index": 51,
+"solution": 0,
+"label": "flawed",
+"reason": "Analyzes an incorrect grid, then obtains 160 from an unrelated sunflower problem."
+},
+{
+"index": 51,
+"solution": 1,
+"label": "flawed",
+"reason": "The forbidden-path counts and inclusion-exclusion terms are incorrect; the supplied code does not return 160."
+},
+{
+"index": 52,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly uses the diameter-circle criterion, its contained semicircle area, and the pentagon area."
+},
+{
+"index": 52,
+"solution": 1,
+"label": "flawed",
+"reason": "Doubles the pentagon area and uses the full circle instead of the portion inside the pentagon."
+},
+{
+"index": 53,
+"solution": 0,
+"label": "guess",
+"reason": "Only the numerical answer is asserted."
+},
+{
+"index": 53,
+"solution": 1,
+"label": "flawed",
+"reason": "Omits tilted squares and treats identical vertex coordinates as congruence; the code counts 30 placements."
+},
+{
+"index": 54,
+"solution": 0,
+"label": "flawed",
+"reason": "The recurrence allows unlimited copies of every stamp denomination, ignoring the available stamp counts."
+},
+{
+"index": 54,
+"solution": 1,
+"label": "flawed",
+"reason": "Counts unordered combinations with unlimited stamps instead of ordered arrangements with the stated inventories."
+},
+{
+"index": 55,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts the 4\u20130, 3\u20131, and 2\u20132 distributions, dividing equal splits by two."
+},
+{
+"index": 55,
+"solution": 1,
+"label": "valid",
+"reason": "Correct case analysis accounts for indistinguishable boxes and counts each distribution exactly once."
+},
+{
+"index": 56,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts 10^5 favorable subsets and C(50,5) total; the Python exponent operator is mistyped."
+},
+{
+"index": 56,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly chooses one number from each tens-digit group and divides by all five-element subsets."
+},
+{
+"index": 57,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly subtracts the unit right triangle from the square; the initial line equation has an intercept typo."
+},
+{
+"index": 57,
+"solution": 1,
+"label": "valid",
+"reason": "Uses the correct complementary triangle area and square area; one listed vertex is mistyped."
+},
+{
+"index": 58,
+"solution": 0,
+"label": "valid",
+"reason": "Exhaustively checks every eligible four-digit number and tests the correct middle-digit product."
+},
+{
+"index": 58,
+"solution": 1,
+"label": "valid",
+"reason": "Correct complete enumeration tests exactly the required digit-product condition."
+},
+{
+"index": 59,
+"solution": 0,
+"label": "flawed",
+"reason": "Counts only exactly one pair and omits two-pair outcomes; the reported probability does not match its calculation."
+},
+{
+"index": 59,
+"solution": 1,
+"label": "flawed",
+"reason": "Omits the valid two-pair case and falsely reports 25/36 for a computation yielding 25/54."
+},
+{
+"index": 60,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly factors the congruence and counts the complement of pairs avoiding all ten qualifying numbers."
+},
+{
+"index": 60,
+"solution": 1,
+"label": "valid",
+"reason": "Correct congruence reduction and complementary pair counting give the reduced probability 89/245."
+},
+{
+"index": 61,
+"solution": 0,
+"label": "flawed",
+"reason": "Treats spaces as consonants and includes invalid Python; no correct count of letter multisets is established."
+},
+{
+"index": 61,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly enumerates and deduplicates the permitted vowel and consonant multisets."
+},
+{
+"index": 62,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts decimal digits in exactly the first 2002 positive even integers."
+},
+{
+"index": 62,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly counts even numbers in each digit-length range and sums their digit contributions."
+},
+{
+"index": 63,
+"solution": 0,
+"label": "flawed",
+"reason": "The probability factors are unjustified and their product is 1/15, not 1/30."
+},
+{
+"index": 63,
+"solution": 1,
+"label": "flawed",
+"reason": "Miscounts choices from GLOW and the favorable selections; both the numerator and denominator are wrong."
+},
+{
+"index": 64,
+"solution": 0,
+"label": "flawed",
+"reason": "Incorrectly reduces the number of replaceable players after substitutions and uses invalid three-substitution counts."
+},
+{
+"index": 64,
+"solution": 1,
+"label": "flawed",
+"reason": "Excludes replacing an entered substitute and miscalculates the three-substitution product; the asserted remainder does not follow."
+},
+{
+"index": 65,
+"solution": 0,
+"label": "flawed",
+"reason": "Compares tuple slices to strings, so no adjacent pairs are counted; the code cannot produce 560."
+},
+{
+"index": 65,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly enumerates every length-15 sequence and checks all four adjacent-pair counts."
+},
+{
+"index": 68,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly restricts the second sample to 42 original fish and uses the unchanged tagged proportion 3/42."
+},
+{
+"index": 68,
+"solution": 1,
+"label": "flawed",
+"reason": "Confuses the September population with the May population and uses the death rate instead of the survival rate."
+},
+{
+"index": 69,
+"solution": 0,
+"label": "valid",
+"reason": "Correct state transitions and absorbing probabilities yield 3/34, so numerator plus denominator is 37."
+},
+{
+"index": 69,
+"solution": 1,
+"label": "flawed",
+"reason": "Omits the one-tail state and therefore never models losing upon two consecutive tails."
+},
+{
+"index": 70,
+"solution": 0,
+"label": "flawed",
+"reason": "Pools different sequence lengths as equally likely and checks only endpoints, rather than whether the target was ever reached."
+},
+{
+"index": 70,
+"solution": 1,
+"label": "valid",
+"reason": "Exhaustively enumerates equally likely six-step sequences and checks every prefix for reaching the target."
+},
+{
+"index": 72,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses unrelated telescoping expressions and incorrect factorial manipulations; the computed N contradicts the asserted answer."
+},
+{
+"index": 72,
+"solution": 1,
+"label": "flawed",
+"reason": "Uses (18\u2212i)! instead of (19\u2212i)!, evaluating a different factorial sum."
+},
+{
+"index": 73,
+"solution": 0,
+"label": "flawed",
+"reason": "The midpoint code fails on the length of an iterator; 200 comes from an unrelated, incorrectly computed profit."
+},
+{
+"index": 74,
+"solution": 0,
+"label": "flawed",
+"reason": "Incorrectly subtracts only one empty-subset count, and the printed result does not match its formula."
+},
+{
+"index": 74,
+"solution": 1,
+"label": "valid",
+"reason": "Correct inclusion-exclusion removes empty subsets and division by two accounts for the unordered pair."
+},
+{
+"index": 75,
+"solution": 0,
+"label": "flawed",
+"reason": "Reports an incorrect area sum and converts radical coefficients incorrectly; the final integer sum matches only coincidentally."
+},
+{
+"index": 76,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts all three matching color cases and reduces the probability to 118/323."
+},
+{
+"index": 76,
+"solution": 1,
+"label": "valid",
+"reason": "Correct conditional sampling accounts for depletion and sums all matching color combinations."
+},
+{
+"index": 77,
+"solution": 0,
+"label": "flawed",
+"reason": "Does not track the previous move or forbid consecutive horizontal and vertical steps; its recurrence permits right-angle turns."
+},
+{
+"index": 78,
+"solution": 0,
+"label": "flawed",
+"reason": "Ignores the face-to-face restriction and divides by nonexistent rotational symmetries of the vertical stack."
+},
+{
+"index": 78,
+"solution": 1,
+"label": "flawed",
+"reason": "Forbids the wrong orientation pattern and enumerates color assignments without enforcing four coins of each color."
+},
+{
+"index": 79,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses incorrect pile membership and position formulas; its own final equation would give 393, not 392."
+},
+{
+"index": 79,
+"solution": 1,
+"label": "flawed",
+"reason": "Search fails immediately because card 131 is absent; the reported odd stack size contradicts a stack of 2n cards."
+},
+{
+"index": 81,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly models the remaining independent wins as binomial variables and computes P(X\u2265Y)."
+},
+{
+"index": 81,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly sums the joint binomial probabilities for the inequality X+1>Y."
+},
+{
+"index": 82,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses unrelated binomial counts and changes the green-flag inventory; no valid enumeration is established."
+},
+{
+"index": 82,
+"solution": 1,
+"label": "flawed",
+"reason": "Misreads nonadjacency as separate-pole placement and arbitrarily fixes four green positions, omitting valid arrangements."
+},
+{
+"index": 84,
+"solution": 0,
+"label": "flawed",
+"reason": "Miscounts one-head outcomes; its code uses identical one-head and two-head probabilities and yields a different result."
+},
+{
+"index": 84,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly derives the head-count distribution and sums squared probabilities for the independent matching counts."
+},
+{
+"index": 85,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses the wrong same-team condition and obtains a probability below one-half, so it cannot meet the required constraint."
+},
+{
+"index": 86,
+"solution": 0,
+"label": "flawed",
+"reason": "Replaces at least one different-country neighbor with no same-country neighbors, then counts only two patterns."
+},
+{
+"index": 86,
+"solution": 1,
+"label": "flawed",
+"reason": "The proposed invalid seating count has no valid combinatorial basis and the code cannot yield 97."
+},
+{
+"index": 88,
+"solution": 0,
+"label": "flawed",
+"reason": "Miscounts adjacent pairs, asserts the wrong maximum red count, and counts arrangements without enforcing the balance condition."
+},
+{
+"index": 88,
+"solution": 1,
+"label": "flawed",
+"reason": "Misinterprets the equality condition, obtains the wrong maximum red count, and counts unrestricted arrangements."
+},
+{
+"index": 89,
+"solution": 0,
+"label": "flawed",
+"reason": "The second case selects three professors from one department, violating the requirement of exactly two per department."
+},
+{
+"index": 90,
+"solution": 0,
+"label": "flawed",
+"reason": "The function-counting formula is unjustified and evaluated incorrectly; the code gives a different remainder."
+},
+{
+"index": 90,
+"solution": 1,
+"label": "valid",
+"reason": "Correctly counts direct preimages and maps remaining elements to them; the final sum includes the constant-function case."
+},
+{
+"index": 91,
+"solution": 0,
+"label": "flawed",
+"reason": "Counts fixed-length color strings rather than variable-length tile partitions and fails to enforce all three colors."
+},
+{
+"index": 91,
+"solution": 1,
+"label": "flawed",
+"reason": "The states and transitions neither count arbitrary tile lengths nor consistently track which colors have appeared."
+},
+{
+"index": 92,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly derives the triple probability and the none and not-A probabilities, giving conditional probability 21/55."
+},
+{
+"index": 92,
+"solution": 1,
+"label": "valid",
+"reason": "Correct disjoint-event accounting and conditioning yield the reduced probability 21/55."
+},
+{
+"index": 93,
+"solution": 0,
+"label": "flawed",
+"reason": "Evaluates the recurrence in reverse dependency order, violates absorbing boundaries, and confuses the denominator with its exponent."
+},
+{
+"index": 94,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly sums all purchase splits using subsets for Alpha and multisets for Beta."
+},
+{
+"index": 94,
+"solution": 1,
+"label": "flawed",
+"reason": "Miscounts Alpha choices and ignores the distinct-product constraint; its computed 155 does not establish 351."
+},
+{
+"index": 95,
+"solution": 0,
+"label": "flawed",
+"reason": "Invents incompatible block contents and lengths, ignores the global letter counts, and reports a false code remainder."
+},
+{
+"index": 95,
+"solution": 1,
+"label": "flawed",
+"reason": "Invents nonexistent letters and invalid block counts, then multiplies unrelated multinomial values."
+},
+{
+"index": 96,
+"solution": 0,
+"label": "flawed",
+"reason": "Weights removal by face count instead of dot count and miscounts how removal changes face parity."
+},
+{
+"index": 96,
+"solution": 1,
+"label": "flawed",
+"reason": "Removes a dot from every face simultaneously and ignores the dot-weighted probability of choosing the affected face."
+},
+{
+"index": 98,
+"solution": 0,
+"label": "flawed",
+"reason": "Counts two fully painted faces instead of six cross-patterned faces and subtracts nonexistent corner overlaps."
+},
+{
+"index": 98,
+"solution": 1,
+"label": "flawed",
+"reason": "Replaces the cross with a square pattern and incorrectly counts corners as painted, producing invalid overlap corrections."
+},
+{
+"index": 100,
+"solution": 0,
+"label": "flawed",
+"reason": "Changes the plant inventory and uses arbitrary multiplication and subtraction instead of counting lamp allocations."
+},
+{
+"index": 100,
+"solution": 1,
+"label": "flawed",
+"reason": "The boxed answer is unsupported; its subsequent code counts a different four-plant, two-choice problem."
+},
+{
+"index": 101,
+"solution": 0,
+"label": "flawed",
+"reason": "Incorrectly excludes corner cubes from the shared edge and doubles the remaining count without justification."
+},
+{
+"index": 102,
+"solution": 0,
+"label": "guess",
+"reason": "Only a boxed answer and unrelated garbled text are supplied."
+},
+{
+"index": 102,
+"solution": 1,
+"label": "flawed",
+"reason": "Misreads several visible faces; the incorrect dot counts happen to sum to the correct visible total."
+},
+{
+"index": 103,
+"solution": 0,
+"label": "flawed",
+"reason": "Uses false nonagon triangle counts and then asserts 66 without a valid enumeration."
+},
+{
+"index": 103,
+"solution": 1,
+"label": "flawed",
+"reason": "Counts only selected edges, repeatedly adds unsupported triangle classes, and never derives the final total."
+},
+{
+"index": 104,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly reduces eight covered cells to a monotone path with four vertical and three horizontal moves."
+},
+{
+"index": 104,
+"solution": 1,
+"label": "flawed",
+"reason": "Equates seven moves with four dominoes and gives inconsistent directions; no valid correspondence to arrangements is established."
+},
+{
+"index": 105,
+"solution": 0,
+"label": "guess",
+"reason": "Only the probability is asserted; no counting or conditional calculation is provided."
+},
+{
+"index": 105,
+"solution": 1,
+"label": "flawed",
+"reason": "Ignores removal of the club four and club two when multiplying conditional probabilities."
+},
+{
+"index": 106,
+"solution": 0,
+"label": "valid",
+"reason": "Correctly counts 28 position-matching codes and three disjoint transpositions, leaving 969."
+},
+{
+"index": 106,
+"solution": 1,
+"label": "flawed",
+"reason": "Excludes allowed cyclic permutations instead of transpositions and never filters the required positional matches."
+},
+{
+"index": 107,
+"solution": 0,
+"label": "guess",
+"reason": "Provides a link and boxed probability without presenting any derivation."
+},
+{
+"index": 107,
+"solution": 1,
+"label": "flawed",
+"reason": "Uses 1/7 for selecting the favorite first and omits the successful 25-cent-then-favorite case."
+},
+{
+"index": 108,
+"solution": 0,
+"label": "guess",
+"reason": "Uses Monte Carlo estimates and then asserts an exact fraction without an exact calculation."
+},
+{
+"index": 108,
+"solution": 1,
+"label": "flawed",
+"reason": "Integrates a region where the boss waits and engineers may arrive later, contrary to the immediate-cancellation rule."
+}
+],
+"summary": {
+"problems_with_valid": 40,
+"valid": 57,
+"flawed": 98,
+"guess": 17
+}
+}
