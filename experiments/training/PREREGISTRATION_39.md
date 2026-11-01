@@ -51,3 +51,21 @@ plans/p39_stage0.json.
 ## Cost (estimate)
 About 1.53 million completions (at most 2.9 billion new tokens); planned 45-55 A100-hours packed on one 8 x A100
 machine (about 7 hours, cap 10 hours): about $230. Measured throughput is reported for Stage 1 planning.
+
+## Amendment 1 (November 1, after Stage 0's results; before any run of this add-on): Stage 0b
+One 8 x A100 job (plans/p39b_addon.json; channel p39-stage0-ckpts, now also holding the TEACHF start and TEACHF8 step
+50), generation, evaluation and smoke tests only. Readings, all descriptive:
+- Teacher coverage: Qwen2.5-Math-7B-Instruct (pinned revision; T = 0.7, top-p 0.8; 2,048 tokens), 64 samples on each
+  of the 191 training problems with at most 4 of 64 base successes (verifier v2) and no archived teacher solution
+  (data/p39b_teacher_missing.json); reported: problems with at least one verified finished teacher solution, by base
+  count (c = 0 and c = 1-4).
+- Headroom, validation only: SmolLM3-3B-Base on hard_val at 2,048 and 4,096 tokens (256 samples, plain prompt) and the
+  Qwen base at 3,072 tokens; pass@1/16/64/128 and truncation by source. The pilot uses a budget at which the base's
+  hard_val pass@128 lies within 10-80% and truncation is below 10% where available.
+- Retention: TEACHF8 (steps 50, 150) against the TEACHF start on the 143 probe problems, with the Newcombe rule of the
+  Readings.
+- Smoke tests (pass/fail, no science): the hint curriculum (10 steps, hard schedule with 4 of 16 problems from the 453
+  hard problems, teacher hints withdrawn at step 6) runs, logs non-trivial hint levels and a non-increasing frontier;
+  a 2,048-token SFT start trains and RL runs from it; SmolLM3 completes 3 RL steps at 2,048 and at 4,096 tokens, with
+  peak memory and seconds per step recorded.
+Cost: about 3.5 hours on one machine, about $110.

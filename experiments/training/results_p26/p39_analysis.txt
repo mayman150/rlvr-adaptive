@@ -1,0 +1,102 @@
+Pre-registration 39, Stage 0 (results/worth-p39-stage0-s0-20261101-030835)
+Harvest: 109 problems x 1,024 samples at 2,048 tokens; mean tokens 1034, finished 80.7%; 11151 generated tokens/s per GPU (summed over chunks)
+   depth   64: problems with >= 1 verified finished solution 45, >= 2: 20
+   depth  256: problems with >= 1 verified finished solution 77, >= 2: 56
+   depth 1024: problems with >= 1 verified finished solution 92, >= 2: 80
+   solutions per solved problem: median 9, mean 14.8, max 90; verified finished lengths: median 819 tokens
+   success rate on solved problems: median 0.0088
+   audit set: 92 problems -> results_p26/p39_audit_harvest.json (Gate H needs >= 44 audited-valid)
+
+PEER (SmolLM3-3B-Base census, 64 samples at 2,048 tokens on all training problems; 7469 tokens/s): 72 of the 109 c = 0 problems have a verified finished SmolLM3 solution; mean tokens 403
+
+Gate V: base pass@128 on hard_val 69.6% (OlympiadBench 75.7%, AIME 63.6%) -> pass (10-80%)
+
+MATH-hard (208): pass@1 / pass@16 / pass@64 / pass@128 (95% CI of pass@128); difference from B1k8 at pass@128 [95%]
+   RE_BASE       6.8 /  55.2 /  80.4 /  86.9 [82.8, 90.5]; vs B1k8 -4.97 [-7.84, -2.14] *; truncated 19%
+   RE_B1k8      31.1 /  74.1 /  87.2 /  91.9 [88.6, 94.8]; vs B1k8 +0.00 [+0.00, +0.00]; truncated 7%
+   RE_B1k9      30.5 /  73.8 /  86.8 /  91.6 [88.2, 94.5]; vs B1k8 -0.30 [-2.16, +1.66]; truncated 8%
+   RE_LH1       38.8 /  76.4 /  86.4 /  89.5 [85.4, 93.0]; vs B1k8 -2.36 [-4.65, -0.15] *; truncated 3%
+   RE_SELF8     29.6 /  72.6 /  85.8 /  90.6 [87.0, 93.8]; vs B1k8 -1.29 [-3.32, +0.61]; truncated 8%
+   RE_TEACHF8   38.3 /  78.2 /  87.6 /  90.1 [85.9, 93.5]; vs B1k8 -1.75 [-4.72, +1.12]; truncated 10%
+   RE_CWS8      29.7 /  72.9 /  86.1 /  91.0 [87.8, 94.0]; vs B1k8 -0.83 [-2.88, +1.19]; truncated 7%
+   RE_OUs8      30.7 /  73.4 /  86.2 /  90.7 [87.3, 93.9]; vs B1k8 -1.13 [-3.37, +1.20]; truncated 8%
+   RE_PSR1k8    30.3 /  73.4 /  86.4 /  91.0 [87.4, 94.2]; vs B1k8 -0.88 [-2.74, +1.02]; truncated 8%
+   RE_S32       35.0 /  75.7 /  87.5 /  91.3 [87.6, 94.4]; vs B1k8 -0.61 [-2.97, +1.87]; truncated 2%
+
+hard_val (200): pass@1 / pass@16 / pass@64 / pass@128 (95% CI of pass@128); difference from B1k8 at pass@128 [95%]
+   RE_BASE      13.8 /  49.3 /  63.9 /  69.6 [63.8, 75.7]; vs B1k8 -4.59 [-7.64, -1.63] *; truncated 19%
+   RE_B1k8      24.4 /  55.6 /  68.4 /  74.2 [68.8, 79.9]; vs B1k8 +0.00 [+0.00, +0.00]; truncated 7%
+   RE_B1k9      24.1 /  55.7 /  68.6 /  74.1 [68.6, 79.8]; vs B1k8 -0.06 [-2.87, +2.72]; truncated 8%
+   RE_LH1       30.7 /  59.6 /  70.7 /  76.1 [70.8, 81.5]; vs B1k8 +1.93 [-0.72, +4.79]; truncated 3%
+   RE_SELF8     23.4 /  54.9 /  67.8 /  73.7 [68.4, 79.3]; vs B1k8 -0.47 [-3.27, +2.17]; truncated 8%
+   RE_TEACHF8   23.8 /  53.6 /  66.6 /  73.0 [67.6, 78.7]; vs B1k8 -1.18 [-5.13, +2.69]; truncated 10%
+   RE_CWS8      23.6 /  54.9 /  67.6 /  73.4 [68.0, 79.0]; vs B1k8 -0.81 [-3.67, +2.04]; truncated 7%
+   RE_OUs8      24.1 /  55.4 /  68.6 /  74.5 [69.1, 80.1]; vs B1k8 +0.26 [-2.75, +3.08]; truncated 8%
+   RE_PSR1k8    23.8 /  55.0 /  68.7 /  75.4 [70.2, 80.5]; vs B1k8 +1.21 [-1.99, +4.17]; truncated 8%
+   RE_S32       27.4 /  57.7 /  69.3 /  74.1 [68.3, 79.8]; vs B1k8 -0.13 [-3.74, +3.44]; truncated 2%
+
+hard_val OlympiadBench (100): pass@1 / pass@16 / pass@64 / pass@128 (95% CI of pass@128); difference from B1k8 at pass@128 [95%]
+   RE_BASE      17.2 /  57.3 /  71.2 /  75.7 [67.7, 83.2]; vs B1k8 -2.48 [-6.82, +1.63]; truncated 19%
+   RE_B1k8      31.1 /  63.3 /  74.3 /  78.2 [70.7, 85.4]; vs B1k8 +0.00 [+0.00, +0.00]; truncated 7%
+   RE_B1k9      30.6 /  63.6 /  74.5 /  78.6 [70.9, 85.7]; vs B1k8 +0.41 [-2.67, +3.34]; truncated 8%
+   RE_LH1       36.9 /  65.0 /  73.7 /  77.4 [69.9, 84.9]; vs B1k8 -0.79 [-4.50, +2.81]; truncated 3%
+   RE_SELF8     30.6 /  63.4 /  74.1 /  78.1 [70.4, 85.2]; vs B1k8 -0.07 [-3.50, +3.29]; truncated 8%
+   RE_TEACHF8   33.9 /  66.8 /  77.1 /  81.0 [73.7, 87.9]; vs B1k8 +2.84 [-0.08, +6.13]; truncated 10%
+   RE_CWS8      30.8 /  63.7 /  74.4 /  78.4 [70.6, 85.7]; vs B1k8 +0.25 [-2.82, +3.16]; truncated 7%
+   RE_OUs8      30.7 /  63.1 /  74.0 /  77.5 [69.7, 84.9]; vs B1k8 -0.65 [-4.27, +2.79]; truncated 8%
+   RE_PSR1k8    30.8 /  62.9 /  74.6 /  79.2 [72.2, 86.1]; vs B1k8 +1.08 [-2.00, +4.09]; truncated 8%
+   RE_S32       35.5 /  65.7 /  75.0 /  78.3 [71.0, 85.9]; vs B1k8 +0.19 [-3.86, +4.24]; truncated 2%
+
+hard_val AIME (100): pass@1 / pass@16 / pass@64 / pass@128 (95% CI of pass@128); difference from B1k8 at pass@128 [95%]
+   RE_BASE      10.3 /  41.3 /  56.5 /  63.6 [55.1, 71.5]; vs B1k8 -6.70 [-11.19, -2.47] *; truncated 19%
+   RE_B1k8      17.7 /  47.9 /  62.5 /  70.3 [62.2, 77.8]; vs B1k8 +0.00 [+0.00, +0.00]; truncated 7%
+   RE_B1k9      17.5 /  47.9 /  62.7 /  69.7 [61.6, 77.5]; vs B1k8 -0.54 [-5.12, +4.26]; truncated 8%
+   RE_LH1       24.6 /  54.3 /  67.7 /  74.9 [67.1, 82.1]; vs B1k8 +4.66 [+1.04, +8.52] *; truncated 3%
+   RE_SELF8     16.1 /  46.4 /  61.5 /  69.4 [61.3, 77.1]; vs B1k8 -0.88 [-5.23, +3.51]; truncated 8%
+   RE_TEACHF8   13.8 /  40.3 /  56.1 /  65.1 [57.3, 73.1]; vs B1k8 -5.19 [-12.29, +1.49]; truncated 10%
+   RE_CWS8      16.3 /  46.0 /  60.7 /  68.4 [60.3, 76.3]; vs B1k8 -1.87 [-6.90, +2.87]; truncated 7%
+   RE_OUs8      17.4 /  47.8 /  63.2 /  71.4 [63.1, 79.1]; vs B1k8 +1.16 [-3.05, +5.80]; truncated 8%
+   RE_PSR1k8    16.8 /  47.1 /  62.8 /  71.6 [63.7, 79.0]; vs B1k8 +1.34 [-3.53, +6.44]; truncated 8%
+   RE_S32       19.2 /  49.6 /  63.6 /  69.8 [61.8, 77.8]; vs B1k8 -0.46 [-6.32, +5.11]; truncated 2%
+
+Retention probes (143 training problems with 1-2 of 64 base successes; 256 samples at 1,024 tokens)
+   base success rate 4.05%; SELF start 6.67%
+   PR_SELF8 step 50: mean rate 14.47%; change +7.80 points; declining 0.0% (c=1: 0.0%, c=2: 0.0%), rising 42.0%
+   PR_SELF8 step 150: mean rate 24.42%; change +17.75 points; declining 0.0% (c=1: 0.0%, c=2: 0.0%), rising 53.1%
+   PR_B1k8 step 50: mean rate 21.04%; change +17.00 points; declining 0.0% (c=1: 0.0%, c=2: 0.0%), rising 42.7%
+   PR_B1k8 step 150: mean rate 25.20%; change +21.15 points; declining 0.0% (c=1: 0.0%, c=2: 0.0%), rising 52.4%
+   constraint trigger (>= 20% declining by step 150 in either run): no
+
+Throughput (generated tokens per second, per evaluation)
+   HARVEST_c0_0            1024 x   14: 0.35 h, 10738 tok/s
+   HARVEST_c0_1            1024 x   14: 0.32 h, 11125 tok/s
+   HARVEST_c0_2            1024 x   14: 0.41 h, 11412 tok/s
+   HARVEST_c0_3            1024 x   14: 0.38 h, 11137 tok/s
+   HARVEST_c0_4            1024 x   14: 0.35 h, 11378 tok/s
+   HARVEST_c0_5            1024 x   14: 0.37 h, 11323 tok/s
+   HARVEST_c0_6            1024 x   14: 0.41 h, 11227 tok/s
+   HARVEST_c0_7            1024 x   11: 0.29 h, 10732 tok/s
+   PR_B1k8                  256 x  143: 0.51 h, 12731 tok/s
+   PR_B1k8                  256 x  143: 0.54 h, 12612 tok/s
+   PR_BASE                  256 x  143: 0.58 h, 12432 tok/s
+   PR_SELF8                 256 x  143: 0.52 h, 12682 tok/s
+   PR_SELF8                 256 x  143: 0.62 h, 12592 tok/s
+   PR_SELFstart             256 x  143: 0.66 h, 12531 tok/s
+   RE_B1k8                  256 x  408: 2.12 h, 11998 tok/s
+   RE_B1k9                  256 x  408: 2.14 h, 11928 tok/s
+   RE_BASE                  256 x  408: 2.63 h, 11535 tok/s
+   RE_CWS8                  256 x  408: 2.06 h, 12014 tok/s
+   RE_LH1                   256 x  408: 1.76 h, 12340 tok/s
+   RE_OUs8                  256 x  408: 2.11 h, 12035 tok/s
+   RE_PSR1k8                256 x  408: 2.14 h, 12016 tok/s
+   RE_S32                   256 x  408: 1.48 h, 12508 tok/s
+   RE_SELF8                 256 x  408: 2.14 h, 11941 tok/s
+   RE_TEACHF8               256 x  408: 2.37 h, 11903 tok/s
+   SMOLtrain64_2k_0          64 x  490: 0.45 h, 7398 tok/s
+   SMOLtrain64_2k_1          64 x  490: 0.45 h, 7469 tok/s
+   SMOLtrain64_2k_2          64 x  490: 0.42 h, 7549 tok/s
+   SMOLtrain64_2k_3          64 x  490: 0.33 h, 7401 tok/s
+   SMOLtrain64_2k_4          64 x  490: 0.36 h, 7322 tok/s
+   SMOLtrain64_2k_5          64 x  490: 0.61 h, 7347 tok/s
+   SMOLtrain64_2k_6          64 x  490: 0.59 h, 7580 tok/s
+   SMOLtrain64_2k_7          64 x  490: 0.55 h, 7619 tok/s
