@@ -167,7 +167,8 @@ def evaluate(job):
                 json.dump({"todo": todo, "tails": [ftexts[k] for k in todo]}, fh)
         with gzip.open(Path(a["out"]) / f"{job['tag']}_texts.json.gz", "wt") as fh:
             json.dump({"step": job["tag"], "n": a["n"], "problems": [{"question": q["question"], "answer": q["answer"]} for q in problems],
-                       "samples": [{"problem": i // a["n"], "text": o, "reward": c} for i, (o, c) in enumerate(zip(outs, correct))]}, fh)
+                       "samples": [{"problem": i // a["n"], "text": o, "reward": c, "tokens": m[0], "finished": bool(m[1])}
+                                   for i, (o, c, m) in enumerate(zip(outs, correct, meta))]}, fh)
     if job["greedy"]:
         sp = SamplingParams(n=1, temperature=0.0, max_tokens=a["max_new"], stop_token_ids=stop, ignore_eos=True,
                             skip_special_tokens=True, detokenize=False)

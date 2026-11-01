@@ -22,6 +22,7 @@ def last_boxed(text):
 def normalize(answer):
     s = answer.strip().strip("$").replace(" ", "").replace("\\!", "").replace("\\,", "")
     s = re.sub(r"\\text\{([^}]*)\}", r"\1", s)
+    s = re.sub(r"\\[dt]?frac(\d)(\d)", r"(\1)/(\2)", s)  # \frac12
     s = re.sub(r"\\[dt]?frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1)/(\2)", s)
     s = s.replace("\\left", "").replace("\\right", "").rstrip(".")
     s = re.sub(r"^[a-zA-Z]=", "", s)
@@ -29,6 +30,16 @@ def normalize(answer):
 
 
 def as_number(s):
+    sign = 1
+    if len(s) > 1 and s[0] in "+-" and s[1] == "(":  # a sign before a parenthesized fraction, e.g. -\frac{1}{2}
+        sign, s = (-1 if s[0] == "-" else 1), s[1:]
+    elif s.startswith("+"):
+        s = s[1:]
+    v = _as_number(s)
+    return None if v is None else sign * v
+
+
+def _as_number(s):
     m = re.fullmatch(r"\(?(-?\d+(?:\.\d+)?)\)?(?:/\(?(-?\d+(?:\.\d+)?)\)?)?", s)
     if not m:
         return None
@@ -63,6 +74,11 @@ if __name__ == "__main__":
         ("\\boxed{\\text{34}}", "34", 1),
         ("\\boxed{1/0}", "5", 0),
         ("\\boxed{\\frac{3}{0}}", "5", 0),
+        ("\\boxed{\\frac12}", "1/2", 1),
+        ("\\boxed{-\\frac{1}{2}}", "-1/2", 1),
+        ("\\boxed{-\\frac{1}{2}}", "1/2", 0),
+        ("\\boxed{+44}", "44", 1),
+        ("\\boxed{-0.5}", "-\\frac{1}{2}", 1),
     ]
     for text, ref, expected in cases:
         assert reward(text, ref) == expected, (text, ref, expected)
