@@ -673,6 +673,89 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
             "prefix_tokens": sum(cuts), "prefix_only_correct": prefix_only}
 
 
+def token_entropies(runner, pairs, chunk=4):
+    """Per-token entropies (no gradient) of each (prompt_ids, response_ids) pair's response tokens."""
+    out = []
+    with torch.no_grad():
+        for k in range(0, len(pairs), chunk):
+            part = pairs[k:k + chunk]
+            seqs = [torch.cat([pi, ri]) for pi, ri in part]
+            width = max(len(x) for x in seqs)
+            ids = torch.full((len(seqs), width), runner.pad_id, dtype=torch.long, device=runner.device)
+            mask = torch.zeros_like(ids)
+            for i, x in enumerate(seqs):
+                ids[i, : len(x)] = x
+                mask[i, : len(x)] = 1
+            with runner.autocast:
+                logits = runner.model(input_ids=ids, attention_mask=mask).logits
+            for i, (pi, ri) in enumerate(part):
+                rows = logits[i, len(pi) - 1: len(pi) - 1 + len(ri)].float()
+                lp = torch.log_softmax(rows, dim=-1)
+                out.append((-(lp.exp() * lp).sum(-1)).cpu())
+            del logits
+    return out
+
+
+def tree_rollouts(runner, args, step, batch, texts):
+    """Tree rollouts at an equal rollout count (DATPO-inspired, arXiv 2609.08650; not a reproduction): per problem,
+    G - m root rollouts; if any root fails, a failed root (the first) is forked at the sentence start with the highest
+    next-token entropy between 10% and 80% of its length and before its first box, and m branches continue from that
+    prefix (prefix as context, no gradient; reward on prefix + continuation); if every root succeeds, m ordinary
+    rollouts are drawn instead. Returns answers and rewards laid out as G per problem, and statistics."""
+    G, m = args.group, args.tree_branches
+    roots = runner.generate(texts, G - m, args.max_new, args.seed * 100003 + step)
+    rr = [reward(runner.tok.decode(r), batch[k // (G - m)]["answer"]) for k, (_, r) in enumerate(roots)]
+    parents, plain = {}, []
+    for j in range(len(batch)):
+        g = rr[j * (G - m):(j + 1) * (G - m)]
+        if all(g):
+            plain.append(j)
+        else:
+            parents[j] = j * (G - m) + g.index(0)
+    ents = token_entropies(runner, [roots[k] for k in parents.values()]) if parents else []
+    items, cuts, owners = [], [], []
+    for (j, k), ent in zip(parents.items(), ents):
+        ri = roots[k][1]
+        n = len(ri)
+        hi = min(int(0.8 * n), box_start(runner, ri))
+        lo = max(1, int(0.1 * n))
+        best, cut = -1.0, None
+        for t in range(lo, hi):
+            piece = runner.tok.decode(ri[t - 1:t])
+            if "\n" in piece or piece.rstrip().endswith("."):
+                if t < n and float(ent[t]) > best:
+                    best, cut = float(ent[t]), t
+        if cut is None:
+            plain.append(j)
+            continue
+        pre = runner.tok.decode(ri[:cut])
+        items.extend([texts[j] + pre] * m)
+        cuts.extend([cut] * m)
+        owners.extend([j] * m)
+    branch_outs = runner.generate(items, 1, args.max_new - min(cuts), args.seed * 100003 + step + 7919) if items else []
+    plain_outs = runner.generate([texts[j] for j in plain], m, args.max_new, args.seed * 100003 + step + 104729) if plain else []
+    extra_by_j = {}
+    for (pi, ri), cut, j in zip(branch_outs, cuts, owners):
+        cap = args.max_new - cut
+        ri = ri[:cap]
+        extra_by_j.setdefault(j, []).append(((pi, ri), reward(runner.tok.decode(roots[parents[j]][1][:cut]) + runner.tok.decode(ri), batch[j]["answer"])))
+    for idx, j in enumerate(plain):
+        for (pi, ri) in plain_outs[idx * m:(idx + 1) * m]:
+            extra_by_j.setdefault(j, []).append(((pi, ri), reward(runner.tok.decode(ri), batch[j]["answer"])))
+    answers, rewards = [], []
+    for j in range(len(batch)):
+        answers.extend(roots[j * (G - m):(j + 1) * (G - m)])
+        rewards.extend(rr[j * (G - m):(j + 1) * (G - m)])
+        ex = extra_by_j[j]
+        assert len(ex) == m, (j, len(ex))
+        answers.extend(a for a, _ in ex)
+        rewards.extend(r for _, r in ex)
+    branched = [j for j in range(len(batch)) if j in parents and j not in plain]
+    stats = {"branched": len(branched), "branch_solved": sum(r for j in branched for _, r in extra_by_j[j]),
+             "root_solved": sum(rr), "prefix_tokens": sum(cuts) // max(m, 1)}
+    return answers, rewards, stats
+
+
 def box_start(runner, ids):
     """Number of leading response tokens before the first final-answer box (all of them if there is none), so that
     a prefix never supplies the boxed answer. Cached per response."""
@@ -1632,6 +1715,10 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
             and not args.complete_groups and args.memory_lambda == 0, \
             "the hard schedule and the hint curriculum are implemented for plain on-policy fixed groups"
+    if args.tree_branches > 0:
+        assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
+            and not args.complete_groups and not hints and 0 < args.tree_branches < args.group, \
+            "tree rollouts are implemented for plain on-policy fixed groups without hints"
     if hints:
         print(f"[{arm}] hint curriculum: {len(hints.lines)} guided problems, {hints.L} levels, withdrawal at step {hints.withdraw}", flush=True)
     log, evals, sampled = [], [], []
@@ -1836,6 +1923,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                          for q, g in zip(batch, levels or [0] * len(batch))]
                 if args.alloc_first > 0:
                     pool_answers, pool_rewards, alloc_n, extra["alloc"] = allocated_rollouts(runner, args, step, batch, texts)
+                elif args.tree_branches > 0:
+                    pool_answers, pool_rewards, extra["tree"] = tree_rollouts(runner, args, step, batch, texts)
                 else:
                     pool_answers = runner.generate(texts, G, args.max_new, args.seed * 100003 + step)
                     pool_rewards = [reward(runner.tok.decode(r), batch[k // G]["answer"]) for k, (_, r) in enumerate(pool_answers)]
@@ -2156,6 +2245,7 @@ def main():
     parser.add_argument("--complete-groups", action="store_true", help="append a stored success to zero-success groups")
     parser.add_argument("--hard-problems", default=None, help="JSON list of training questions; --hard-per-step of each step's problems come from it")
     parser.add_argument("--hard-per-step", type=int, default=0)
+    parser.add_argument("--tree-branches", type=int, default=0, help="DATPO-inspired tree rollouts: branches per group forked from a failed root")
     parser.add_argument("--hint-archive", default=None, help="JSON list of {question, trace}: MFC-style hint curriculum")
     parser.add_argument("--hint-levels", type=int, default=4)
     parser.add_argument("--hint-success", type=float, default=0.5, help="group mean reward that lowers a problem's hint frontier")

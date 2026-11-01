@@ -21,12 +21,17 @@ not, and does delivering it as hints withdrawn during RL keep the gain after wit
 ## Arms (Qwen2.5-Math-1.5B; Dr. GRPO, Pre-registration 21's recipe except [B] answer tokens and 300 steps; checkpoints
 25, 50, 100, 150, 200, 250, 300)
 1. DR: Dr. GRPO with the hard schedule (seeds 8 and 9).
-2. T-SFT: SFT on the teacher bank (one pass: every guided problem's trace once, AdamW 1e-5, batches of 8), then DR
-   (seeds 8 and 9).
+2. TREE: DR with tree rollouts at an equal rollout count (DATPO-inspired, not a reproduction: 4 roots per problem; if
+   any root fails, the first failed root is forked at its highest-entropy sentence start between 10% and 80% of its
+   length and before its box, and 4 branches continue from that prefix; otherwise 4 ordinary rollouts; Dr. GRPO
+   group-relative advantages over all 8; train_grpo --tree-branches 4; seed 8). The structured-exploration arm the
+   external review asked for.
 3. T-HINT: DR with teacher hints on G (MFC-style curriculum port: 4 levels, uniform level draw up to each problem's
    frontier, frontier lowered when the group mean reward >= 0.5, every hint withdrawn from step 200; seeds 8 and 9).
-4. S-SFT: as T-SFT with the self bank (seed 8).
+4. T-SFT: SFT on the teacher bank (one pass: every guided problem's trace once, AdamW 1e-5, batches of 8), then DR
+   (seed 8).
 5. S-HINT: as T-HINT with the self bank (seed 8).
+6. S-SFT: as T-SFT with the self bank (seed 8).
 Each pair of arms shares seeds, so contrasts are paired. Exposure (guidance tokens presented) is logged per arm.
 
 ## Readings (descriptive; fixed now)
@@ -37,6 +42,7 @@ Each pair of arms shares seeds, so contrasts are paired. Exposure (guidance toke
   such.
 - R3 persistence: R1's gap at steps 250-300 minus the gap at steps 150-200 (during hints), per arm.
 - R4 source: T-SFT minus S-SFT and T-HINT minus S-HINT (seed 8), R1 and R2.
+- R4b exploration: TREE minus DR (seed 8), R1 and R2; branch statistics (problems branched, branch success).
 - R5 diagnostics: hint-curriculum state (unguided share, frontier histogram at step 200), guided-problem training
   reward, truncation, exposure.
 
