@@ -1,0 +1,26 @@
+I choose the **conditional hybrid: HARVEST first; rare-success constraints only after fresh samples establish an absolute probability decline.** The bet is that concentrating positive updates on newly discovered rare solutions improves durable coverage; constraints address subsequent suppression if it occurs.
+
+Claude’s strongest error was treating tested families as unexplored. P18 increased success-bearing pilot-zero groups to 50–54% without moving the curve, weakening discovery starvation. Fable’s strongest error is turning recoverability into novelty and predicted persistence. S32’s residual gain and D32/G32’s limitations preclude categorical self-training nulls. My constraints also need evidence: fading relative gains can reflect reference catch-up. [P18](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:685), [S32](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:698), [P14](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:571).
+
+The **53% yield and 0.93% mean success rate check out**, but the partial cohort comprises 232/309 low-success **evaluation problems**, initially 0/32 for the never-solved subset—not training problems or 0/64. Training harvest yield remains unverified. Low probability does not diagnose luck; answer correctness permits invalid reasoning. Blindly audit retained derivations and independently recheck calculations. [Result](/Users/mmayman/Desktop/adaptive-rlvr/docs/full_story.tex:658), [cohort definition](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/PREREGISTRATION_17.md:19).
+
+STaR (2203.14465) and RFT (2308.01825) already train on self-generated correct solutions. ReST (2308.08998), ReST-EM (2312.06585), and Expert Iteration (1705.08439) separate generation/search from learning. DART-Math (2407.13690) already explores thousands of trials on difficult queries using DeepSeekMath-7B-RL. Changing the generator warrants an ablation, insufficient novelty alone. BroRL (2510.01180) already evaluates 512-rollout groups under equal training time. The defensible contribution, conditional on success, is **an allocation/retention mechanism delivering durable held-out coverage beyond these alternatives at equal total compute**.
+
+Method: freeze a training-only 0/64 census; harvest in capped rounds, up to 512–2,048 attempts/problem, stopping after an audited derivation. Distill a validation-selected dose, then Dr. GRPO. Conditional constraints project updates against independently refreshed correctness-probability floors; fresh rollouts must validate retention.
+
+Arms: HARVEST+RL, extended Dr. GRPO, BroRL-style G512, uniform RFT+RL, and DART-style RFT+RL with the same generator. Controls: shallow SELF, token/update-matched teacher reasoning, answer-only distillation; conditional constraint removal and identical-data replay.
+
+Accounting: charge census, every successful/rejected generation, SFT, RL, verification, probes, and projection. Charge full preparation per run even when cached. Dr. GRPO receives additional ordinary rollouts corresponding to harvest generation; G512 trades updates and prompt breadth for group size. Compare equal generated tokens and equal total training FLOPs; report active GPU-hours and dollars. Evaluation budgets are common and separately reported.
+
+Setting: Qwen2.5-Math-1.5B/MATH; MATH-511 continuity plus 400–500 deduplicated English, text-only, open-ended OlympiadBench questions, with separate validation. Train/evaluate at 2,048 tokens; test 4,096-token sensitivity. Draw 256 samples; report pass@1/16/64/128. Primary: terminal pass@128 at equal total compute, with 1-pp pass@1 noninferiority. Supported matched-accuracy frontiers diagnose coverage; audit reasoning-strategy variety separately.
+
+Costs are conditional caps requiring throughput calibration; total ≤$3,500.
+
+- **Stage 0, week 1, ≤$200:** large-k evaluation of selected existing checkpoints; training harvest pilot; throughput and fresh-sample retention probes. Gate: ≥40% audited usable yield on a frozen zero-success pilot cohort and validation pass@128 between 10–80%. Constraints require demonstrated absolute decline.
+- **Stage 1, weeks 2–3, ≤$600:** two paired seeds screening arms/controls at common budgets. Gate: ≥3-pp validation pass@128 gain over the strongest control in both seeds, ≤1-pp pass@1 loss; constraints must improve fresh-sample retention.
+- **Stage 2, weeks 4–6, ≤$1,700:** preregister winner against the strongest control and fresh Dr. GRPO; three paired seeds. Gate: ≥3-pp terminal gain, Holm-adjusted 95% interval accounting for seeds/problems above zero, every seed positive, pass@1 noninferiority. Frontier claims require supported matching.
+- **Stage 3, weeks 7–9, ≤$1,000:** SmolLM3 replication, 500-step-equivalent persistence, decoding sensitivity. Gate: replicated gain and persistence; weeks 10–11 for writing.
+
+Kill for unusable yield, training-only gains, disappearing long-budget advantages, or credible equivalence within ±1 pp. Wide intervals remain inconclusive. Fallback: bounded evidence separating discovery, retention, coverage, and strategy variety, including teacher controls.
+
+Remaining disagreement: failed harvesting cannot establish a model-support ceiling.
