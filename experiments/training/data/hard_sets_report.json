@@ -1,0 +1,11 @@
+{
+ "source": "OlympiadBench OE_TO_maths_en_COMP (Hothan/OlympiadBench; single rational answer, no unit) + AIME 1983-2024 (di-zhang-fdu/AIME_1983_2024); 8-gram overlap >= 30% with MATH train or the 511 test problems removed; figure-dependent questions without [asy] removed; split seed 39, stratified by source",
+ "pool": {
+  "OB": 422,
+  "AIME": 729
+ },
+ "val": 200,
+ "test": 400,
+ "hard_val.json": "9a216d5d19c3f574cc9a7297c1d342ff50c952ee40352accbc24e9b5a6e6ec13",
+ "hard_test.json": "c0b4aaa602e4bd34c8030c88a8a1f67bd2b20d435cedbd614478730e9ac248b0"
+}

@@ -1,0 +1,2802 @@
+[
+{
+"question": "An integer $n$, with $100 \\leq n \\leq 999$, is chosen at random. What is the probability that the sum of the digits of $n$ is 24 ?",
+"answer": "\\frac{1}{90}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2534"
+},
+{
+"question": "Let $T=20 \\sqrt{7}$. Let $w>0$ be a real number such that $T$ is the area of the region above the $x$-axis, below the graph of $y=\\lceil x\\rceil^{2}$, and between the lines $x=0$ and $x=w$. Compute $\\lceil 2 w\\rceil$.",
+"answer": "10",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2610"
+},
+{
+"question": "Determine all integers $n \\geqslant 1$ for which there exists a pair of positive integers $(a, b)$ such that no cube of a prime divides $a^{2}+b+3$ and\n\n$$\n\\frac{a b+3 b+8}{a^{2}+b+3}=n\n$$",
+"answer": "2",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-1798"
+},
+{
+"question": "Compute the least positive integer $n$ such that the set of angles\n\n$$\n\\left\\{123^{\\circ}, 246^{\\circ}, \\ldots, n \\cdot 123^{\\circ}\\right\\}\n$$\n\ncontains at least one angle in each of the four quadrants.",
+"answer": "11",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2800"
+},
+{
+"question": "Positive integers $x, y, z$ satisfy $x y+z=160$. Compute the smallest possible value of $x+y z$.",
+"answer": "50",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2712"
+},
+{
+"question": "For an integer $n \\geq 4$, define $a_{n}$ to be the product of all real numbers that are roots to at least one quadratic polynomial whose coefficients are positive integers that sum to $n$. Compute\n\n$$\n\\frac{a_{4}}{a_{5}}+\\frac{a_{5}}{a_{6}}+\\frac{a_{6}}{a_{7}}+\\cdots+\\frac{a_{2022}}{a_{2023}} .\n$$",
+"answer": "-2019",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2759"
+},
+{
+"question": "Let $T=$ 3. Suppose that $T$ fair coins are flipped. Compute the probability that at least one tails is flipped.",
+"answer": "\\frac{7}{8}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2780"
+},
+{
+"question": "Some students in a gym class are wearing blue jerseys, and the rest are wearing red jerseys. There are exactly 25 ways to pick a team of three players that includes at least one player wearing each color. Compute the number of students in the class.",
+"answer": "7",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2847"
+},
+{
+"question": "Call a rational number short if it has finitely many digits in its decimal expansion. For a positive integer $m$, we say that a positive integer $t$ is $m$-tastic if there exists a number $c \\in\\{1,2,3, \\ldots, 2017\\}$ such that $\\frac{10^{t}-1}{c \\cdot m}$ is short, and such that $\\frac{10^{k}-1}{c \\cdot m}$ is not short for any $1 \\leqslant k<t$. Let $S(m)$ be the set of $m$-tastic numbers. Consider $S(m)$ for $m=1,2, \\ldots$ What is the maximum number of elements in $S(m)$ ?",
+"answer": "807",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-1832"
+},
+{
+"question": "In triangle $A B C, C$ is a right angle and $M$ is on $\\overline{A C}$. A circle with radius $r$ is centered at $M$, is tangent to $\\overline{A B}$, and is tangent to $\\overline{B C}$ at $C$. If $A C=5$ and $B C=12$, compute $r$.",
+"answer": "\\frac{12}{5}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3035"
+},
+{
+"question": "Point $P$ is on the hypotenuse $\\overline{E N}$ of right triangle $B E N$ such that $\\overline{B P}$ bisects $\\angle E B N$. Perpendiculars $\\overline{P R}$ and $\\overline{P S}$ are drawn to sides $\\overline{B E}$ and $\\overline{B N}$, respectively. If $E N=221$ and $P R=60$, compute $\\frac{1}{B E}+\\frac{1}{B N}$.",
+"answer": "\\frac{1}{60}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2848"
+},
+{
+"question": "Let $T=12$. In triangle $A B C, B C=T$ and $\\mathrm{m} \\angle B=30^{\\circ}$. Compute the number of integer values of $A C$ for which there are two possible values for side length $A B$.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2860"
+},
+{
+"question": "Two fair dice, each having six faces numbered 1 to 6 , are thrown. What is the probability that the product of the two numbers on the top faces is divisible by 5 ?",
+"answer": "\\frac{11}{36}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2312"
+},
+{
+"question": "Suppose that $r$ and $s$ are the two roots of the equation $F_{k} x^{2}+F_{k+1} x+F_{k+2}=0$, where $F_{n}$ denotes the $n^{\\text {th }}$ Fibonacci number. Compute the value of $(r+1)(s+1)$.",
+"answer": "2",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3090"
+},
+{
+"question": "Let $n$ be a positive integer such that $\\frac{3+4+\\cdots+3 n}{5+6+\\cdots+5 n}=\\frac{4}{11}$. Compute $\\frac{2+3+\\cdots+2 n}{4+5+\\cdots+4 n}$.",
+"answer": "\\frac{27}{106}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3040"
+},
+{
+"question": "Let $T=32$. Given that $\\sin \\theta=\\frac{\\sqrt{T^{2}-64}}{T}$, compute the largest possible value of the infinite series $\\cos \\theta+\\cos ^{2} \\theta+\\cos ^{3} \\theta+\\ldots$.",
+"answer": "\\frac{1}{3}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2836"
+},
+{
+"question": "Let $T=6$. Compute the value of $x$ such that $\\log _{T} \\sqrt{x-7}+\\log _{T^{2}}(x-2)=1$.",
+"answer": "11",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3022"
+},
+{
+"question": "If $2 \\leq x \\leq 5$ and $10 \\leq y \\leq 20$, what is the maximum value of $15-\\frac{y}{x}$ ?",
+"answer": "13",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2247"
+},
+{
+"question": "$\\quad$ Let $T=9$. An integer $n$ is randomly selected from the set $\\{1,2,3, \\ldots, 2 T\\}$. Compute the probability that the integer $\\left|n^{3}-7 n^{2}+13 n-6\\right|$ is a prime number.",
+"answer": "\\frac{1}{9}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2903"
+},
+{
+"question": "The ARMLLexicon consists of 10 letters: $\\{A, R, M, L, e, x, i, c, o, n\\}$. A palindrome is an ordered list of letters that read the same backwards and forwards; for example, MALAM, n, oncecno, and MoM are palindromes. Compute the number of 15-letter palindromes that can be spelled using letters in the ARMLLexicon, among which there are four consecutive letters that spell out $A R M L$.",
+"answer": "99956",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2737"
+},
+{
+"question": "Compute the least integer greater than 2023 , the sum of whose digits is 17 .",
+"answer": "2069",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2772"
+},
+{
+"question": "In $\\triangle A B C, D$ is on $\\overline{A C}$ so that $\\overline{B D}$ is the angle bisector of $\\angle B$. Point $E$ is on $\\overline{A B}$ and $\\overline{C E}$ intersects $\\overline{B D}$ at $P$. Quadrilateral $B C D E$ is cyclic, $B P=12$ and $P E=4$. Compute the ratio $\\frac{A C}{A E}$.",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2884"
+},
+{
+"question": "A diagonal of a regular 2006-gon is called odd if its endpoints divide the boundary into two parts, each composed of an odd number of sides. Sides are also regarded as odd diagonals.\n\nSuppose the 2006-gon has been dissected into triangles by 2003 nonintersecting diagonals. Find the maximum possible number of isosceles triangles with two odd sides.",
+"answer": "1003",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-1750"
+},
+{
+"question": "A rectangular box has dimensions $8 \\times 10 \\times 12$. Compute the fraction of the box's volume that is not within 1 unit of any of the box's faces.",
+"answer": "\\frac{1}{2}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2855"
+},
+{
+"question": "Let $E U C L I D$ be a hexagon inscribed in a circle of radius 5 . Given that $E U=U C=L I=I D=6$, and $C L=D E$, compute $C L$.",
+"answer": "\\frac{14}{5}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2736"
+},
+{
+"question": "A geometric sequence has 20 terms.\n\nThe sum of its first two terms is 40 .\n\nThe sum of its first three terms is 76 .\n\nThe sum of its first four terms is 130 .\n\nDetermine how many of the terms in the sequence are integers.\n\n(A geometric sequence is a sequence in which each term after the first is obtained from the previous term by multiplying it by a constant. For example, $3,6,12$ is a geometric sequence with three terms.)",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2372"
+},
+{
+"question": "Determine the largest real number $a$ such that for all $n \\geqslant 1$ and for all real numbers $x_{0}, x_{1}, \\ldots, x_{n}$ satisfying $0=x_{0}<x_{1}<x_{2}<\\cdots<x_{n}$, we have\n\n$$\n\\frac{1}{x_{1}-x_{0}}+\\frac{1}{x_{2}-x_{1}}+\\cdots+\\frac{1}{x_{n}-x_{n-1}} \\geqslant a\\left(\\frac{2}{x_{1}}+\\frac{3}{x_{2}}+\\cdots+\\frac{n+1}{x_{n}}\\right) .\\tag{1}\n$$",
+"answer": "\\frac{4}{9}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-1845"
+},
+{
+"question": "Given that $a, b, c$, and $d$ are integers such that $a+b c=20$ and $-a+c d=19$, compute the greatest possible value of $c$.",
+"answer": "39",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3019"
+},
+{
+"question": "Let $T=11$. Compute the least positive integer $b$ such that, when expressed in base $b$, the number $T$ ! ends in exactly two zeroes.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2674"
+},
+{
+"question": "Consider the sequence $t_{1}=1, t_{2}=-1$ and $t_{n}=\\left(\\frac{n-3}{n-1}\\right) t_{n-2}$ where $n \\geq 3$. What is the value of $t_{1998}$ ?",
+"answer": "\\frac{-1}{1997}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2558"
+},
+{
+"question": "Let $T=3$, and let $K=T+2$. Compute the largest $K$-digit number which has distinct digits and is a multiple of 63.",
+"answer": "98721",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2971"
+},
+{
+"question": "Let $T=100$. Nellie has a flight from Rome to Athens that is scheduled to last for $T+30$ minutes. However, owing to a tailwind, her flight only lasts for $T$ minutes. The plane's speed is 1.5 miles per minute faster than what it would have been for the originally scheduled flight. Compute the distance (in miles) that the plane travels.",
+"answer": "650",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2658"
+},
+{
+"question": "Let $a=19, b=20$, and $c=21$. Compute\n\n$$\n\\frac{a^{2}+b^{2}+c^{2}+2 a b+2 b c+2 c a}{a+b+c}\n$$",
+"answer": "60",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2985"
+},
+{
+"question": "A fair coin is flipped $n$ times. Compute the smallest positive integer $n$ for which the probability that the coin has the same result every time is less than $10 \\%$.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2925"
+},
+{
+"question": "One face of a $2 \\times 2 \\times 2$ cube is painted (not the entire cube), and the cube is cut into eight $1 \\times 1 \\times 1$ cubes. The small cubes are reassembled randomly into a $2 \\times 2 \\times 2$ cube. Compute the probability that no paint is showing.",
+"answer": "\\frac{1}{16}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2795"
+},
+{
+"question": "Compute the sum of all real numbers $x$ such that\n\n$$\n\\left\\lfloor\\frac{x}{2}\\right\\rfloor-\\left\\lfloor\\frac{x}{3}\\right\\rfloor=\\frac{x}{7}\n$$",
+"answer": "-21",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2715"
+},
+{
+"question": "Let $T=67$. A group of children and adults go to a rodeo. A child's admission ticket costs $\\$ 5$, and an adult's admission ticket costs more than $\\$ 5$. The total admission cost for the group is $\\$ 10 \\cdot T$. If the number of adults in the group were to increase by $20 \\%$, then the total cost would increase by $10 \\%$. Compute the number of children in the group.",
+"answer": "67",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2989"
+},
+{
+"question": "Let set $S=\\{1,2,3,4,5,6\\}$, and let set $T$ be the set of all subsets of $S$ (including the empty set and $S$ itself). Let $t_{1}, t_{2}, t_{3}$ be elements of $T$, not necessarily distinct. The ordered triple $\\left(t_{1}, t_{2}, t_{3}\\right)$ is called satisfactory if either\n\n(a) both $t_{1} \\subseteq t_{3}$ and $t_{2} \\subseteq t_{3}$, or\n\n(b) $t_{3} \\subseteq t_{1}$ and $t_{3} \\subseteq t_{2}$.\n\nCompute the number of satisfactory ordered triples $\\left(t_{1}, t_{2}, t_{3}\\right)$.",
+"answer": "31186",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2947"
+},
+{
+"question": "Let $T=(0,0), N=(2,0), Y=(6,6), W=(2,6)$, and $R=(0,2)$. Compute the area of pentagon $T N Y W R$.",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2608"
+},
+{
+"question": "Compute the smallest positive integer $N$ such that $20 N$ is a multiple of 14 and $14 N$ is a multiple of 20 .",
+"answer": "70",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2662"
+},
+{
+"question": "Compute the smallest positive integer $n$ such that\n\n$$\nn,\\lfloor\\sqrt{n}\\rfloor,\\lfloor\\sqrt[3]{n}\\rfloor,\\lfloor\\sqrt[4]{n}\\rfloor,\\lfloor\\sqrt[5]{n}\\rfloor,\\lfloor\\sqrt[6]{n}\\rfloor,\\lfloor\\sqrt[7]{n}\\rfloor, \\text { and }\\lfloor\\sqrt[8]{n}\\rfloor\n$$\n\nare distinct.",
+"answer": "4096",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2792"
+},
+{
+"question": "Amir and Brigitte play a card game. Amir starts with a hand of 6 cards: 2 red, 2 yellow and 2 green. Brigitte starts with a hand of 4 cards: 2 purple and 2 white. Amir plays first. Amir and Brigitte alternate turns. On each turn, the current player chooses one of their own cards at random and places it on the table. The cards remain on the table for the rest of the game. A player wins and the game ends when they have placed two cards of the same colour on the table. Determine the probability that Amir wins the game.",
+"answer": "\\frac{7}{15}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2555"
+},
+{
+"question": "Three different numbers are chosen at random from the set $\\{1,2,3,4,5\\}$.\n\nThe numbers are arranged in increasing order.\n\nWhat is the probability that the resulting sequence is an arithmetic sequence?\n\n(An arithmetic sequence is a sequence in which each term after the first is obtained from the previous term by adding a constant. For example, 3,5,7,9 is an arithmetic sequence with four terms.)",
+"answer": "\\frac{2}{5}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2249"
+},
+{
+"question": "Let $T=$ 4. Pyramid $L E O J S$ is a right square pyramid with base $E O J S$, whose area is $T$. Given that $L E=5 \\sqrt{2}$, compute $[L E O]$.",
+"answer": "7",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2784"
+},
+{
+"question": "Given that $a, b, c$, and $d$ are positive integers such that\n\n$$\na ! \\cdot b ! \\cdot c !=d ! \\quad \\text { and } \\quad a+b+c+d=37\n$$\n\ncompute the product $a b c d$.",
+"answer": "2240",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2983"
+},
+{
+"question": "Let $T$ be a rational number. Let $a, b$, and $c$ be the three solutions of the equation $x^{3}-20 x^{2}+19 x+T=0$. Compute $a^{2}+b^{2}+c^{2}$.",
+"answer": "362",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3027"
+},
+{
+"question": "Eight people, including triplets Barry, Carrie and Mary, are going for a trip in four canoes. Each canoe seats two people. The eight people are to be randomly assigned to the four canoes in pairs. What is the probability that no two of Barry, Carrie and Mary will be in the same canoe?",
+"answer": "\\frac{4}{7}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2582"
+},
+{
+"question": "For every real number $x$, define $\\lfloor x\\rfloor$ to be equal to the greatest integer less than or equal to $x$. (We call this the \"floor\" of $x$.) For example, $\\lfloor 4.2\\rfloor=4,\\lfloor 5.7\\rfloor=5$, $\\lfloor-3.4\\rfloor=-4,\\lfloor 0.4\\rfloor=0$, and $\\lfloor 2\\rfloor=2$.\nDetermine the integer equal to $\\left\\lfloor\\frac{1}{3}\\right\\rfloor+\\left\\lfloor\\frac{2}{3}\\right\\rfloor+\\left\\lfloor\\frac{3}{3}\\right\\rfloor+\\ldots+\\left\\lfloor\\frac{59}{3}\\right\\rfloor+\\left\\lfloor\\frac{60}{3}\\right\\rfloor$. (The sum has 60 terms.)",
+"answer": "590",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2414"
+},
+{
+"question": "Let $T=7$. Given the sequence $u_{n}$ such that $u_{3}=5, u_{6}=89$, and $u_{n+2}=3 u_{n+1}-u_{n}$ for integers $n \\geq 1$, compute $u_{T}$.",
+"answer": "233",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2613"
+},
+{
+"question": "Let $N$ be the least integer greater than 20 that is a palindrome in both base 20 and base 14 . For example, the three-digit base-14 numeral (13)5(13) ${ }_{14}$ (representing $13 \\cdot 14^{2}+5 \\cdot 14^{1}+13 \\cdot 14^{0}$ ) is a palindrome in base 14 , but not in base 20 , and the three-digit base-14 numeral (13)31 14 is not a palindrome in base 14 . Compute the base-10 representation of $N$.",
+"answer": "105",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2604"
+},
+{
+"question": "Each positive integer less than or equal to 2019 is written on a blank sheet of paper, and each of the digits 0 and 5 is erased. Compute the remainder when the product of the remaining digits on the sheet of paper is divided by 1000 .",
+"answer": "976",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-3007"
+},
+{
+"question": "Determine all positive integers $n$ satisfying the following condition: for every monic polynomial $P$ of degree at most $n$ with integer coefficients, there exists a positive integer $k \\leq n$, and $k+1$ distinct integers $x_{1}, x_{2}, \\ldots, x_{k+1}$ such that\n\n\n\n$$\n\nP\\left(x_{1}\\right)+P\\left(x_{2}\\right)+\\cdots+P\\left(x_{k}\\right)=P\\left(x_{k+1}\\right) .\n\n$$\n\n\nNote. A polynomial is monic if the coefficient of the highest power is one.",
+"answer": "2",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-1613"
+},
+{
+"question": "Let $T=20$. For some real constants $a$ and $b$, the solution sets of the equations $x^{2}+(5 b-T-a) x=T+1$ and $2 x^{2}+(T+8 a-2) x=-10 b$ are the same. Compute $a$.",
+"answer": "-10",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2841"
+},
+{
+"question": "Let $W=(0,0), A=(7,0), S=(7,1)$, and $H=(0,1)$. Compute the number of ways to tile rectangle $W A S H$ with triangles of area $1 / 2$ and vertices at lattice points on the boundary of WASH.",
+"answer": "3432",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2643"
+},
+{
+"question": "A function $f$ is defined so that\n\n- $f(1)=1$,\n- if $n$ is an even positive integer, then $f(n)=f\\left(\\frac{1}{2} n\\right)$, and\n- if $n$ is an odd positive integer with $n>1$, then $f(n)=f(n-1)+1$.\n\nFor example, $f(34)=f(17)$ and $f(17)=f(16)+1$.\n\nDetermine the value of $f(50)$.",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2577"
+},
+{
+"question": "Compute the number of quadratic functions $f(x)=a x^{2}+b x+c$ with integer roots and integer coefficients whose graphs pass through the points $(0,0)$ and $(15,225)$.",
+"answer": "8",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2669"
+},
+{
+"question": "Compute the smallest positive integer $n$ such that $n^{n}$ has at least 1,000,000 positive divisors.",
+"answer": "84",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2954"
+},
+{
+"question": "Let $T=8640$. Compute $\\left\\lfloor\\log _{4}\\left(1+2+4+\\cdots+2^{T}\\right)\\right\\rfloor$.",
+"answer": "4320",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2678"
+},
+{
+"question": "$\\quad$ Suppose that $p$ and $q$ are two-digit prime numbers such that $p^{2}-q^{2}=2 p+6 q+8$. Compute the largest possible value of $p+q$.",
+"answer": "162",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2790"
+},
+{
+"question": "A computer is programmed to choose an integer between 1 and 99, inclusive, so that the probability that it selects the integer $x$ is equal to $\\log _{100}\\left(1+\\frac{1}{x}\\right)$. Suppose that the probability that $81 \\leq x \\leq 99$ is equal to 2 times the probability that $x=n$ for some integer $n$. What is the value of $n$ ?",
+"answer": "9",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2510"
+},
+{
+"question": "Let $X$ be the number of digits in the decimal expansion of $100^{1000^{10,000}}$, and let $Y$ be the number of digits in the decimal expansion of $1000^{10,000^{100,000}}$. Compute $\\left\\lfloor\\log _{X} Y\\right\\rfloor$.",
+"answer": "13",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2667"
+},
+{
+"question": "Let $T=60$ . Lydia is a professional swimmer and can swim one-fifth of a lap of a pool in an impressive 20.19 seconds, and she swims at a constant rate. Rounded to the nearest integer, compute the number of minutes required for Lydia to swim $T$ laps.",
+"answer": "101",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2986"
+},
+{
+"question": "Let $T=11$. Let $p$ be an odd prime and let $x, y$, and $z$ be positive integers less than $p$. When the trinomial $(p x+y+z)^{T-1}$ is expanded and simplified, there are $N$ terms, of which $M$ are always multiples of $p$. Compute $M$.",
+"answer": "55",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-3023"
+},
+{
+"question": "In rectangle $P A U L$, point $D$ is the midpoint of $\\overline{U L}$ and points $E$ and $F$ lie on $\\overline{P L}$ and $\\overline{P A}$, respectively such that $\\frac{P E}{E L}=\\frac{3}{2}$ and $\\frac{P F}{F A}=2$. Given that $P A=36$ and $P L=25$, compute the area of pentagon $A U D E F$.",
+"answer": "630",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2975"
+},
+{
+"question": "Let $f(x)=2^{x}+x^{2}$. Compute the smallest integer $n>10$ such that $f(n)$ and $f(10)$ have the same units digit.",
+"answer": "30",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2974"
+},
+{
+"question": "An integer $N$ is worth 1 point for each pair of digits it contains that forms a prime in its original order. For example, 6733 is worth 3 points (for 67,73 , and 73 again), and 20304 is worth 2 points (for 23 and 03). Compute the smallest positive integer that is worth exactly 11 points. [Note: Leading zeros are not allowed in the original integer.]",
+"answer": "100337",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2952"
+},
+{
+"question": "Compute the sum of the reciprocals of the positive integer divisors of 24.",
+"answer": "\\frac{5}{2}",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2637"
+},
+{
+"question": "The perimeter of equilateral $\\triangle P Q R$ is 12. The perimeter of regular hexagon $S T U V W X$ is also 12. What is the ratio of the area of $\\triangle P Q R$ to the area of $S T U V W X$ ?",
+"answer": "\\frac{2}{3}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2578"
+},
+{
+"question": "Let $T=184$. A group of $n$ friends goes camping; two of them are selected to set up the campsite when they arrive and two others are selected to take down the campsite the next day. Compute the smallest possible value of $n$ such that there are at least $T$ ways of selecting the four helpers.",
+"answer": "7",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2726"
+},
+{
+"question": "Let $T=11$. In ARMLvania, license plates use only the digits 1-9, and each license plate contains exactly $T-3$ digits. On each plate, all digits are distinct, and for all $k \\leq T-3$, the $k^{\\text {th }}$ digit is at least $k$. Compute the number of valid ARMLvanian license plates.",
+"answer": "256",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2801"
+},
+{
+"question": "Given a regular 16-gon, extend three of its sides to form a triangle none of whose vertices lie on the 16-gon itself. Compute the number of noncongruent triangles that can be formed in this manner.",
+"answer": "11",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3086"
+},
+{
+"question": "In an arithmetic sequence, the first term is 1 and the last term is 19 . The sum of all the terms in the sequence is 70 . How many terms does the sequence have? (An arithmetic sequence is a sequence in which each term after the first is obtained from the previous term by adding a constant. For example, 3, 5, 7, 9 is an arithmetic sequence with four terms.)",
+"answer": "7",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2531"
+},
+{
+"question": "Six tickets numbered 1 through 6 are placed in a box. Two tickets are randomly selected and removed together. What is the probability that the smaller of the two numbers on the tickets selected is less than or equal to 4 ?",
+"answer": "\\frac{14}{15}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2263"
+},
+{
+"question": "In triangle $A B C, A B=5, A C=6$, and $\\tan \\angle B A C=-\\frac{4}{3}$. Compute the area of $\\triangle A B C$.",
+"answer": "12",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2911"
+},
+{
+"question": "Let $f(x)=x^{1}+x^{2}+x^{4}+x^{8}+x^{16}+x^{32}+\\cdots$. Compute the coefficient of $x^{10}$ in $f(f(x))$.",
+"answer": "40",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3076"
+},
+{
+"question": "Find the largest possible integer $k$, such that the following statement is true:\n\nLet 2009 arbitrary non-degenerated triangles be given. In every triangle the three sides are colored, such that one is blue, one is red and one is white. Now, for every color separately, let us sort the lengths of the sides. We obtain\n\n$$\n\\begin{aligned}\nb_{1} \\leq b_{2} \\leq \\ldots \\leq b_{2009} & \\text { the lengths of the blue sides } \\\\\nr_{1} \\leq r_{2} \\leq \\ldots \\leq r_{2009} & \\text { the lengths of the red sides, } \\\\\n\\text { and } \\quad & w_{1} \\leq w_{2} \\leq \\ldots \\leq w_{2009} \\quad \\text { the lengths of the white sides. }\n\\end{aligned}\n$$\n\nThen there exist $k$ indices $j$ such that we can form a non-degenerated triangle with side lengths $b_{j}, r_{j}, w_{j}$.",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2082"
+},
+{
+"question": "Let $T=\\frac{8}{5}$. Let $z_{1}=15+5 i$ and $z_{2}=1+K i$. Compute the smallest positive integral value of $K$ such that $\\left|z_{1}-z_{2}\\right| \\geq 15 T$.",
+"answer": "25",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2653"
+},
+{
+"question": "For positive integers $a$ and $b$, define $f(a, b)=\\frac{a}{b}+\\frac{b}{a}+\\frac{1}{a b}$.\n\nFor example, the value of $f(1,2)$ is 3 .\nDetermine the value of $f(2,5)$.",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2552"
+},
+{
+"question": "In an increasing sequence of numbers with an odd number of terms, the difference between any two consecutive terms is a constant $d$, and the middle term is 302 . When the last 4 terms are removed from the sequence, the middle term of the resulting sequence is 296. What is the value of $d$ ?",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2234"
+},
+{
+"question": "Let $T$ = 39. Emile randomly chooses a set of $T$ cards from a standard deck of 52 cards. Given that Emile's set contains no clubs, compute the probability that his set contains three aces.",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-3020"
+},
+{
+"question": "Let $T=19$. Let $\\mathcal{S}_{1}$ denote the arithmetic sequence $0, \\frac{1}{4}, \\frac{1}{2}, \\ldots$, and let $\\mathcal{S}_{2}$ denote the arithmetic sequence $0, \\frac{1}{6}, \\frac{1}{3}, \\ldots$ Compute the $T^{\\text {th }}$ smallest number that occurs in both sequences $\\mathcal{S}_{1}$ and $\\mathcal{S}_{2}$.",
+"answer": "9",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2902"
+},
+{
+"question": "Compute the value of\n\n$$\n\\sin \\left(6^{\\circ}\\right) \\cdot \\sin \\left(12^{\\circ}\\right) \\cdot \\sin \\left(24^{\\circ}\\right) \\cdot \\sin \\left(42^{\\circ}\\right)+\\sin \\left(12^{\\circ}\\right) \\cdot \\sin \\left(24^{\\circ}\\right) \\cdot \\sin \\left(42^{\\circ}\\right) \\text {. }\n$$",
+"answer": "\\frac{1}{16}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2984"
+},
+{
+"question": "An ARMLbar is a $7 \\times 7$ grid of unit squares with the center unit square removed. A portion of an ARMLbar is a square section of the bar, cut along the gridlines of the original bar. Compute the number of different ways there are to cut a single portion from an ARMLbar.",
+"answer": "96",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2664"
+},
+{
+"question": "Let T be a rational number, and let $K=T-2$. If $K$ workers can produce 9 widgets in 1 hour, compute the number of workers needed to produce $\\frac{720}{K}$ widgets in 4 hours.",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2842"
+},
+{
+"question": "Let $T=67$. Rectangles $F A K E$ and $F U N K$ lie in the same plane. Given that $E F=T$, $A F=\\frac{4 T}{3}$, and $U F=\\frac{12}{5}$, compute the area of the intersection of the two rectangles.",
+"answer": "262",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2990"
+},
+{
+"question": "Emma goes to the store to buy apples and peaches. She buys five of each, hands the shopkeeper one $\\$ 5$ bill, but then has to give the shopkeeper another; she gets back some change. Jonah goes to the same store, buys 2 apples and 12 peaches, and tries to pay with a single $\\$ 10$ bill. But that's not enough, so Jonah has to give the shopkeeper another $\\$ 10$ bill, and also gets some change. Finally, Helen goes to the same store to buy 25 peaches. Assuming that the price in cents of each fruit is an integer, compute the least amount of money, in cents, that Helen can expect to pay.",
+"answer": "1525",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2709"
+},
+{
+"question": "If $1, x, y$ is a geometric sequence and $x, y, 3$ is an arithmetic sequence, compute the maximum value of $x+y$.",
+"answer": "\\frac{15}{4}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3078"
+},
+{
+"question": "Let $T=114$. A rectangular prism has a length of 1 , a width of 3 , a height of $h$, and has a total surface area of $T$. Compute the value of $h$.",
+"answer": "\\frac{27}{2}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2731"
+},
+{
+"question": "In triangle $A B C, A B=B C$. A trisector of $\\angle B$ intersects $\\overline{A C}$ at $D$. If $A B, A C$, and $B D$ are integers and $A B-B D=7$, compute $A C$.",
+"answer": "146",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2796"
+},
+{
+"question": "Let $A B C D$ be a parallelogram with $\\angle A B C$ obtuse. Let $\\overline{B E}$ be the altitude to side $\\overline{A D}$ of $\\triangle A B D$. Let $X$ be the point of intersection of $\\overline{A C}$ and $\\overline{B E}$, and let $F$ be the point of intersection of $\\overline{A B}$ and $\\overleftrightarrow{D X}$. If $B C=30, C D=13$, and $B E=12$, compute the ratio $\\frac{A C}{A F}$.",
+"answer": "\\frac{222}{13}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2948"
+},
+{
+"question": "Let $T=2$. Compute the product of $-T-i$ and $i-T$, where $i=\\sqrt{-1}$.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3091"
+},
+{
+"question": "At present, the sum of the ages of a husband and wife, $P$, is six times the sum of the ages of their children, $C$. Two years ago, the sum of the ages of the husband and wife was ten times the sum of the ages of the same children. Six years from now, it will be three times the sum of the ages of the same children. Determine the number of children.",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2239"
+},
+{
+"question": "Let $T=3$. Regular hexagon $S U P E R B$ has side length $\\sqrt{T}$. Compute the value of $B E \\cdot S U \\cdot R E$.",
+"answer": "9",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2660"
+},
+{
+"question": "Let $T=$ 7. Compute the units digit of $T^{2023}+(T-2)^{20}-(T+10)^{23}$.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2785"
+},
+{
+"question": "Let $T=13$. If $r$ is the radius of a right circular cone and the cone's height is $T-r^{2}$, let $V$ be the maximum possible volume of the cone. Compute $\\pi / V$.",
+"answer": "\\frac{12}{169}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2656"
+},
+{
+"question": "The taxicab distance between points $\\left(x_{1}, y_{1}, z_{1}\\right)$ and $\\left(x_{2}, y_{2}, z_{2}\\right)$ is given by\n\n$$\nd\\left(\\left(x_{1}, y_{1}, z_{1}\\right),\\left(x_{2}, y_{2}, z_{2}\\right)\\right)=\\left|x_{1}-x_{2}\\right|+\\left|y_{1}-y_{2}\\right|+\\left|z_{1}-z_{2}\\right| .\n$$\n\nThe region $\\mathcal{R}$ is obtained by taking the cube $\\{(x, y, z): 0 \\leq x, y, z \\leq 1\\}$ and removing every point whose taxicab distance to any vertex of the cube is less than $\\frac{3}{5}$. Compute the volume of $\\mathcal{R}$.",
+"answer": "\\frac{179}{250}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2894"
+},
+{
+"question": "Let $T=-10$. Given that $\\log _{2} 4^{8 !}+\\log _{4} 2^{8 !}=6 ! \\cdot T \\cdot x$, compute $x$.",
+"answer": "-14",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2840"
+},
+{
+"question": "The Sieve of Sundaram uses the following infinite table of positive integers:\n\n| 4 | 7 | 10 | 13 | $\\cdots$ |\n| :---: | :---: | :---: | :---: | :---: |\n| 7 | 12 | 17 | 22 | $\\cdots$ |\n| 10 | 17 | 24 | 31 | $\\cdots$ |\n| 13 | 22 | 31 | 40 | $\\cdots$ |\n| $\\vdots$ | $\\vdots$ | $\\vdots$ | $\\vdots$ |  |\n\nThe numbers in each row in the table form an arithmetic sequence. The numbers in each column in the table form an arithmetic sequence. The first four entries in each of the first four rows and columns are shown.\nDetermine the number in the 50th row and 40th column.",
+"answer": "4090",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2257"
+},
+{
+"question": "Elizabeth is in an \"escape room\" puzzle. She is in a room with one door which is locked at the start of the puzzle. The room contains $n$ light switches, each of which is initially off. Each minute, she must flip exactly $k$ different light switches (to \"flip\" a switch means to turn it on if it is currently off, and off if it is currently on). At the end of each minute, if all of the switches are on, then the door unlocks and Elizabeth escapes from the room.\n\nLet $E(n, k)$ be the minimum number of minutes required for Elizabeth to escape, for positive integers $n, k$ with $k \\leq n$. For example, $E(2,1)=2$ because Elizabeth cannot escape in one minute (there are two switches and one must be flipped every minute) but she can escape in two minutes (by flipping Switch 1 in the first minute and Switch 2 in the second minute). Define $E(n, k)=\\infty$ if the puzzle is impossible to solve (that is, if it is impossible to have all switches on at the end of any minute).\n\nFor convenience, assume the $n$ light switches are numbered 1 through $n$.\nCompute the $E(6,1)$",
+"answer": "6",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2991"
+},
+{
+"question": "Find all positive integers $n$ for which all positive divisors of $n$ can be put into the cells of a rectangular table under the following constraints:\n\n- each cell contains a distinct divisor;\n- the sums of all rows are equal; and\n- the sums of all columns are equal.",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-1847"
+},
+{
+"question": "Suppose that 5-letter \"words\" are formed using only the letters A, R, M, and L. Each letter need not be used in a word, but each word must contain at least two distinct letters. Compute the number of such words that use the letter A more than any other letter.",
+"answer": "165",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2822"
+},
+{
+"question": "Compute the base $b$ for which $253_{b} \\cdot 341_{b}=\\underline{7} \\underline{4} \\underline{X} \\underline{Y} \\underline{Z}_{b}$, for some base- $b$ digits $X, Y, Z$.",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-3080"
+},
+{
+"question": "Lucy starts by writing $s$ integer-valued 2022-tuples on a blackboard. After doing that, she can take any two (not necessarily distinct) tuples $\\mathbf{v}=\\left(v_{1}, \\ldots, v_{2022}\\right)$ and $\\mathbf{w}=\\left(w_{1}, \\ldots, w_{2022}\\right)$ that she has already written, and apply one of the following operations to obtain a new tuple:\n\n$$\n\\begin{aligned}\n& \\mathbf{v}+\\mathbf{w}=\\left(v_{1}+w_{1}, \\ldots, v_{2022}+w_{2022}\\right) \\\\\n& \\mathbf{v} \\vee \\mathbf{w}=\\left(\\max \\left(v_{1}, w_{1}\\right), \\ldots, \\max \\left(v_{2022}, w_{2022}\\right)\\right)\n\\end{aligned}\n$$\n\nand then write this tuple on the blackboard.\n\nIt turns out that, in this way, Lucy can write any integer-valued 2022-tuple on the blackboard after finitely many steps. What is the smallest possible number $s$ of tuples that she initially wrote?",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2010"
+},
+{
+"question": "The six sides of convex hexagon $A_{1} A_{2} A_{3} A_{4} A_{5} A_{6}$ are colored red. Each of the diagonals of the hexagon is colored either red or blue. Compute the number of colorings such that every triangle $A_{i} A_{j} A_{k}$ has at least one red side.",
+"answer": "392",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2953"
+},
+{
+"question": "Compute the $2011^{\\text {th }}$ smallest positive integer $N$ that gains an extra digit when doubled.",
+"answer": "6455",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-3034"
+},
+{
+"question": "Let $a_{1}, a_{2}, a_{3}, \\ldots$ be an arithmetic sequence, and let $b_{1}, b_{2}, b_{3}, \\ldots$ be a geometric sequence. The sequence $c_{1}, c_{2}, c_{3}, \\ldots$ has $c_{n}=a_{n}+b_{n}$ for each positive integer $n$. If $c_{1}=1, c_{2}=4, c_{3}=15$, and $c_{4}=2$, compute $c_{5}$.",
+"answer": "61",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2918"
+},
+{
+"question": "For $k \\geq 3$, we define an ordered $k$-tuple of real numbers $\\left(x_{1}, x_{2}, \\ldots, x_{k}\\right)$ to be special if, for every $i$ such that $1 \\leq i \\leq k$, the product $x_{1} \\cdot x_{2} \\cdot \\ldots \\cdot x_{k}=x_{i}^{2}$. Compute the smallest value of $k$ such that there are at least 2009 distinct special $k$-tuples.",
+"answer": "12",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2852"
+},
+{
+"question": "We are given an infinite deck of cards, each with a real number on it. For every real number $x$, there is exactly one card in the deck that has $x$ written on it. Now two players draw disjoint sets $A$ and $B$ of 100 cards each from this deck. We would like to define a rule that declares one of them a winner. This rule should satisfy the following conditions:\n\n1. The winner only depends on the relative order of the 200 cards: if the cards are laid down in increasing order face down and we are told which card belongs to which player, but not what numbers are written on them, we can still decide the winner.\n2. If we write the elements of both sets in increasing order as $A=\\left\\{a_{1}, a_{2}, \\ldots, a_{100}\\right\\}$ and $B=\\left\\{b_{1}, b_{2}, \\ldots, b_{100}\\right\\}$, and $a_{i}>b_{i}$ for all $i$, then $A$ beats $B$.\n3. If three players draw three disjoint sets $A, B, C$ from the deck, $A$ beats $B$ and $B$ beats $C$, then $A$ also beats $C$.\n\nHow many ways are there to define such a rule? Here, we consider two rules as different if there exist two sets $A$ and $B$ such that $A$ beats $B$ according to one rule, but $B$ beats $A$ according to the other.",
+"answer": "100",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-1977"
+},
+{
+"question": "The solutions to the equation $x^{2}-180 x+8=0$ are $r_{1}$ and $r_{2}$. Compute\n\n$$\n\\frac{r_{1}}{\\sqrt[3]{r_{2}}}+\\frac{r_{2}}{\\sqrt[3]{r_{1}}}\n$$",
+"answer": "508",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2739"
+},
+{
+"question": "A cube has edges of length $n$, where $n$ is an integer. Three faces, meeting at a corner, are painted red. The cube is then cut into $n^{3}$ smaller cubes of unit length. If exactly 125 of these cubes have no faces painted red, determine the value of $n$.",
+"answer": "6",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2361"
+},
+{
+"question": "The three-digit positive integer $m$ is odd and has three distinct digits. If the hundreds digit of $m$ equals the product of the tens digit and ones (units) digit of $m$, what is $m$ ?",
+"answer": "623",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2321"
+},
+{
+"question": "Let $T=20$. In $\\triangle L E O, \\sin \\angle L E O=\\frac{1}{T}$. If $L E=\\frac{1}{n}$ for some positive real number $n$, then $E O=$ $n^{3}-4 n^{2}+5 n$. As $n$ ranges over the positive reals, compute the least possible value of $[L E O]$.",
+"answer": "\\frac{1}{40}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3029"
+},
+{
+"question": "Suppose $0^{\\circ}<x<90^{\\circ}$ and $2 \\sin ^{2} x+\\cos ^{2} x=\\frac{25}{16}$. What is the value of $\\sin x$ ?",
+"answer": "\\frac{3}{4}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2388"
+},
+{
+"question": "Call a positive integer fibbish if each digit, after the leftmost two, is at least the sum of the previous two digits. Compute the greatest fibbish number.",
+"answer": "10112369",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2663"
+},
+{
+"question": "Queenie and Horst play a game on a $20 \\times 20$ chessboard. In the beginning the board is empty. In every turn, Horst places a black knight on an empty square in such a way that his new knight does not attack any previous knights. Then Queenie places a white queen on an empty square. The game gets finished when somebody cannot move.\n\nFind the maximal positive $K$ such that, regardless of the strategy of Queenie, Horst can put at least $K$ knights on the board.",
+"answer": "100",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2037"
+},
+{
+"question": "A number is called Norwegian if it has three distinct positive divisors whose sum is equal to 2022. Determine the smallest Norwegian number.\n\n(Note: The total number of positive divisors of a Norwegian number is allowed to be larger than 3.)",
+"answer": "1344",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2021"
+},
+{
+"question": "Let $T=\\frac{9}{17}$. When $T$ is expressed as a reduced fraction, let $m$ and $n$ be the numerator and denominator, respectively. A square pyramid has base $A B C D$, the distance from vertex $P$ to the base is $n-m$, and $P A=P B=P C=P D=n$. Compute the area of square $A B C D$.",
+"answer": "450",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2838"
+},
+{
+"question": "$\\quad$ Let $S$ be the set of four-digit positive integers for which the sum of the squares of their digits is 17 . For example, $2023 \\in S$ because $2^{2}+0^{2}+2^{2}+3^{2}=17$. Compute the median of $S$.",
+"answer": "2302",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2735"
+},
+{
+"question": "Let $T=23$ . Compute the units digit of $T^{2023}+T^{20}-T^{23}$.",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2778"
+},
+{
+"question": "For each positive integer $N$, let $P(N)$ denote the product of the digits of $N$. For example, $P(8)=8$, $P(451)=20$, and $P(2023)=0$. Compute the least positive integer $n$ such that $P(n+23)=P(n)+23$.",
+"answer": "34",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2763"
+},
+{
+"question": "Let $T=15$. In parallelogram $A R M L$, points $P$ and $Q$ trisect $\\overline{A R}$ and points $W, X, Y, Z$ divide $\\overline{M L}$ into fifths (where $W$ is closest to $M$, and points $X$ and $Y$ are both between $W$ and $Z$ ). If $[A R M L]=T$, compute $[P Q W Z]$.",
+"answer": "7",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2722"
+},
+{
+"question": "Let $A=\\frac{1}{9}$, and let $B=\\frac{1}{25}$. In $\\frac{1}{A}$ minutes, 20 frogs can eat 1800 flies. At this rate, in $\\frac{1}{B}$ minutes, how many flies will 15 frogs be able to eat?",
+"answer": "3750",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2904"
+},
+{
+"question": "Let $\\mathcal{A}$ denote the set of all polynomials in three variables $x, y, z$ with integer coefficients. Let $\\mathcal{B}$ denote the subset of $\\mathcal{A}$ formed by all polynomials which can be expressed as\n\n$$\n(x+y+z) P(x, y, z)+(x y+y z+z x) Q(x, y, z)+x y z R(x, y, z)\n$$\n\nwith $P, Q, R \\in \\mathcal{A}$. Find the smallest non-negative integer $n$ such that $x^{i} y^{j} z^{k} \\in \\mathcal{B}$ for all nonnegative integers $i, j, k$ satisfying $i+j+k \\geqslant n$.",
+"answer": "4",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-1873"
+},
+{
+"question": "Let $N=\\left\\lfloor(3+\\sqrt{5})^{34}\\right\\rfloor$. Compute the remainder when $N$ is divided by 100 .",
+"answer": "47",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2827"
+},
+{
+"question": "Compute the number of ordered pairs of integers $(b, c)$, with $-20 \\leq b \\leq 20,-20 \\leq c \\leq 20$, such that the equations $x^{2}+b x+c=0$ and $x^{2}+c x+b=0$ share at least one root.",
+"answer": "81",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2818"
+},
+{
+"question": "In non-right triangle $A B C$, distinct points $P, Q, R$, and $S$ lie on $\\overline{B C}$ in that order such that $\\angle B A P \\cong \\angle P A Q \\cong \\angle Q A R \\cong \\angle R A S \\cong \\angle S A C$. Given that the angles of $\\triangle A B C$ are congruent to the angles of $\\triangle A P Q$ in some order of correspondence, compute $\\mathrm{m} \\angle B$ in degrees.",
+"answer": "\\frac{45}{2}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3012"
+},
+{
+"question": "The zeros of $x^{2}+b x+93$ are $r$ and $s$. If the zeros of $x^{2}-22 x+c$ are $r+1$ and $s+1$, compute $c$.",
+"answer": "114",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2732"
+},
+{
+"question": "Triangle $A B C$ is inscribed in circle $\\omega$. The tangents to $\\omega$ at $B$ and $C$ meet at point $T$. The tangent to $\\omega$ at $A$ intersects the perpendicular bisector of $\\overline{A T}$ at point $P$. Given that $A B=14, A C=30$, and $B C=40$, compute $[P B C]$.",
+"answer": "\\frac{800}{3}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3018"
+},
+{
+"question": "Find the smallest number $n$ such that there exist polynomials $f_{1}, f_{2}, \\ldots, f_{n}$ with rational coefficients satisfying\n\n$$\nx^{2}+7=f_{1}(x)^{2}+f_{2}(x)^{2}+\\cdots+f_{n}(x)^{2} .\n$$",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-1738"
+},
+{
+"question": "$\\quad$ Let $a$ and $b$ be real numbers such that\n\n$$\na^{3}-15 a^{2}+20 a-50=0 \\quad \\text { and } \\quad 8 b^{3}-60 b^{2}-290 b+2575=0\n$$\n\nCompute $a+b$.",
+"answer": "\\frac{15}{2}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2895"
+},
+{
+"question": "Let $T=688$. Let $a$ be the least nonzero digit in $T$, and let $b$ be the greatest digit in $T$. In square $N O R M, N O=b$, and points $P_{1}$ and $P_{2}$ lie on $\\overline{N O}$ and $\\overline{O R}$, respectively, so that $O P_{1}=O P_{2}=a$. A circle centered at $O$ has radius $a$, and quarter-circular arc $\\widehat{P_{1} P_{2}}$ is drawn. There is a circle that is tangent to $\\widehat{P_{1} P_{2}}$ and to sides $\\overline{M N}$ and $\\overline{M R}$. The radius of this circle can be written in the form $x-y \\sqrt{2}$, where $x$ and $y$ are positive integers. Compute $x+y$.",
+"answer": "36",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2744"
+},
+{
+"question": "Let $T=11$. Compute the value of $x$ that satisfies $\\sqrt{20+\\sqrt{T+x}}=5$.",
+"answer": "14",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3101"
+},
+{
+"question": "Let $T=\\frac{1}{2}$. Compute the largest real solution $x$ to $(\\log x)^{2}-\\log \\sqrt{x}=T$.",
+"answer": "10",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2856"
+},
+{
+"question": "Find the smallest positive integer $n$, or show that no such $n$ exists, with the following property: there are infinitely many distinct $n$-tuples of positive rational numbers $\\left(a_{1}, a_{2}, \\ldots, a_{n}\\right)$ such that both\n\n$$\na_{1}+a_{2}+\\cdots+a_{n} \\quad \\text { and } \\quad \\frac{1}{a_{1}}+\\frac{1}{a_{2}}+\\cdots+\\frac{1}{a_{n}}\n$$\n\nare integers.",
+"answer": "3",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-1834"
+},
+{
+"question": "Let $T=25$. Suppose that $T$ people are standing in a line, including three people named Charlie, Chris, and Abby. If the people are assigned their positions in line at random, compute the probability that Charlie is standing next to at least one of Chris or Abby.",
+"answer": "\\frac{47}{300}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2654"
+},
+{
+"question": "The average of three consecutive multiples of 3 is $a$.\n\nThe average of four consecutive multiples of 4 is $a+27$.\n\nThe average of the smallest and largest of these seven integers is 42 .\n\nDetermine the value of $a$.",
+"answer": "27",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2571"
+},
+{
+"question": "A bag contains 20 lavender marbles, 12 emerald marbles, and some number of orange marbles. If the probability of drawing an orange marble in one try is $\\frac{1}{y}$, compute the sum of all possible integer values of $y$.",
+"answer": "69",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-3038"
+},
+{
+"question": "Suppose that $a, b, c, d$ are positive real numbers satisfying $(a+c)(b+d)=a c+b d$. Find the smallest possible value of\n\n$$\nS=\\frac{a}{b}+\\frac{b}{c}+\\frac{c}{d}+\\frac{d}{a}\n$$",
+"answer": "8",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-1874"
+},
+{
+"question": "Let T be a rational number. Let $N$ be the smallest positive $T$-digit number that is divisible by 33 . Compute the product of the last two digits of $N$.",
+"answer": "6",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2832"
+},
+{
+"question": "Suppose that $n>5$ and that the numbers $t_{1}, t_{2}, t_{3}, \\ldots, t_{n-2}, t_{n-1}, t_{n}$ form an arithmetic sequence with $n$ terms. If $t_{3}=5, t_{n-2}=95$, and the sum of all $n$ terms is 1000 , what is the value of $n$ ?\n\n(An arithmetic sequence is a sequence in which each term after the first is obtained from the previous term by adding a constant, called the common difference. For example, $3,5,7,9$ are the first four terms of an arithmetic sequence.)",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2286"
+},
+{
+"question": "The sequence $2,5,10,50,500, \\ldots$ is formed so that each term after the second is the product of the two previous terms. The 15 th term ends with exactly $k$ zeroes. What is the value of $k$ ?",
+"answer": "233",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2496"
+},
+{
+"question": "Let $T=72 \\sqrt{2}$, and let $K=\\left(\\frac{T}{12}\\right)^{2}$. In the sequence $0.5,1,-1.5,2,2.5,-3, \\ldots$, every third term is negative, and the absolute values of the terms form an arithmetic sequence. Compute the sum of the first $K$ terms of this sequence.",
+"answer": "414",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3094"
+},
+{
+"question": "Let $x_{1}, \\ldots, x_{100}$ be nonnegative real numbers such that $x_{i}+x_{i+1}+x_{i+2} \\leq 1$ for all $i=1, \\ldots, 100$ (we put $x_{101}=x_{1}, x_{102}=x_{2}$ ). Find the maximal possible value of the sum\n\n$$\nS=\\sum_{i=1}^{100} x_{i} x_{i+2}\n$$",
+"answer": "\\frac{25}{2}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-1716"
+},
+{
+"question": "Rectangle $A R M L$ has length 125 and width 8. The rectangle is divided into 1000 squares of area 1 by drawing in gridlines parallel to the sides of $A R M L$. Diagonal $\\overline{A M}$ passes through the interior of exactly $n$ of the 1000 unit squares. Compute $n$.",
+"answer": "132",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2976"
+},
+{
+"question": "Dan was born in a year between 1300 and 1400. Steve was born in a year between 1400 and 1500. Each was born on April 6 in a year that is a perfect square. Each lived for 110 years. In what year while they were both alive were their ages both perfect squares on April 7?",
+"answer": "1469",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2422"
+},
+{
+"question": "Charlie was born in the twentieth century. On his birthday in the present year (2014), he notices that his current age is twice the number formed by the rightmost two digits of the year in which he was born. Compute the four-digit year in which Charlie was born.",
+"answer": "1938",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2598"
+},
+{
+"question": "Positive integers $a_{1}, a_{2}, a_{3}, \\ldots$ form an arithmetic sequence. If $a_{1}=10$ and $a_{a_{2}}=100$, compute $a_{a_{a_{3}}}$.",
+"answer": "820",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2823"
+},
+{
+"question": "The sequence of words $\\left\\{a_{n}\\right\\}$ is defined as follows: $a_{1}=X, a_{2}=O$, and for $n \\geq 3, a_{n}$ is $a_{n-1}$ followed by the reverse of $a_{n-2}$. For example, $a_{3}=O X, a_{4}=O X O, a_{5}=O X O X O$, and $a_{6}=O X O X O O X O$. Compute the number of palindromes in the first 1000 terms of this sequence.",
+"answer": "667",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2602"
+},
+{
+"question": "Let $T=\\frac{1}{40}$. Given that $x, y$, and $z$ are real numbers such that $x+y=5, x^{2}-y^{2}=\\frac{1}{T}$, and $x-z=-7$, compute $x+z$",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3030"
+},
+{
+"question": "David builds a circular table; he then carves one or more positive integers into the table at points equally spaced around its circumference. He considers two tables to be the same if one can be rotated so that it has the same numbers in the same positions as the other. For example, a table with the numbers $8,4,5$ (in clockwise order) is considered the same as a table with the numbers 4, 5,8 (in clockwise order), but both tables are different from a table with the numbers 8, 5, 4 (in clockwise order). Given that the numbers he carves sum to 17 , compute the number of different tables he can make.",
+"answer": "7711",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2767"
+},
+{
+"question": "Let $T=9.5$. If $\\log _{2} x^{T}-\\log _{4} x=\\log _{8} x^{k}$ is an identity for all $x>0$, compute the value of $k$.",
+"answer": "27",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3096"
+},
+{
+"question": "If $x, y$, and $z$ are positive integers such that $x y=20$ and $y z=12$, compute the smallest possible value of $x+z$.",
+"answer": "8",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2830"
+},
+{
+"question": "Compute $\\left\\lfloor 100000(1.002)^{10}\\right\\rfloor$.",
+"answer": "102018",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3077"
+},
+{
+"question": "Let $10^{y}$ be the product of all real numbers $x$ such that $\\log x=\\frac{3+\\left\\lfloor(\\log x)^{2}\\right\\rfloor}{4}$. Compute $y$.",
+"answer": "8",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2738"
+},
+{
+"question": "The geometric sequence with $n$ terms $t_{1}, t_{2}, \\ldots, t_{n-1}, t_{n}$ has $t_{1} t_{n}=3$. Also, the product of all $n$ terms equals 59049 (that is, $t_{1} t_{2} \\cdots t_{n-1} t_{n}=59049$ ). Determine the value of $n$.\n\n(A geometric sequence is a sequence in which each term after the first is obtained from the previous term by multiplying it by a constant. For example, $3,6,12$ is a geometric sequence with three terms.)",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2344"
+},
+{
+"question": "Players $A$ and $B$ play a game with $N \\geq 2012$ coins and 2012 boxes arranged around a circle. Initially $A$ distributes the coins among the boxes so that there is at least 1 coin in each box. Then the two of them make moves in the order $B, A, B, A, \\ldots$ by the following rules:\n\n- On every move of his $B$ passes 1 coin from every box to an adjacent box.\n- On every move of hers $A$ chooses several coins that were not involved in $B$ 's previous move and are in different boxes. She passes every chosen coin to an adjacent box.\n\nPlayer $A$ 's goal is to ensure at least 1 coin in each box after every move of hers, regardless of how $B$ plays and how many moves are made. Find the least $N$ that enables her to succeed.",
+"answer": "4022",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2153"
+},
+{
+"question": "$\\quad$ Compute the greatest real number $K$ for which the graphs of\n\n$$\n(|x|-5)^{2}+(|y|-5)^{2}=K \\quad \\text { and } \\quad(x-1)^{2}+(y+1)^{2}=37\n$$\n\nhave exactly two intersection points.",
+"answer": "29",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3016"
+},
+{
+"question": "Find the least positive integer $n$ for which there exists a set $\\left\\{s_{1}, s_{2}, \\ldots, s_{n}\\right\\}$ consisting of $n$ distinct positive integers such that\n\n$$\n\\left(1-\\frac{1}{s_{1}}\\right)\\left(1-\\frac{1}{s_{2}}\\right) \\ldots\\left(1-\\frac{1}{s_{n}}\\right)=\\frac{51}{2010}\n$$",
+"answer": "39",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-1736"
+},
+{
+"question": "The points $(1,2,3)$ and $(3,3,2)$ are vertices of a cube. Compute the product of all possible distinct volumes of the cube.",
+"answer": "216",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3009"
+},
+{
+"question": "Let $T=10$. Kay has $T+1$ different colors of fingernail polish. Compute the number of ways that Kay can paint the five fingernails on her left hand by using at least three colors and such that no two consecutive fingernails have the same color.",
+"answer": "109890",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2857"
+},
+{
+"question": "The function $f(x)$ satisfies the equation $f(x)=f(x-1)+f(x+1)$ for all values of $x$. If $f(1)=1$ and $f(2)=3$, what is the value of $f(2008)$ ?",
+"answer": "-1",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2569"
+},
+{
+"question": "Let $T=362$ and let $K=\\sqrt{T-1}$. Compute $\\left|(K-20)(K+1)+19 K-K^{2}\\right|$.",
+"answer": "20",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3028"
+},
+{
+"question": "$A \\pm 1 \\text{-}sequence$ is a sequence of 2022 numbers $a_{1}, \\ldots, a_{2022}$, each equal to either +1 or -1 . Determine the largest $C$ so that, for any $\\pm 1 -sequence$, there exists an integer $k$ and indices $1 \\leqslant t_{1}<\\ldots<t_{k} \\leqslant 2022$ so that $t_{i+1}-t_{i} \\leqslant 2$ for all $i$, and\n\n$$\n\\left|\\sum_{i=1}^{k} a_{t_{i}}\\right| \\geqslant C\n$$",
+"answer": "506",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2004"
+},
+{
+"question": "In right triangle $A B C$ with right angle $C$, line $\\ell$ is drawn through $C$ and is parallel to $\\overline{A B}$. Points $P$ and $Q$ lie on $\\overline{A B}$ with $P$ between $A$ and $Q$, and points $R$ and $S$ lie on $\\ell$ with $C$ between $R$ and $S$ such that $P Q R S$ is a square. Let $\\overline{P S}$ intersect $\\overline{A C}$ in $X$, and let $\\overline{Q R}$ intersect $\\overline{B C}$ in $Y$. The inradius of triangle $A B C$ is 10 , and the area of square $P Q R S$ is 576 . Compute the sum of the inradii of triangles $A X P, C X S, C Y R$, and $B Y Q$.",
+"answer": "14",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2714"
+},
+{
+"question": "Let $T$ = 2069, and let $K$ be the sum of the digits of $T$. Let $r$ and $s$ be the two roots of the polynomial $x^{2}-18 x+K$. Compute $|r-s|$.",
+"answer": "16",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2773"
+},
+{
+"question": "A bubble in the shape of a hemisphere of radius 1 is on a tabletop. Inside the bubble are five congruent spherical marbles, four of which are sitting on the table and one which rests atop the others. All marbles are tangent to the bubble, and their centers can be connected to form a pyramid with volume $V$ and with a square base. Compute $V$.",
+"answer": "\\frac{1}{54}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2670"
+},
+{
+"question": "Regular hexagon $A B C D E F$ and regular hexagon $G H I J K L$ both have side length 24 . The hexagons overlap, so that $G$ is on $\\overline{A B}, B$ is on $\\overline{G H}, K$ is on $\\overline{D E}$, and $D$ is on $\\overline{J K}$. If $[G B C D K L]=\\frac{1}{2}[A B C D E F]$, compute $L F$.",
+"answer": "18",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2665"
+},
+{
+"question": "Derek starts at the point $(0,0)$, facing the point $(0,1)$, and he wants to get to the point $(1,1)$. He takes unit steps parallel to the coordinate axes. A move consists of either a step forward, or a $90^{\\circ}$ right (clockwise) turn followed by a step forward, so that his path does not contain any left turns. His path is restricted to the square region defined by $0 \\leq x \\leq 17$ and $0 \\leq y \\leq 17$. Compute the number of ways he can get to $(1,1)$ without returning to any previously visited point.",
+"answer": "529",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2957"
+},
+{
+"question": "Let $i=\\sqrt{-1}$. The complex number $z=-142+333 \\sqrt{5} i$ can be expressed as a product of two complex numbers in multiple different ways, two of which are $(57-8 \\sqrt{5} i)(-6+5 \\sqrt{5} i)$ and $(24+\\sqrt{5} i)(-3+14 \\sqrt{5} i)$. Given that $z=-142+333 \\sqrt{5} i$ can be written as $(a+b \\sqrt{5} i)(c+d \\sqrt{5} i)$, where $a, b, c$, and $d$ are positive integers, compute the lesser of $a+b$ and $c+d$.",
+"answer": "17",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2770"
+},
+{
+"question": "Let $T=800$. Simplify $2^{\\log _{4} T} / 2^{\\log _{16} 64}$.",
+"answer": "10",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2908"
+},
+{
+"question": "If $\\log _{10} x=3+\\log _{10} y$, what is the value of $\\frac{x}{y}$ ?",
+"answer": "1000",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2351"
+},
+{
+"question": "Compute the smallest positive integer base $b$ for which $16_{b}$ is prime and $97_{b}$ is a perfect square.",
+"answer": "53",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2671"
+},
+{
+"question": "Compute the integer $n$ such that $2009<n<3009$ and the sum of the odd positive divisors of $n$ is 1024 .",
+"answer": "2604",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2892"
+},
+{
+"question": "A seventeen-sided die has faces numbered 1 through 17, but it is not fair: 17 comes up with probability $1 / 2$, and each of the numbers 1 through 16 comes up with probability $1 / 32$. Compute the probability that the sum of two rolls is either 20 or 12.",
+"answer": "\\frac{7}{128}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2819"
+},
+{
+"question": "A die, with the numbers $1,2,3,4,6$, and 8 on its six faces, is rolled. After this roll, if an odd number appears on the top face, all odd numbers on the die are doubled. If an even number appears on the top face, all the even numbers are halved. If the given die changes in this way, what is the probability that a 2 will appear on the second roll of the die?",
+"answer": "\\frac{2}{9}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2355"
+},
+{
+"question": "Let T be any number you want. Compute $2^{\\log _{T} 8}-8^{\\log _{T} 2}$.",
+"answer": "0",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2720"
+},
+{
+"question": "Hexagon $A B C D E F$ has vertices $A(0,0), B(4,0), C(7,2), D(7,5), E(3,5)$, $F(0,3)$. What is the area of hexagon $A B C D E F$ ?",
+"answer": "29",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2504"
+},
+{
+"question": "Tanner has two identical dice. Each die has six faces which are numbered 2, 3, 5, $7,11,13$. When Tanner rolls the two dice, what is the probability that the sum of the numbers on the top faces is a prime number?",
+"answer": "\\frac{1}{6}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2454"
+},
+{
+"question": "Let $T=35$. Triangle $A B C$ has a right angle at $C$, and $A B=40$. If $A C-B C=T-1$, compute $[A B C]$, the area of $\\triangle A B C$.",
+"answer": "111",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3046"
+},
+{
+"question": "Define a reverse prime to be a positive integer $N$ such that when the digits of $N$ are read in reverse order, the resulting number is a prime. For example, the numbers 5, 16, and 110 are all reverse primes. Compute the largest two-digit integer $N$ such that the numbers $N, 4 \\cdot N$, and $5 \\cdot N$ are all reverse primes.",
+"answer": "79",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2846"
+},
+{
+"question": "The function $f$ satisfies the relation $f(n)=f(n-1) f(n-2)$ for all integers $n$, and $f(n)>0$ for all positive integers $n$. If $f(1)=\\frac{f(2)}{512}$ and $\\frac{1}{f(1)}=2 f(2)$, compute $f(f(4))$.",
+"answer": "4096",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3084"
+},
+{
+"question": "Compute the sum of all values of $k$ for which there exist positive real numbers $x$ and $y$ satisfying the following system of equations.\n\n$$\n\\left\\{\\begin{aligned}\n\\log _{x} y^{2}+\\log _{y} x^{5} & =2 k-1 \\\\\n\\log _{x^{2}} y^{5}-\\log _{y^{2}} x^{3} & =k-3\n\\end{aligned}\\right.\n$$",
+"answer": "\\frac{43}{48}",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2642"
+},
+{
+"question": "Let $T=4$ and let $k=21+2 T$. Compute the largest integer $n$ such that $2 n^{2}-k n+77$ is a positive prime number.",
+"answer": "12",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2859"
+},
+{
+"question": "Let $T=$ -8, and let $i=\\sqrt{-1}$. Compute the positive integer $k$ for which $(-1+i)^{k}=\\frac{1}{2^{T}}$.",
+"answer": "16",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2782"
+},
+{
+"question": "What is the value of $x$ such that $\\log _{2}\\left(\\log _{2}(2 x-2)\\right)=2$ ?",
+"answer": "9",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2241"
+},
+{
+"question": "Polygon $A_{1} A_{2} \\ldots A_{n}$ is a regular $n$-gon. For some integer $k<n$, quadrilateral $A_{1} A_{2} A_{k} A_{k+1}$ is a rectangle of area 6 . If the area of $A_{1} A_{2} \\ldots A_{n}$ is 60 , compute $n$.",
+"answer": "40",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3037"
+},
+{
+"question": "Given that April $1^{\\text {st }}, 2012$ fell on a Sunday, what is the next year in which April $1^{\\text {st }}$ will fall on a Sunday?",
+"answer": "2018",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2844"
+},
+{
+"question": "The arithmetic sequences $a_{1}, a_{2}, a_{3}, \\ldots, a_{20}$ and $b_{1}, b_{2}, b_{3}, \\ldots, b_{20}$ consist of 40 distinct positive integers, and $a_{20}+b_{14}=1000$. Compute the least possible value for $b_{20}+a_{14}$.",
+"answer": "10",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2646"
+},
+{
+"question": "Determine the number of positive integers less than or equal to 300 that are multiples of 3 or 5 , but are not multiples of 10 or 15 .",
+"answer": "100",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2441"
+},
+{
+"question": "Let $T=9$. Compute $\\sqrt{\\sqrt{\\sqrt[T]{10^{T^{2}-T}}}}$.",
+"answer": "100",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2659"
+},
+{
+"question": "Let $T=8$. A cube has volume $T-2$. The cube's surface area equals one-eighth the surface area of a $2 \\times 2 \\times n$ rectangular prism. Compute $n$.",
+"answer": "23",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-2969"
+},
+{
+"question": "Suppose that, for some angles $x$ and $y$,\n\n$$\n\\begin{aligned}\n& \\sin ^{2} x+\\cos ^{2} y=\\frac{3}{2} a \\\\\n& \\cos ^{2} x+\\sin ^{2} y=\\frac{1}{2} a^{2}\n\\end{aligned}\n$$\n\nDetermine the possible value(s) of $a$.",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2494"
+},
+{
+"question": "Compute the number of ordered quadruples of integers $(a, b, c, d)$ satisfying the following system of equations:\n\n$$\n\\left\\{\\begin{array}{l}\na b c=12,000 \\\\\nb c d=24,000 \\\\\nc d a=36,000\n\\end{array}\\right.\n$$",
+"answer": "12",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3039"
+},
+{
+"question": "Two square tiles of area 9 are placed with one directly on top of the other. The top tile is then rotated about its center by an acute angle $\\theta$. If the area of the overlapping region is 8 , compute $\\sin \\theta+\\cos \\theta$.",
+"answer": "\\frac{5}{4}",
+"level": "OlympiadBench",
+"subject": "Geometry",
+"id": "OB-3087"
+},
+{
+"question": "Let $T=43$. Compute the positive integer $n \\neq 17$ for which $\\left(\\begin{array}{c}T-3 \\\\ 17\\end{array}\\right)=\\left(\\begin{array}{c}T-3 \\\\ n\\end{array}\\right)$.",
+"answer": "23",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2777"
+},
+{
+"question": "Let $A$ be the number you will receive from position 7 , and let $B$ be the number you will receive from position 9 . There are exactly two ordered pairs of real numbers $\\left(x_{1}, y_{1}\\right),\\left(x_{2}, y_{2}\\right)$ that satisfy both $|x+y|=6(\\sqrt{A}-5)$ and $x^{2}+y^{2}=B^{2}$. Compute $\\left|x_{1}\\right|+\\left|y_{1}\\right|+\\left|x_{2}\\right|+\\left|y_{2}\\right|$.",
+"answer": "24",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2967"
+},
+{
+"question": "Let $x$ be a positive real number such that $\\log _{\\sqrt{2}} x=20$. Compute $\\log _{2} \\sqrt{x}$.",
+"answer": "5",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-3047"
+},
+{
+"question": "Determine all possible values of $r$ such that the three term geometric sequence 4, $4 r, 4 r^{2}$ is also an arithmetic sequence.\n\n(An arithmetic sequence is a sequence in which each term after the first is obtained from the previous term by adding a constant. For example, 3, 5, 7, 9, 11 is an arithmetic sequence.)",
+"answer": "1",
+"level": "OlympiadBench",
+"subject": "Algebra",
+"id": "OB-2266"
+},
+{
+"question": "A bag contains 3 green balls, 4 red balls, and no other balls. Victor removes balls randomly from the bag, one at a time, and places them on a table. Each ball in the bag is equally likely to be chosen each time that he removes a ball. He stops removing balls when there are two balls of the same colour on the table. What is the probability that, when he stops, there is at least 1 red ball and at least 1 green ball on the table?",
+"answer": "\\frac{4}{7}",
+"level": "OlympiadBench",
+"subject": "Combinatorics",
+"id": "OB-2288"
+},
+{
+"question": "Let $\\lfloor x\\rfloor$ denote the greatest integer less than or equal to $x$. For example, $\\lfloor 3.1\\rfloor=3$ and $\\lfloor-1.4\\rfloor=-2$.\n\nSuppose that $f(n)=2 n-\\left\\lfloor\\frac{1+\\sqrt{8 n-7}}{2}\\right\\rfloor$ and $g(n)=2 n+\\left\\lfloor\\frac{1+\\sqrt{8 n-7}}{2}\\right\\rfloor$ for each positive integer $n$.\nDetermine the value of $g(2011)$.",
+"answer": "4085",
+"level": "OlympiadBench",
+"subject": "Number Theory",
+"id": "OB-2260"
+},
+{
+"question": "Let $f(x)$ be a polynomial with real coefficients such that $f(0) = 1,$ $f(2)+f(3)=125,$ and for all $x$ , $f(x)f(2x^{2})=f(2x^{3}+x).$ Find $f(5).$",
+"answer": "676",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-II-14"
+},
+{
+"question": "Two noncongruent integer-sided isosceles triangles have the same perimeter and the same area. The ratio of the lengths of the bases of the two triangles is $8: 7$ . Find the minimum possible value of their common perimeter.",
+"answer": "676",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-II-12"
+},
+{
+"question": "A wooden cube, whose edges are one centimeter long, rests on a horizontal surface. Illuminated by a point source of light that is $x$ centimeters directly above an upper vertex, the cube casts a shadow on the horizontal surface. The area of a shadow, which does not include the area beneath the cube is 48 square centimeters. Find the greatest integer that does not exceed $1000x$ .",
+"answer": "166",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1996--4"
+},
+{
+"question": "Let $S$ be the sum of all numbers of the form $\\frac{a}{b}$ , where $a$ and $b$ are relatively prime positive divisors of $1000.$ What is the greatest integer that does not exceed $\\frac{S}{10}$ ?",
+"answer": "248",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-11"
+},
+{
+"question": "Point $B$ is on $\\overline{AC}$ with $AB = 9$ and $BC = 21.$ Point $D$ is not on $\\overline{AC}$ so that $AD = CD,$ and $AD$ and $BD$ are integers. Let $s$ be the sum of all possible perimeters of $\\triangle ACD.$ Find $s.$",
+"answer": "380",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2003-I-7"
+},
+{
+"question": "How many of the first $1000$ positive integers can be expressed in the form $\\lfloor 2x \\rfloor + \\lfloor 4x \\rfloor + \\lfloor 6x \\rfloor + \\lfloor 8x \\rfloor$ , where $x$ is a real number, and $\\lfloor z \\rfloor$ denotes the greatest integer less than or equal to $z$ ?",
+"answer": "600",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1985--10"
+},
+{
+"question": "Every positive integer $k$ has a unique factorial base expansion $(f_1,f_2,f_3,\\ldots,f_m)$ , meaning that $k=1!\\cdot f_1+2!\\cdot f_2+3!\\cdot f_3+\\cdots+m!\\cdot f_m$ , where each $f_i$ is an integer, $0\\le f_i\\le i$ , and $0<f_m$ . Given that $(f_1,f_2,f_3,\\ldots,f_j)$ is the factorial base expansion of $16!-32!+48!-64!+\\cdots+1968!-1984!+2000!$ , find the value of $f_1-f_2+f_3-f_4+\\cdots+(-1)^{j+1}f_j$ .",
+"answer": "495",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-14"
+},
+{
+"question": "The sequence $(a_n)$ satisfies $a_0=0$ and $a_{n + 1} = \\frac{8}{5}a_n + \\frac{6}{5}\\sqrt{4^n - a_n^2}$ for $n \\geq 0$ . Find the greatest integer less than or equal to $a_{10}$ .",
+"answer": "983",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2009-II-14"
+},
+{
+"question": "Find the value of $10\\cot(\\cot^{-1}3+\\cot^{-1}7+\\cot^{-1}13+\\cot^{-1}21).$",
+"answer": "15",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--13"
+},
+{
+"question": "Triangle $ABC$ is inscribed in circle $\\omega$ . Points $P$ and $Q$ are on side $\\overline{AB}$ with $AP<AQ$ . Rays $CP$ and $CQ$ meet $\\omega$ again at $S$ and $T$ (other than $C$ ), respectively. If $AP=4,PQ=3,QB=6,BT=5,$ and $AS=7$ , then $ST=\\frac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "43",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-II-10"
+},
+{
+"question": "The terms of the sequence $\\{a_i\\}$ defined by $a_{n + 2} = \\frac {a_n + 2009} {1 + a_{n + 1}}$ for $n \\ge 1$ are positive integers. Find the minimum possible value of $a_1 + a_2$ .",
+"answer": "90",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2009-I-13"
+},
+{
+"question": "A chord of a circle is perpendicular to a radius at the midpoint of the radius. The ratio of the area of the larger of the two regions into which the chord divides the circle to the smaller can be expressed in the form $\\frac{a\\pi+b\\sqrt{c}}{d\\pi-e\\sqrt{f}},$ where $a, b, c, d, e,$ and $f$ are positive integers, $a$ and $e$ are relatively prime, and neither $c$ nor $f$ is divisible by the square of any prime. Find the remainder when the product $abcdef$ is divided by 1000.",
+"answer": "592",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-II-1"
+},
+{
+"question": "Square $ABCD$ has center $O, AB=900, E$ and $F$ are on $AB$ with $AE<BF$ and $E$ between $A$ and $F, m\\angle EOF =45^\\circ,$ and $EF=400.$ Given that $BF=p+q\\sqrt{r},$ where $p,q,$ and $r$ are positive integers and $r$ is not divisible by the square of any prime, find $p+q+r.$",
+"answer": "307",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2005-II-12"
+},
+{
+"question": "Let $v$ and $w$ be distinct, randomly chosen roots of the equation $z^{1997}-1=0$ . Let $m/n$ be the probability that $\\sqrt{2+\\sqrt{3}}\\le |v+w|$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "582",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1997--14"
+},
+{
+"question": "Let $f(x)=(x^2+3x+2)^{\\cos(\\pi x)}$ . Find the sum of all positive integers $n$ for which $\\left |\\sum_{k=1}^n\\log_{10}f(k)\\right|=1.$",
+"answer": "21",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-II-7"
+},
+{
+"question": "A list of positive integers has the following properties: $\\bullet$ The sum of the items in the list is $30$ . $\\bullet$ The unique mode of the list is $9$ . $\\bullet$ The median of the list is a positive integer that does not appear in the list itself. Find the sum of the squares of all the items in the list.",
+"answer": "236",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2024-II-2"
+},
+{
+"question": "$ABCD$ is a rectangular sheet of paper that has been folded so that corner $B$ is matched with point $B'$ on edge $AD.$ The crease is $EF,$ where $E$ is on $AB$ and $F$ is on $CD.$ The dimensions $AE=8, BE=17,$ and $CF=3$ are given. The perimeter of rectangle $ABCD$ is $m/n,$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$ [asy] size(200); defaultpen(linewidth(0.7)+fontsize(10)); pair A=origin, B=(25,0), C=(25,70/3), D=(0,70/3), E=(8,0), F=(22,70/3), Bp=reflect(E,F)*B, Cp=reflect(E,F)*C; draw(F--D--A--E); draw(E--B--C--F, linetype(\"4 4\")); filldraw(E--F--Cp--Bp--cycle, white, black); pair point=( 12.5, 35/3 ); label(\"$A$\", A, dir(point--A)); label(\"$B$\", B, dir(point--B)); label(\"$C$\", C, dir(point--C)); label(\"$D$\", D, dir(point--D)); label(\"$E$\", E, dir(point--E)); label(\"$F$\", F, dir(point--F)); label(\"$B^\\prime$\", Bp, dir(point--Bp)); label(\"$C^\\prime$\", Cp, dir(point--Cp));[/asy]",
+"answer": "293",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-II-7"
+},
+{
+"question": "The function f is defined on the set of integers and satisfies $f(n)= \\begin{cases}  n-3 & \\mbox{if }n\\ge 1000 \\\\  f(f(n+5)) & \\mbox{if }n<1000 \\end{cases}$ Find $f(84)$ .",
+"answer": "997",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--7"
+},
+{
+"question": "Find the arithmetic mean of all the three-digit palindromes. (Recall that a palindrome is a number that reads the same forward and backward, such as $777$ or $383$ .)",
+"answer": "550",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-II-1"
+},
+{
+"question": "Let $u$ and $v$ be integers satisfying $0 < v < u$ . Let $A = (u,v)$ , let $B$ be the reflection of $A$ across the line $y = x$ , let $C$ be the reflection of $B$ across the y-axis, let $D$ be the reflection of $C$ across the x-axis, and let $E$ be the reflection of $D$ across the y-axis. The area of pentagon $ABCDE$ is $451$ . Find $u + v$ .",
+"answer": "21",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-2"
+},
+{
+"question": "Let $K$ be the product of all factors $(b-a)$ (not necessarily distinct) where $a$ and $b$ are integers satisfying $1\\le a < b \\le 20$ . Find the greatest positive integer $n$ such that $2^n$ divides $K$ .",
+"answer": "150",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-II-3"
+},
+{
+"question": "From the set of integers $\\{1,2,3,\\dots,2009\\}$ , choose $k$ pairs $\\{a_i,b_i\\}$ with $a_i<b_i$ so that no two pairs have a common element. Suppose that all the sums $a_i+b_i$ are distinct and less than or equal to $2009$ . Find the maximum possible value of $k$ .",
+"answer": "803",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2009-II-12"
+},
+{
+"question": "Let $x,y,$ and $z$ be real numbers satisfying the system of equations \\begin{align*} xy + 4z &= 60 \\\\ yz + 4x &= 60 \\\\ zx + 4y &= 60. \\end{align*} Let $S$ be the set of possible values of $x.$ Find the sum of the squares of the elements of $S.$",
+"answer": "273",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2023-II-4"
+},
+{
+"question": "Equilateral $\\triangle ABC$ has side length $600$ . Points $P$ and $Q$ lie outside the plane of $\\triangle ABC$ and are on opposite sides of the plane. Furthermore, $PA=PB=PC$ , and $QA=QB=QC$ , and the planes of $\\triangle PAB$ and $\\triangle QAB$ form a $120^{\\circ}$ dihedral angle (the angle between the two planes). There is a point $O$ whose distance from each of $A,B,C,P,$ and $Q$ is $d$ . Find $d$ .",
+"answer": "450",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-II-14"
+},
+{
+"question": "The increasing geometric sequence $x_{0},x_{1},x_{2},\\ldots$ consists entirely of integral powers of $3.$ Given that $\\sum_{n=0}^{7}\\log_{3}(x_{n}) = 308$ and $56 \\leq \\log_{3}\\left ( \\sum_{n=0}^{7}x_{n}\\right ) \\leq 57,$ find $\\log_{3}(x_{14}).$",
+"answer": "91",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-II-12"
+},
+{
+"question": "Let $z=a+bi$ be the complex number with $\\vert z \\vert = 5$ and $b > 0$ such that the distance between $(1+2i)z^3$ and $z^5$ is maximized, and let $z^4 = c+di$ . Find $c+d$ .",
+"answer": "125",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-6"
+},
+{
+"question": "A rectangle that is inscribed in a larger rectangle (with one vertex on each side) is called unstuck if it is possible to rotate (however slightly) the smaller rectangle about its center within the confines of the larger. Of all the rectangles that can be inscribed unstuck in a 6 by 8 rectangle, the smallest perimeter has the form $\\sqrt{N}\\,$ , for a positive integer $N\\,$ . Find $N\\,$ .",
+"answer": "448",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1993--14"
+},
+{
+"question": "In a $6 \\times 4$ grid ( $6$ rows, $4$ columns), $12$ of the $24$ squares are to be shaded so that there are two shaded squares in each row and three shaded squares in each column.  Let $N$ be the number of shadings with this property.  Find the remainder when $N$ is divided by $1000$ . AIME I 2007-10.png",
+"answer": "860",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-I-10"
+},
+{
+"question": "There are nonzero integers $a$ , $b$ , $r$ , and $s$ such that the complex number $r+si$ is a zero of the polynomial $P(x)={x}^{3}-a{x}^{2}+bx-65$ . For each possible combination of $a$ and $b$ , let ${p}_{a,b}$ be the sum of the zeros of $P(x)$ . Find the sum of the ${p}_{a,b}$ 's for all possible combinations of $a$ and $b$ .",
+"answer": "80",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-I-10"
+},
+{
+"question": "Let $\\omega = \\cos\\frac{2\\pi}{7} + i \\cdot \\sin\\frac{2\\pi}{7},$ where $i = \\sqrt{-1}.$ Find the value of the product \\[\\prod_{k=0}^6 \\left(\\omega^{3k} + \\omega^k + 1\\right).\\]",
+"answer": "24",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2023-II-8"
+},
+{
+"question": "There is a unique angle $\\theta$ between $0^\\circ$ and $90^\\circ$ such that for nonnegative integers $n,$ the value of $\\tan(2^n\\theta)$ is positive when $n$ is a multiple of $3$ , and negative otherwise. The degree measure of $\\theta$ is $\\tfrac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "547",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2019-II-10"
+},
+{
+"question": "Find the number of ordered pairs of integers $(a,b)$ such that the sequence \\[3,4,5,a,b,30,40,50\\] is strictly increasing and no set of four (not necessarily consecutive) terms forms an arithmetic progression.",
+"answer": "228",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-I-6"
+},
+{
+"question": "Among the $900$ residents of Aimeville, there are $195$ who own a diamond ring, $367$ who own a set of golf clubs, and $562$ who own a garden spade. In addition, each of the $900$ residents owns a bag of candy hearts. There are $437$ residents who own exactly two of these things, and $234$ residents who own exactly three of these things. Find the number of residents of Aimeville who own all four of these things.",
+"answer": "73",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2024-II-1"
+},
+{
+"question": "Tetrahedron $ABCD$ has $AD=BC=28$ , $AC=BD=44$ , and $AB=CD=52$ . For any point $X$ in space, define $f(X)=AX+BX+CX+DX$ . The least possible value of $f(X)$ can be expressed as $m\\sqrt{n}$ , where $m$ and $n$ are positive integers, and $n$ is not divisible by the square of any prime. Find $m+n$ .",
+"answer": "682",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-II-15"
+},
+{
+"question": "A sequence of numbers $x_{1},x_{2},x_{3},\\ldots,x_{100}$ has the property that, for every integer $k$ between $1$ and $100,$ inclusive, the number $x_{k}$ is $k$ less than the sum of the other $99$ numbers. Given that $x_{50} = \\frac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers, find $m + n$ .",
+"answer": "173",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-10"
+},
+{
+"question": "Define the sequence $a_1, a_2, a_3, \\ldots$ by $a_n = \\sum\\limits_{k=1}^n \\sin{k}$ , where $k$ represents radian measure. Find the index of the 100th term for which $a_n < 0$ .",
+"answer": "628",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-II-13"
+},
+{
+"question": "Ana, Bob, and Cao bike at constant rates of $8.6$ meters per second, $6.2$ meters per second, and $5$ meters per second, respectively. They all begin biking at the same time from the northeast corner of a rectangular field whose longer side runs due west. Ana starts biking along the edge of the field, initially heading west, Bob starts biking along the edge of the field, initially heading south, and Cao bikes in a straight line across the field to a point $D$ on the south edge of the field. Cao arrives at point $D$ at the same time that Ana and Bob arrive at $D$ for the first time. The ratio of the field's length to the field's width to the distance from point $D$ to the southeast corner of the field can be represented as $p\u00a0: q\u00a0: r$ , where $p$ , $q$ , and $r$ are positive integers with $p$ and $q$ relatively prime. Find $p+q+r$ .",
+"answer": "61",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-4"
+},
+{
+"question": "Real numbers $r$ and $s$ are roots of $p(x)=x^3+ax+b$ , and $r+4$ and $s-3$ are roots of $q(x)=x^3+ax+b+240$ . Find the sum of all possible values of $|b|$ .",
+"answer": "420",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-II-5"
+},
+{
+"question": "In tetrahedron $ABCD$ , edge $AB$ has length 3 cm. The area of face $ABC$ is $15\\mbox{cm}^2$ and the area of face $ABD$ is $12 \\mbox { cm}^2$ . These two faces meet each other at a $30^\\circ$ angle. Find the volume of the tetrahedron in $\\mbox{cm}^3$ .",
+"answer": "20",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--9"
+},
+{
+"question": "Let $N$ be the greatest integer multiple of $36$ all of whose digits are even and no two of whose digits are the same. Find the remainder when $N$ is divided by $1000$ .",
+"answer": "640",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-II-1"
+},
+{
+"question": "Points $A$ , $B$ , and $C$ lie in that order along a straight path where the distance from $A$ to $C$ is $1800$ meters. Ina runs twice as fast as Eve, and Paul runs twice as fast as Ina. The three runners start running at the same time with Ina starting at $A$ and running toward $C$ , Paul starting at $B$ and running toward $C$ , and Eve starting at $C$ and running toward $A$ . When Paul meets Eve, he turns around and runs toward $A$ . Paul and Ina both arrive at $B$ at the same time. Find the number of meters from $A$ to $B$ .",
+"answer": "800",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-II-1"
+},
+{
+"question": "A triangle has vertices $A(0,0)$ , $B(12,0)$ , and $C(8,10)$ . The probability that a randomly chosen point inside the triangle is closer to vertex $B$ than to either vertex $A$ or vertex $C$ can be written as $\\frac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "409",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-II-3"
+},
+{
+"question": "In trapezoid $ABCD$ , leg $\\overline{BC}$ is perpendicular to bases $\\overline{AB}$ and $\\overline{CD}$ , and diagonals $\\overline{AC}$ and $\\overline{BD}$ are perpendicular. Given that $AB=\\sqrt{11}$ and $AD=\\sqrt{1001}$ , find $BC^2$ .",
+"answer": "110",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-8"
+},
+{
+"question": "An $a \\times b \\times c$ rectangular box is built from $a \\cdot b \\cdot c$ unit cubes. Each unit cube is colored red, green, or yellow. Each of the $a$ layers of size $1 \\times b \\times c$ parallel to the $(b \\times c)$ faces of the box contains exactly $9$ red cubes, exactly $12$ green cubes, and some yellow cubes. Each of the $b$ layers of size $a \\times 1 \\times c$ parallel to the $(a \\times c)$ faces of the box contains exactly $20$ green cubes, exactly $25$ yellow cubes, and some red cubes. Find the smallest possible volume of the box.",
+"answer": "180",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-II-4"
+},
+{
+"question": "A solid in the shape of a right circular cone is 4 inches tall and its base has a 3-inch radius. The entire surface of the cone, including its base, is painted. A plane parallel to the base of the cone divides the cone into two solids, a smaller cone-shaped solid $C$ and a frustum-shaped solid $F,$ in such a way that the ratio between the areas of the painted surfaces of $C$ and $F$ and the ratio between the volumes of $C$ and $F$ are both equal to $k.$ Given that $k=m/n,$ where $m$ and $n$ are relatively prime positive integers, find $m+n.$",
+"answer": "512",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-I-11"
+},
+{
+"question": "The diagram shows a rectangle that has been dissected into nine non-overlapping squares. Given that the width and the height of the rectangle are relatively prime positive integers, find the perimeter of the rectangle. [asy]defaultpen(linewidth(0.7)); draw((0,0)--(69,0)--(69,61)--(0,61)--(0,0));draw((36,0)--(36,36)--(0,36)); draw((36,33)--(69,33));draw((41,33)--(41,61));draw((25,36)--(25,61)); draw((34,36)--(34,45)--(25,45)); draw((36,36)--(36,38)--(34,38)); draw((36,38)--(41,38)); draw((34,45)--(41,45));[/asy]",
+"answer": "260",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-4"
+},
+{
+"question": "Point $B$ lies on line segment $\\overline{AC}$ with $AB=16$ and $BC=4$ . Points $D$ and $E$ lie on the same side of line $AC$ forming equilateral triangles $\\triangle ABD$ and $\\triangle BCE$ . Let $M$ be the midpoint of $\\overline{AE}$ , and $N$ be the midpoint of $\\overline{CD}$ . The area of $\\triangle BMN$ is $x$ . Find $x^2$ .",
+"answer": "507",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-I-4"
+},
+{
+"question": "In triangle $ABC,\\,$ angle $C$ is a right angle and the altitude from $C\\,$ meets $\\overline{AB}\\,$ at $D.\\,$ The lengths of the sides of $\\triangle ABC\\,$ are integers, $BD=29^3,\\,$ and $\\cos B=m/n\\,$ , where $m\\,$ and $n\\,$ are relatively prime positive integers.  Find $m+n.\\,$",
+"answer": "450",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1994--10"
+},
+{
+"question": "A straight river that is $264$ meters wide flows from west to east at a rate of $14$ meters per minute. Melanie and Sherry sit on the south bank of the river with Melanie a distance of $D$ meters downstream from Sherry. Relative to the water, Melanie swims at $80$ meters per minute, and Sherry swims at $60$ meters per minute. At the same time, Melanie and Sherry begin swimming in straight lines to a point on the north bank of the river that is equidistant from their starting positions. The two women arrive at this point simultaneously. Find $D.$",
+"answer": "550",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-I-5"
+},
+{
+"question": "Determine the number of ordered pairs $(a,b)$ of integers such that $\\log_a b + 6\\log_b a=5, 2 \\leq a \\leq 2005,$ and $2 \\leq b \\leq 2005.$",
+"answer": "54",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2005-II-5"
+},
+{
+"question": "Jar $A$ contains four liters of a solution that is $45\\%$ acid. Jar $B$ contains five liters of a solution that is $48\\%$ acid. Jar $C$ contains one liter of a solution that is $k\\%$ acid. From jar $C$ , $\\frac{m}{n}$ liters of the solution is added to jar $A$ , and the remainder of the solution in jar $C$ is added to jar B. At the end both jar $A$ and jar $B$ contain solutions that are $50\\%$ acid. Given that $m$ and $n$ are relatively prime positive integers, find $k + m + n$ .",
+"answer": "85",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2011-I-1"
+},
+{
+"question": "Three circles, each of radius $3$ , are drawn with centers at $(14, 92)$ , $(17, 76)$ , and $(19, 84)$ . A line passing through $(17,76)$ is such that the total area of the parts of the three circles to one side of the line is equal to the total area of the parts of the three circles to the other side of it. What is the absolute value of the slope of this line?",
+"answer": "24",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--6"
+},
+{
+"question": "Two geometric sequences $a_1, a_2, a_3, \\ldots$ and $b_1, b_2, b_3, \\ldots$ have the same common ratio, with $a_1 = 27$ , $b_1=99$ , and $a_{15}=b_{11}$ . Find $a_9$ .",
+"answer": "363",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-2"
+},
+{
+"question": "A special deck of cards contains $49$ cards, each labeled with a number from $1$ to $7$ and colored with one of seven colors. Each number-color combination appears on exactly one card. Sharon will select a set of eight cards from the deck at random. Given that she gets at least one card of each color and at least one card with each number, the probability that Sharon can discard one of her cards and $\\textit{still}$ have at least one card of each color and at least one card with each number is $\\frac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "13",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-II-9"
+},
+{
+"question": "Let $P(x)$ be a polynomial with integer coefficients that satisfies $P(17)=10$ and $P(24)=17.$ Given that $P(n)=n+3$ has two distinct integer solutions $n_1$ and $n_2,$ find the product $n_1\\cdot n_2.$",
+"answer": "418",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2005-II-13"
+},
+{
+"question": "A function $f$ is defined for all real numbers and satisfies $f(2+x)=f(2-x)$ and $f(7+x)=f(7-x)$ for all $x$ . If $x=0$ is a root for $f(x)=0$ , what is the least number of roots $f(x)=0$ must have in the interval $-1000\\leq x \\leq 1000$ ?",
+"answer": "401",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--12"
+},
+{
+"question": "Let $\\bigtriangleup PQR$ be a triangle with $\\angle P = 75^o$ and $\\angle Q = 60^o$ . A regular hexagon $ABCDEF$ with side length 1 is drawn inside $\\triangle PQR$ so that side $\\overline{AB}$ lies on $\\overline{PQ}$ , side $\\overline{CD}$ lies on $\\overline{QR}$ , and one of the remaining vertices lies on $\\overline{RP}$ . There are positive integers $a, b, c,$ and $d$ such that the area of $\\triangle PQR$ can be expressed in the form $\\frac{a+b\\sqrt{c}}{d}$ , where $a$ and $d$ are relatively prime, and c is not divisible by the square of any prime. Find $a+b+c+d$ .",
+"answer": "21",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-I-12"
+},
+{
+"question": "Find the number of functions $f$ from $\\{0, 1, 2, 3, 4, 5, 6\\}$ to the integers such that $f(0) = 0$ , $f(6) = 12$ , and \\[|x - y|  \\leq  |f(x) - f(y)|  \\leq  3|x - y|\\] for all $x$ and $y$ in $\\{0, 1, 2, 3, 4, 5, 6\\}$ .",
+"answer": "185",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-II-15"
+},
+{
+"question": "Circles of radii 5, 5, 8, and $m/n$ are mutually externally tangent, where $m$ and $n$ are relatively prime positive integers.  Find $m + n.$",
+"answer": "17",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1997--4"
+},
+{
+"question": "The system of equations \\begin{eqnarray*}\\log_{10}(2000xy) - (\\log_{10}x)(\\log_{10}y) & = & 4 \\\\ \\log_{10}(2yz) - (\\log_{10}y)(\\log_{10}z) & = & 1 \\\\ \\log_{10}(zx) - (\\log_{10}z)(\\log_{10}x) & = & 0 \\\\ \\end{eqnarray*} has two solutions $(x_{1},y_{1},z_{1})$ and $(x_{2},y_{2},z_{2})$ . Find $y_{1} + y_{2}$ .",
+"answer": "25",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-9"
+},
+{
+"question": "In isosceles triangle $ABC$ , $A$ is located at the origin and $B$ is located at (20,0).  Point $C$ is in the first quadrant with $AC = BC$ and angle $BAC = 75^{\\circ}$ .  If triangle $ABC$ is rotated counterclockwise about point $A$ until the image of $C$ lies on the positive $y$ -axis, the area of the region common to the original and the rotated triangle is in the form $p\\sqrt{2} + q\\sqrt{3} + r\\sqrt{6} + s$ , where $p,q,r,s$ are integers.  Find $(p-q+r-s)/2$ .",
+"answer": "875",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-I-12"
+},
+{
+"question": "In $\\triangle ABC, AB = 3, BC = 4,$ and $CA = 5$ . Circle $\\omega$ intersects $\\overline{AB}$ at $E$ and $B, \\overline{BC}$ at $B$ and $D,$ and $\\overline{AC}$ at $F$ and $G$ . Given that $EF=DF$ and $\\frac{DG}{EG} = \\frac{3}{4},$ length $DE=\\frac{a\\sqrt{b}}{c},$ where $a$ and $c$ are relatively prime positive integers, and $b$ is a positive integer not divisible by the square of any prime. Find $a+b+c$ .",
+"answer": "41",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-I-15"
+},
+{
+"question": "In the middle of a vast prairie, a firetruck is stationed at the intersection of two perpendicular straight highways. The truck travels at $50$ miles per hour along the highways and at $14$ miles per hour across the prairie. Consider the set of points that can be reached by the firetruck within six minutes. The area of this region is $\\frac{m}{n}$ square miles, where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "731",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-13"
+},
+{
+"question": "Steve says to Jon, \"I am thinking of a polynomial whose roots are all positive integers. The polynomial has the form $P(x) = 2x^3-2ax^2+(a^2-81)x-c$ for some positive integers $a$ and $c$ . Can you tell me the values of $a$ and $c$ ?\" After some calculations, Jon says, \"There is more than one such polynomial.\" Steve says, \"You're right.  Here is the value of $a$ .\" He writes down a positive integer and asks, \"Can you tell me the value of $c$ ?\" Jon says, \"There are still two possible values of $c$ .\" Find the sum of the two possible values of $c$ .",
+"answer": "440",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-II-6"
+},
+{
+"question": "Let $\\ell_A$ and $\\ell_B$ be two distinct parallel lines. For positive integers $m$ and $n$ , distinct points $A_1, A_2, \\allowbreak A_3, \\allowbreak \\ldots, \\allowbreak A_m$ lie on $\\ell_A$ , and distinct points $B_1, B_2, B_3, \\ldots, B_n$ lie on $\\ell_B$ . Additionally, when segments $\\overline{A_iB_j}$ are drawn for all $i=1,2,3,\\ldots, m$ and $j=1,\\allowbreak 2,\\allowbreak 3, \\ldots, \\allowbreak n$ , no point strictly between $\\ell_A$ and $\\ell_B$ lies on more than two of the segments. Find the number of bounded regions into which this figure divides the plane when $m=7$ and $n=5$ . The figure shows that there are 8 regions when $m=3$ and $n=2$ . [asy] import geometry; size(10cm); draw((-2,0)--(13,0)); draw((0,4)--(10,4)); label(\"$\\ell_A$\",(-2,0),W); label(\"$\\ell_B$\",(0,4),W); point A1=(0,0),A2=(5,0),A3=(11,0),B1=(2,4),B2=(8,4),I1=extension(B1,A2,A1,B2),I2=extension(B1,A3,A1,B2),I3=extension(B1,A3,A2,B2); draw(B1--A1--B2); draw(B1--A2--B2); draw(B1--A3--B2); label(\"$A_1$\",A1,S); label(\"$A_2$\",A2,S); label(\"$A_3$\",A3,S); label(\"$B_1$\",B1,N); label(\"$B_2$\",B2,N); label(\"1\",centroid(A1,B1,I1)); label(\"2\",centroid(B1,I1,I3)); label(\"3\",centroid(B1,B2,I3)); label(\"4\",centroid(A1,A2,I1)); label(\"5\",(A2+I1+I2+I3)/4); label(\"6\",centroid(B2,I2,I3)); label(\"7\",centroid(A2,A3,I2)); label(\"8\",centroid(A3,B2,I2)); dot(A1); dot(A2); dot(A3); dot(B1); dot(B2); [/asy]",
+"answer": "244",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-II-9"
+},
+{
+"question": "Let $ABCD$ be a cyclic quadrilateral with $AB=4,BC=5,CD=6,$ and $DA=7.$ Let $A_1$ and $C_1$ be the feet of the perpendiculars from $A$ and $C,$ respectively, to line $BD,$ and let $B_1$ and $D_1$ be the feet of the perpendiculars from $B$ and $D,$ respectively, to line $AC.$ The perimeter of $A_1B_1C_1D_1$ is $\\frac mn,$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$",
+"answer": "301",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-I-11"
+},
+{
+"question": "An integer is called snakelike if its decimal representation $a_1a_2a_3\\cdots a_k$ satisfies $a_i<a_{i+1}$ if $i$ is odd and $a_i>a_{i+1}$ if $i$ is even. How many snakelike integers between 1000 and 9999 have four distinct digits?",
+"answer": "882",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-I-6"
+},
+{
+"question": "A stack of $2000$ cards is labelled with the integers from $1$ to $2000,$ with different integers on different cards. The cards in the stack are not in numerical order. The top card is removed from the stack and placed on the table, and the next card is moved to the bottom of the stack. The new top card is removed from the stack and placed on the table, to the right of the card already there, and the next card in the stack is moved to the bottom of the stack. The process - placing the top card to the right of the cards already on the table and moving the next card in the stack to the bottom of the stack - is repeated until all cards are on the table. It is found that, reading from left to right, the labels on the cards are now in ascending order: $1,2,3,\\ldots,1999,2000.$ In the original stack of cards, how many cards were above the card labeled $1999$ ?",
+"answer": "927",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-15"
+},
+{
+"question": "Point $P$ lies on the diagonal $AC$ of square $ABCD$ with $AP > CP$ . Let $O_1$ and $O_2$ be the circumcenters of triangles $ABP$ and $CDP$ , respectively. Given that $AB = 12$ and $\\angle O_1PO_2 = 120 ^{\\circ}$ , then $AP = \\sqrt{a} + \\sqrt{b}$ , where $a$ and $b$ are positive integers. Find $a + b$ .",
+"answer": "96",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2011-II-13"
+},
+{
+"question": "A game uses a deck of $n$ different cards, where $n$ is an integer and $n \\geq 6.$ The number of possible sets of 6 cards that can be drawn from the deck is 6 times the number of possible sets of 3 cards that can be drawn. Find $n.$",
+"answer": "13",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2005-II-1"
+},
+{
+"question": "Let $f(n)$ and $g(n)$ be functions satisfying \\[f(n) =  \\begin{cases} \\sqrt{n} & \\text{ if } \\sqrt{n} \\text{ is an integer}\\\\ 1 + f(n+1) & \\text{ otherwise} \\end{cases}\\] and \\[g(n) = \\begin{cases}\\sqrt{n} & \\text{ if } \\sqrt{n} \\text{ is an integer}\\\\ 2 + g(n+2) & \\text{ otherwise} \\end{cases}\\] for positive integers $n$ . Find the least positive integer $n$ such that $\\tfrac{f(n)}{g(n)} = \\tfrac{4}{7}$ .",
+"answer": "258",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-II-15"
+},
+{
+"question": "Find the number of ordered pairs $(x,y)$ of positive integers that satisfy $x \\le 2y \\le 60$ and $y \\le 2x \\le 60$ .",
+"answer": "480",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1998--2"
+},
+{
+"question": "Let $ABCD$ be an isosceles trapezoid, whose dimensions are $AB = 6, BC=5=DA,$ and $CD=4.$ Draw circles of radius 3 centered at $A$ and $B$ and circles of radius 2 centered at $C$ and $D.$ A circle contained within the trapezoid is tangent to all four of these circles. Its radius is $\\frac{-k+m\\sqrt{n}}p,$ where $k, m, n,$ and $p$ are positive integers, $n$ is not divisible by the square of any prime, and $k$ and $p$ are relatively prime. Find $k+m+n+p.$",
+"answer": "134",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-II-12"
+},
+{
+"question": "A regular icosahedron is a $20$ -faced solid where each face is an equilateral triangle and five triangles meet at every vertex. The regular icosahedron shown below has one vertex at the top, one vertex at the bottom, an upper pentagon of five vertices all adjacent to the top vertex and all in the same horizontal plane, and a lower pentagon of five vertices all adjacent to the bottom vertex and all in another horizontal plane. Find the number of paths from the top vertex to the bottom vertex such that each part of a path goes downward or horizontally along an edge of the icosahedron, and no vertex is repeated. [asy] size(3cm); pair A=(0.05,0),B=(-.9,-0.6),C=(0,-0.45),D=(.9,-0.6),E=(.55,-0.85),F=(-0.55,-0.85),G=B-(0,1.1),H=F-(0,0.6),I=E-(0,0.6),J=D-(0,1.1),K=C-(0,1.4),L=C+K-A; draw(A--B--F--E--D--A--E--A--F--A^^B--G--F--K--G--L--J--K--E--J--D--J--L--K); draw(B--C--D--C--A--C--H--I--C--H--G^^H--L--I--J^^I--D^^H--B,dashed); dot(A^^B^^C^^D^^E^^F^^G^^H^^I^^J^^K^^L);  [/asy]",
+"answer": "810",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-I-3"
+},
+{
+"question": "Triangle $ABC^{}_{}$ has $AB=9^{}_{}$ and $BC: AC=40: 41^{}_{}$ . What's the largest area that this triangle can have?",
+"answer": "820",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1992--13"
+},
+{
+"question": "Point $B$ is in the exterior of the regular $n$ -sided polygon $A_1A_2\\cdots A_n$ , and $A_1A_2B$ is an equilateral triangle. What is the largest value of $n$ for which $A_1$ , $A_n$ , and $B$ are consecutive vertices of a regular polygon?",
+"answer": "42",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1997--6"
+},
+{
+"question": "For some integer $m$ , the polynomial $x^3 - 2011x + m$ has the three integer roots $a$ , $b$ , and $c$ .  Find $|a| + |b| + |c|$ .",
+"answer": "98",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2011-I-15"
+},
+{
+"question": "A real number $a$ is chosen randomly and uniformly from the interval $[-20, 18]$ . The probability that the roots of the polynomial \\[x^4 + 2ax^3 + (2a - 2)x^2 + (-4a + 3)x - 2\\] are all real can be written in the form $\\dfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "37",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-II-6"
+},
+{
+"question": "In triangle $ABC$ , $\\tan \\angle CAB = 22/7$ , and the altitude from $A$ divides $BC$ into segments of length $3$ and $17$ . What is the area of triangle $ABC$ ?",
+"answer": "110",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1988--7"
+},
+{
+"question": "Let triangle $ABC$ be a right triangle in the $xy$ -plane with a right angle at $C_{}$ . Given that the length of the hypotenuse $AB$ is $60$ , and that the medians through $A$ and $B$ lie along the lines $y=x+3$ and $y=2x+4$ respectively, find the area of triangle $ABC$ .",
+"answer": "400",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1986--15"
+},
+{
+"question": "A flat board has a circular hole with radius $1$ and a circular hole with radius $2$ such that the distance between the centers of the two holes is $7$ . Two spheres with equal radii sit in the two holes such that the spheres are tangent to each other. The square of the radius of the spheres is $\\tfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "173",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-I-6"
+},
+{
+"question": "A paper equilateral triangle $ABC$ has side length $12$ . The paper triangle is folded so that vertex $A$ touches a point on side $\\overline{BC}$ a distance $9$ from point $B$ . The length of the line segment along which the triangle is folded can be written as $\\frac{m\\sqrt{p}}{n}$ , where $m$ , $n$ , and $p$ are positive integers, $m$ and $n$ are relatively prime, and $p$ is not divisible by the square of any prime. Find $m+n+p$ . [asy] import cse5; size(12cm); pen tpen = defaultpen + 1.337; real a = 39/5.0; real b = 39/7.0; pair B = MP(\"B\", (0,0), dir(200)); pair A = MP(\"A\", (9,0), dir(-80)); pair C = MP(\"C\", (12,0), dir(-20)); pair K = (6,10.392); pair M = (a*B+(12-a)*K) / 12; pair N = (b*C+(12-b)*K) / 12; draw(B--M--N--C--cycle, tpen); draw(M--A--N--cycle); fill(M--A--N--cycle, mediumgrey); pair shift = (-20.13, 0); pair B1 = MP(\"B\", B+shift, dir(200)); pair A1 = MP(\"A\", K+shift, dir(90)); pair C1 = MP(\"C\", C+shift, dir(-20)); draw(A1--B1--C1--cycle, tpen);[/asy]",
+"answer": "113",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-I-9"
+},
+{
+"question": "In triangle $ABC$ the medians $\\overline{AD}$ and $\\overline{CE}$ have lengths 18 and 27, respectively, and $AB = 24$ .  Extend $\\overline{CE}$ to intersect the circumcircle of $ABC$ at $F$ .  The area of triangle $AFB$ is $m\\sqrt {n}$ , where $m$ and $n$ are positive integers and $n$ is not divisible by the square of any prime.  Find $m + n$ .",
+"answer": "63",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2002-I-13"
+},
+{
+"question": "Find the value of $a_2+a_4+a_6+a_8+\\ldots+a_{98}$ if $a_1$ , $a_2$ , $a_3\\ldots$ is an arithmetic progression with common difference 1, and $a_1+a_2+a_3+\\ldots+a_{98}=137$ .",
+"answer": "93",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--1"
+},
+{
+"question": "Let $a$ and $b$ be positive integers satisfying $\\frac{ab+1}{a+b} < \\frac{3}{2}$ . The maximum possible value of $\\frac{a^3b^3+1}{a^3+b^3}$ is $\\frac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "36",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-II-8"
+},
+{
+"question": "Rectangle $ABCD$ has side lengths $AB=84$ and $AD=42$ . Point $M$ is the midpoint of $\\overline{AD}$ , point $N$ is the trisection point of $\\overline{AB}$ closer to $A$ , and point $O$ is the intersection of $\\overline{CM}$ and $\\overline{DN}$ . Point $P$ lies on the quadrilateral $BCON$ , and $\\overline{BP}$ bisects the area of $BCON$ . Find the area of $\\triangle CDP$ .",
+"answer": "546",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-II-10"
+},
+{
+"question": "On square $ABCD$ , point $E$ lies on side $AD$ and point $F$ lies on side $BC$ , so that $BE=EF=FD=30$ . Find the area of the square $ABCD$ .",
+"answer": "810",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2011-II-2"
+},
+{
+"question": "Find the number of integers $c$ such that the equation \\[\\left||20|x|-x^2|-c\\right|=21\\] has $12$ distinct real solutions.",
+"answer": "57",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-I-8"
+},
+{
+"question": "Given that $z$ is a complex number such that $z+\\frac 1z=2\\cos 3^\\circ$ , find the least integer that is greater than $z^{2000}+\\frac 1{z^{2000}}$ .",
+"answer": "0",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-9"
+},
+{
+"question": "Call a set $S$ product-free if there do not exist $a, b, c \\in S$ (not necessarily distinct) such that $a b = c$ . For example, the empty set and the set $\\{16, 20\\}$ are product-free, whereas the sets $\\{4, 16\\}$ and $\\{2, 8, 16\\}$ are not product-free. Find the number of product-free subsets of the set $\\{1, 2, 3, 4, \\ldots, 7, 8, 9, 10\\}$ .",
+"answer": "252",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-I-12"
+},
+{
+"question": "Let $ABCDEF$ be a regular hexagon. Let $G$ , $H$ , $I$ , $J$ , $K$ , and $L$ be the midpoints of sides $AB$ , $BC$ , $CD$ , $DE$ , $EF$ , and $AF$ , respectively. The segments $\\overline{AH}$ , $\\overline{BI}$ , $\\overline{CJ}$ , $\\overline{DK}$ , $\\overline{EL}$ , and $\\overline{FG}$ bound a smaller regular hexagon. Let the ratio of the area of the smaller hexagon to the area of $ABCDEF$ be expressed as a fraction $\\frac {m}{n}$ where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "11",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-II-9"
+},
+{
+"question": "Two squares of a $7\\times 7$ checkerboard are painted yellow, and the rest are painted green. Two color schemes are equivalent if one can be obtained from the other by applying a rotation in the plane board. How many inequivalent color schemes are possible?",
+"answer": "300",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1996--7"
+},
+{
+"question": "A machine-shop cutting tool has the shape of a notched circle, as shown. The radius of the circle is $\\sqrt{50}$ cm, the length of $AB$ is $6$ cm and that of $BC$ is $2$ cm. The angle $ABC$ is a right angle. Find the square of the distance (in centimeters) from $B$ to the center of the circle. [asy] size(150); defaultpen(linewidth(0.6)+fontsize(11)); real r=10; pair O=(0,0), A=r*dir(45),B=(A.x,A.y-r); path P=circle(O,r); pair C=intersectionpoint(B--(B.x+r,B.y),P); // Drawing arc instead of full circle //draw(P); draw(arc(O, r, degrees(A), degrees(C))); draw(C--B--A--B); dot(A); dot(B); dot(C); label(\"$A$\",A,NE); label(\"$B$\",B,S); label(\"$C$\",C,SE); [/asy]",
+"answer": "26",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1983--4"
+},
+{
+"question": "A transformation of the first quadrant of the coordinate plane maps each point $(x,y)$ to the point $(\\sqrt{x},\\sqrt{y}).$ The vertices of quadrilateral $ABCD$ are $A=(900,300), B=(1800,600), C=(600,1800),$ and $D=(300,900).$ Let $k_{}$ be the area of the region enclosed by the image of quadrilateral $ABCD.$ Find the greatest integer that does not exceed $k_{}.$",
+"answer": "314",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1999--6"
+},
+{
+"question": "A pyramid has a triangular base with side lengths $20$ , $20$ , and $24$ . The three edges of the pyramid from the three corners of the base to the fourth vertex of the pyramid all have length $25$ . The volume of the pyramid is $m\\sqrt{n}$ , where $m$ and $n$ are positive integers, and $n$ is not divisible by the square of any prime. Find $m+n$ .",
+"answer": "803",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-I-4"
+},
+{
+"question": "The graph of $y^2 + 2xy + 40|x|= 400$ partitions the plane into several regions.  What is the area of the bounded region?",
+"answer": "800",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1998--3"
+},
+{
+"question": "A frog is placed at the origin on the number line , and moves according to the following rule: in a given move, the frog advances to either the closest point with a greater integer coordinate that is a multiple of $3$ , or to the closest point with a greater integer coordinate that is a multiple of $13$ . A move sequence is a sequence of coordinates which correspond to valid moves, beginning with $0$ , and ending with $39$ . For example, $0,\\ 3,\\ 6,\\ 13,\\ 15,\\ 26,\\ 39$ is a move sequence. How many move sequences are possible for the frog?",
+"answer": "169",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-I-6"
+},
+{
+"question": "For any sequence of real numbers $A=(a_1,a_2,a_3,\\ldots)$ , define $\\Delta A^{}_{}$ to be the sequence $(a_2-a_1,a_3-a_2,a_4-a_3,\\ldots)$ , whose $n^{th}$ term is $a_{n+1}-a_n^{}$ . Suppose that all of the terms of the sequence $\\Delta(\\Delta A^{}_{})$ are $1^{}_{}$ , and that $a_{19}=a_{92}^{}=0$ . Find $a_1^{}$ .",
+"answer": "819",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1992--8"
+},
+{
+"question": "A circle with center $O$ has radius 25. Chord $\\overline{AB}$ of length 30 and chord $\\overline{CD}$ of length 14 intersect at point $P$ . The distance between the midpoints of the two chords is 12. The quantity $OP^2$ can be represented as $\\frac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find the remainder when $m + n$ is divided by 1000.",
+"answer": "57",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2011-II-10"
+},
+{
+"question": "A convex polyhedron $P$ has 26 vertices, 60 edges, and 36 faces, 24 of which are triangular, and 12 of which are quadrilaterals. A space diagonal is a line segment connecting two non-adjacent vertices that do not belong to the same face. How many space diagonals does $P$ have?",
+"answer": "241",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-I-3"
+},
+{
+"question": "Three concentric circles have radii $3,$ $4,$ and $5.$ An equilateral triangle with one vertex on each circle has side length $s.$ The largest possible area of the triangle can be written as $a + \\tfrac{b}{c} \\sqrt{d},$ where $a,$ $b,$ $c,$ and $d$ are positive integers, $b$ and $c$ are relatively prime, and $d$ is not divisible by the square of any prime. Find $a+b+c+d.$",
+"answer": "41",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-I-13"
+},
+{
+"question": "Let $S$ be a set with six elements . Let $\\mathcal{P}$ be the set of all subsets of $S.$ Subsets $A$ and $B$ of $S$ , not necessarily distinct, are chosen independently and at random from $\\mathcal{P}$ . The probability that $B$ is contained in one of $A$ or $S-A$ is $\\frac{m}{n^{r}},$ where $m$ , $n$ , and $r$ are positive integers , $n$ is prime , and $m$ and $n$ are relatively prime . Find $m+n+r.$ (The set $S-A$ is the set of all elements of $S$ which are not in $A.$ )",
+"answer": "710",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-II-10"
+},
+{
+"question": "During a recent campaign for office, a candidate made a tour of a country which we assume lies in a plane. On the first day of the tour he went east, on the second day he went north, on the third day west, on the fourth day south, on the fifth day east, etc. If the candidate went $\\frac{n^{2}}{2}$ miles on the $n^{\\mbox{th}}_{}$ day of this tour, how many miles was he from his starting point at the end of the $40^{\\mbox{th}}_{}$ day?",
+"answer": "580",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1993--2"
+},
+{
+"question": "A hexagon is inscribed in a circle. Five of the sides have length 81 and the sixth, denoted by $\\overline{AB}$ , has length 31. Find the sum of the lengths of the three diagonals that can be drawn from $A_{}^{}$ .",
+"answer": "384",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1991--14"
+},
+{
+"question": "There are $2n$ complex numbers that satisfy both $z^{28} - z^{8} - 1 = 0$ and $|z| = 1$ . These numbers have the form $z_{m} = \\cos\\theta_{m} + i\\sin\\theta_{m}$ , where $0\\leq\\theta_{1} < \\theta_{2} < \\ldots < \\theta_{2n} < 360$ and angles are measured in degrees. Find the value of $\\theta_{2} + \\theta_{4} + \\ldots + \\theta_{2n}$ .",
+"answer": "840",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2001-II-14"
+},
+{
+"question": "Let $m$ and $n$ be odd integers greater than $1.$ An $m\\times n$ rectangle is made up of unit squares where the squares in the top row are numbered left to right with the integers $1$ through $n$ , those in the second row are numbered left to right with the integers $n + 1$ through $2n$ , and so on. Square $200$ is in the top row, and square $2000$ is in the bottom row. Find the number of ordered pairs $(m,n)$ of odd integers greater than $1$ with the property that, in the $m\\times n$ rectangle, the line through the centers of squares $200$ and $2000$ intersects the interior of square $1099$ .",
+"answer": "248",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-II-12"
+},
+{
+"question": "Eight circles of diameter 1 are packed in the first quadrant of the coordinate plane as shown. Let region $\\mathcal{R}$ be the union of the eight circular regions. Line $l,$ with slope 3, divides $\\mathcal{R}$ into two regions of equal area. Line $l$ 's equation can be expressed in the form $ax=by+c,$ where $a, b,$ and $c$ are positive integers whose greatest common divisor is 1. Find $a^2+b^2+c^2.$ [asy] unitsize(0.50cm); draw((0,-1)--(0,6)); draw((-1,0)--(6,0)); draw(shift(1,1)*unitcircle); draw(shift(1,3)*unitcircle); draw(shift(1,5)*unitcircle); draw(shift(3,1)*unitcircle); draw(shift(3,3)*unitcircle); draw(shift(3,5)*unitcircle); draw(shift(5,1)*unitcircle); draw(shift(5,3)*unitcircle); [/asy]",
+"answer": "65",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2006-I-10"
+},
+{
+"question": "A plane contains $40$ lines, no $2$ of which are parallel. Suppose that there are $3$ points where exactly $3$ lines intersect, $4$ points where exactly $4$ lines intersect, $5$ points where exactly $5$ lines intersect, $6$ points where exactly $6$ lines intersect, and no points where more than $6$ lines intersect. Find the number of points where exactly $2$ lines intersect.",
+"answer": "607",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2023-I-3"
+},
+{
+"question": "Find the sum of all positive integers $n$ such that when $1^3+2^3+3^3+\\cdots +n^3$ is divided by $n+5$ , the remainder is $17$ .",
+"answer": "239",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-II-10"
+},
+{
+"question": "Let $S$ be the set of ordered pairs $(x, y)$ such that $0 < x \\le 1, 0<y\\le 1,$ and $\\left \\lfloor{\\log_2{\\left(\\frac 1x\\right)}}\\right \\rfloor$ and $\\left \\lfloor{\\log_5{\\left(\\frac 1y\\right)}}\\right \\rfloor$ are both even. Given that the area of the graph of $S$ is $m/n,$ where $m$ and $n$ are relatively prime positive integers, find $m+n.$ The notation $\\left \\lfloor{z}\\right \\rfloor$ denotes the greatest integer that is less than or equal to $z.$",
+"answer": "14",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-I-12"
+},
+{
+"question": "Find the area of the region enclosed by the graph of $|x-60|+|y|=\\left|\\frac{x}{4}\\right|.$",
+"answer": "480",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1987--4"
+},
+{
+"question": "Convex pentagon $ABCDE$ has side lengths $AB=5$ , $BC=CD=DE=6$ , and $EA=7$ . Moreover, the pentagon has an inscribed circle (a circle tangent to each side of the pentagon). Find the area of $ABCDE$ .",
+"answer": "60",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-II-13"
+},
+{
+"question": "Complex numbers $a,$ $b,$ and $c$ are zeros of a polynomial $P(z) = z^3 + qz + r,$ and $|a|^2 + |b|^2 + |c|^2 = 250.$ The points corresponding to $a,$ $b,$ and $c$ in the complex plane are the vertices of a right triangle with hypotenuse $h.$ Find $h^2.$",
+"answer": "375",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-I-14"
+},
+{
+"question": "Let $z$ be a complex number with $|z|=2014$ . Let $P$ be the polygon in the complex plane whose vertices are $z$ and every $w$ such that $\\frac{1}{z+w}=\\frac{1}{z}+\\frac{1}{w}$ . Then the area enclosed by $P$ can be written in the form $n\\sqrt{3}$ , where $n$ is an integer. Find the remainder when $n$ is divided by $1000$ .",
+"answer": "147",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-II-10"
+},
+{
+"question": "For positive integers $a$ , $b$ , and $c$ with $a < b < c$ , consider collections of postage stamps in denominations $a$ , $b$ , and $c$ cents that contain at least one stamp of each denomination. If there exists such a collection that contains sub-collections worth every whole number of cents up to $1000$ cents, let $f(a, b, c)$ be the minimum number of stamps in such a collection. Find the sum of the three least values of $c$ such that $f(a, b, c) = 97$ for some choice of $a$ and $b$ .",
+"answer": "188",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-II-14"
+},
+{
+"question": "Suppose that the sum of the squares of two complex numbers $x$ and $y$ is $7$ and the sum of the cubes is $10$ . What is the largest real value that $x + y$ can have?",
+"answer": "4",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1983--5"
+},
+{
+"question": "Let $x,$ $y,$ and $z$ be positive real numbers satisfying the system of equations: \\begin{align*} \\sqrt{2x-xy} + \\sqrt{2y-xy} &= 1 \\\\ \\sqrt{2y-yz} + \\sqrt{2z-yz} &= \\sqrt2 \\\\ \\sqrt{2z-zx} + \\sqrt{2x-zx} &= \\sqrt3. \\end{align*} Then $\\left[ (1-x)(1-y)(1-z) \\right]^2$ can be written as $\\frac{m}{n},$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$",
+"answer": "33",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-I-15"
+},
+{
+"question": "In triangle $ABC$ , $AB=\\sqrt{30}$ , $AC=\\sqrt{6}$ , and $BC=\\sqrt{15}$ . There is a point $D$ for which $\\overline{AD}$ bisects $\\overline{BC}$ , and $\\angle ADB$ is a right angle. The ratio \\[\\dfrac{\\text{Area}(\\triangle ADB)}{\\text{Area}(\\triangle ABC)}\\] can be written in the form $\\dfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "65",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1996--13"
+},
+{
+"question": "Given that $x, y,$ and $z$ are real numbers that satisfy: \\begin{align*} x &= \\sqrt{y^2-\\frac{1}{16}}+\\sqrt{z^2-\\frac{1}{16}}, \\\\ y &= \\sqrt{z^2-\\frac{1}{25}}+\\sqrt{x^2-\\frac{1}{25}}, \\\\ z &= \\sqrt{x^2 - \\frac 1{36}}+\\sqrt{y^2-\\frac 1{36}}, \\end{align*} and that $x+y+z = \\frac{m}{\\sqrt{n}},$ where $m$ and $n$ are positive integers and $n$ is not divisible by the square of any prime, find $m+n.$",
+"answer": "9",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2006-II-15"
+},
+{
+"question": "Find $a$ if $a$ and $b$ are integers such that $x^2 - x - 1$ is a factor of $ax^{17} + bx^{16} + 1$ .",
+"answer": "987",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1988--13"
+},
+{
+"question": "Square $ABCD$ is inscribed in a circle. Square $EFGH$ has vertices $E$ and $F$ on $\\overline{CD}$ and vertices $G$ and $H$ on the circle. The ratio of the area of square $EFGH$ to the area of square $ABCD$ can be expressed as $\\frac {m}{n}$ where $m$ and $n$ are relatively prime positive integers and $m < n$ . Find $10n + m$ .",
+"answer": "251",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2001-II-6"
+},
+{
+"question": "Find the three-digit positive integer $\\underline{a}\\,\\underline{b}\\,\\underline{c}$ whose representation in base nine is $\\underline{b}\\,\\underline{c}\\,\\underline{a}_{\\,\\text{nine}},$ where $a,$ $b,$ and $c$ are (not necessarily distinct) digits.",
+"answer": "227",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-I-2"
+},
+{
+"question": "The points $A$ , $B$ and $C$ lie on the surface of a sphere with center $O$ and radius $20$ . It is given that $AB=13$ , $BC=14$ , $CA=15$ , and that the distance from $O$ to triangle $ABC$ is $\\frac{m\\sqrt{n}}k$ , where $m$ , $n$ , and $k$ are positive integers, $m$ and $k$ are relatively prime, and $n$ is not divisible by the square of any prime. Find $m+n+k$ .",
+"answer": "118",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-12"
+},
+{
+"question": "Let $x$ be a real number such that $\\sin^{10}x+\\cos^{10} x = \\tfrac{11}{36}$ . Then $\\sin^{12}x+\\cos^{12} x = \\tfrac{m}{n}$ where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "67",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2019-I-8"
+},
+{
+"question": "A point $P$ is chosen in the interior of $\\triangle ABC$ such that when lines are drawn through $P$ parallel to the sides of $\\triangle ABC$ , the resulting smaller triangles $t_{1}$ , $t_{2}$ , and $t_{3}$ in the figure, have areas $4$ , $9$ , and $49$ , respectively. Find the area of $\\triangle ABC$ . [asy] size(200); pathpen=black+linewidth(0.65);pointpen=black; pair A=(0,0),B=(12,0),C=(4,5); D(A--B--C--cycle); D(A+(B-A)*3/4--A+(C-A)*3/4); D(B+(C-B)*5/6--B+(A-B)*5/6);D(C+(B-C)*5/12--C+(A-C)*5/12); MP(\"A\",C,N);MP(\"B\",A,SW);MP(\"C\",B,SE); /* sorry mixed up points according to resources diagram. */ MP(\"t_3\",(A+B+(B-A)*3/4+(A-B)*5/6)/2+(-1,0.8),N); MP(\"t_2\",(B+C+(B-C)*5/12+(C-B)*5/6)/2+(-0.3,0.1),WSW); MP(\"t_1\",(A+C+(C-A)*3/4+(A-C)*5/12)/2+(0,0.15),ESE); [/asy]",
+"answer": "144",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1984--3"
+},
+{
+"question": "Given a function $f$ for which \\[f(x) = f(398 - x) = f(2158 - x) = f(3214 - x)\\] holds for all real $x,$ what is the largest number of different values that can appear in the list $f(0),f(1),f(2),\\ldots,f(999)$ ?",
+"answer": "177",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-12"
+},
+{
+"question": "Let $x$ and $y$ be real numbers such that $\\frac{\\sin x}{\\sin y} = 3$ and $\\frac{\\cos x}{\\cos y} = \\frac12$ . The value of $\\frac{\\sin 2x}{\\sin 2y} + \\frac{\\cos 2x}{\\cos 2y}$ can be expressed in the form $\\frac pq$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "107",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-9"
+},
+{
+"question": "Ten points in the plane are given, with no three collinear.  Four distinct segments joining pairs of these points are chosen at random, all such segments being equally likely.  The probability that some three of the segments form a triangle whose vertices are among the ten given points is $m/n,$ where $m_{}$ and $n_{}$ are relatively prime positive integers.  Find $m+n.$",
+"answer": "489",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1999--10"
+},
+{
+"question": "For $t = 1, 2, 3, 4$ , define $S_t = \\sum_{i = 1}^{350}a_i^t$ , where $a_i \\in \\{1,2,3,4\\}$ . If $S_1 = 513$ and $S_4 = 4745$ , find the minimum possible value for $S_2$ .",
+"answer": "905",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2009-I-14"
+},
+{
+"question": "Circles of radius $3$ and $6$ are externally tangent to each other and are internally tangent to a circle of radius $9$ . The circle of radius $9$ has a chord that is a common external tangent of the other two circles. Find the square of the length of this chord.",
+"answer": "224",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1995--4"
+},
+{
+"question": "The graph of the equation $9x+223y=2007$ is drawn on graph paper with each square representing one unit in each direction. How many of the $1$ by $1$ graph paper squares have interiors lying entirely below the graph and entirely in the first quadrant ?",
+"answer": "888",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-II-5"
+},
+{
+"question": "Triangle $ABC$ is inscribed in circle $\\omega$ with $AB=5$ , $BC=7$ , and $AC=3$ . The bisector of angle $A$ meets side $\\overline{BC}$ at $D$ and circle $\\omega$ at a second point $E$ . Let $\\gamma$ be the circle with diameter $\\overline{DE}$ . Circles $\\omega$ and $\\gamma$ meet at $E$ and a second point $F$ . Then $AF^2 = \\frac mn$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "919",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-15"
+},
+{
+"question": "Compute \\[\\frac{(10^4+324)(22^4+324)(34^4+324)(46^4+324)(58^4+324)}{(4^4+324)(16^4+324)(28^4+324)(40^4+324)(52^4+324)}.\\]",
+"answer": "373",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1987--14"
+},
+{
+"question": "A sample of 121 integers is given, each between 1 and 1000 inclusive, with repetitions allowed. The sample has a unique mode (most frequent value). Let $D^{}_{}$ be the difference between the mode and the arithmetic mean of the sample. What is the largest possible value of $\\lfloor D^{}_{}\\rfloor$ ? (For real $x^{}_{}$ , $\\lfloor x^{}_{}\\rfloor$ is the greatest integer less than or equal to $x^{}_{}$ .)",
+"answer": "947",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1989--11"
+},
+{
+"question": "Find the number of rational numbers $r$ , $0<r<1,$ such that when $r$ is written as a fraction in lowest terms, the numerator and the denominator have a sum of $1000$ .",
+"answer": "200",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-I-3"
+},
+{
+"question": "A convex polyhedron has for its faces 12 squares, 8 regular hexagons, and 6 regular octagons. At each vertex of the polyhedron one square, one hexagon, and one octagon meet. How many segments joining vertices of the polyhedron lie in the interior of the polyhedron rather than along an edge or a face?",
+"answer": "840",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1988--10"
+},
+{
+"question": "For $-1<r<1$ , let $S(r)$ denote the sum of the geometric series \\[12+12r+12r^2+12r^3+\\cdots .\\] Let $a$ between $-1$ and $1$ satisfy $S(a)S(-a)=2016$ . Find $S(a)+S(-a)$ .",
+"answer": "336",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-I-1"
+},
+{
+"question": "In equilateral $\\triangle ABC$ let points $D$ and $E$ trisect $\\overline{BC}$ . Then $\\sin(\\angle DAE)$ can be expressed in the form $\\frac{a\\sqrt{b}}{c}$ , where $a$ and $c$ are relatively prime positive integers, and $b$ is an integer that is not divisible by the square of any prime. Find $a+b+c$ .",
+"answer": "20",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-II-5"
+},
+{
+"question": "The solutions to the system of equations \\begin{align*} \\log_{225}{x}+\\log_{64}{y} = 4\\\\ \\log_{x}{225}- \\log_{y}{64} = 1 \\end{align*} are $(x_1,y_1)$ and $(x_2, y_2)$ . Find $\\log_{30}{(x_1y_1x_2y_2)}$ .",
+"answer": "12",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2002-I-6"
+},
+{
+"question": "Let $a > 1$ and $x > 1$ satisfy $\\log_a(\\log_a(\\log_a 2) + \\log_a 24 - 128) = 128$ and $\\log_a(\\log_a x) = 256$ . Find the remainder when $x$ is divided by $1000$ .",
+"answer": "896",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-I-14"
+},
+{
+"question": "In triangle $ABC,$ $AB = 13,$ $BC = 14,$ $AC = 15,$ and point $G$ is the intersection of the medians. Points $A',$ $B',$ and $C',$ are the images of $A,$ $B,$ and $C,$ respectively, after a $180^\\circ$ rotation about $G.$ What is the area of the union of the two regions enclosed by the triangles $ABC$ and $A'B'C'?$",
+"answer": "112",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2003-II-6"
+},
+{
+"question": "For certain real values of $a, b, c,$ and $d_{},$ the equation $x^4+ax^3+bx^2+cx+d=0$ has four non-real roots.  The product of two of these roots is $13+i$ and the sum of the other two roots is $3+4i,$ where $i=\\sqrt{-1}.$ Find $b.$",
+"answer": "51",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1995--5"
+},
+{
+"question": "Find the number of ordered pairs of positive integers $(m,n)$ such that ${m^2n = 20 ^{20}}$ .",
+"answer": "231",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-II-1"
+},
+{
+"question": "A disk with radius $1$ is externally tangent to a disk with radius $5$ . Let $A$ be the point where the disks are tangent, $C$ be the center of the smaller disk, and $E$ be the center of the larger disk. While the larger disk remains fixed, the smaller disk is allowed to roll along the outside of the larger disk until the smaller disk has turned through an angle of $360^\\circ$ . That is, if the center of the smaller disk has moved to the point $D$ , and the point on the smaller disk that began at $A$ has now moved to point $B$ , then $\\overline{AC}$ is parallel to $\\overline{BD}$ . Then $\\sin^2(\\angle BEA)=\\tfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "58",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2014-I-10"
+},
+{
+"question": "Let $\\overline{AB}$ be a chord of a circle $\\omega$ , and let $P$ be a point on the chord $\\overline{AB}$ . Circle $\\omega_1$ passes through $A$ and $P$ and is internally tangent to $\\omega$ . Circle $\\omega_2$ passes through $B$ and $P$ and is internally tangent to $\\omega$ . Circles $\\omega_1$ and $\\omega_2$ intersect at points $P$ and $Q$ . Line $PQ$ intersects $\\omega$ at $X$ and $Y$ . Assume that $AP=5$ , $PB=3$ , $XY=11$ , and $PQ^2 = \\tfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "65",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2019-I-15"
+},
+{
+"question": "For any positive integer $k$ , let $f_1(k)$ denote the square of the sum of the digits of $k$ .  For $n \\ge 2$ , let $f_n(k) = f_1(f_{n - 1}(k))$ .  Find $f_{1988}(11)$ .",
+"answer": "169",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1988--2"
+},
+{
+"question": "A sequence of positive integers with $a_1=1$ and $a_9+a_{10}=646$ is formed so that the first three terms are in geometric progression, the second, third, and fourth terms are in arithmetic progression, and, in general, for all $n\\ge1,$ the terms $a_{2n-1}, a_{2n}, a_{2n+1}$ are in geometric progression, and the terms $a_{2n}, a_{2n+1},$ and $a_{2n+2}$ are in arithmetic progression. Let $a_n$ be the greatest term in this sequence that is less than 1000. Find $n+a_n.$",
+"answer": "973",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2004-II-9"
+},
+{
+"question": "One base of a trapezoid is $100$ units longer than the other base. The segment that joins the midpoints of the legs divides the trapezoid into two regions whose areas are in the ratio $2: 3$ . Let $x$ be the length of the segment joining the legs of the trapezoid that is parallel to the bases and that divides the trapezoid into two regions of equal area. Find the greatest integer that does not exceed $x^2/100$ .",
+"answer": "181",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-6"
+},
+{
+"question": "The equation $2000x^6+100x^5+10x^3+x-2=0$ has exactly two real roots, one of which is $\\frac{m+\\sqrt{n}}r$ , where $m$ , $n$ and $r$ are integers, $m$ and $r$ are relatively prime, and $r>0$ . Find $m+n+r$ .",
+"answer": "200",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-II-13"
+},
+{
+"question": "Find the number of ordered pairs of positive integer solutions $(m, n)$ to the equation $20m + 12n = 2012$ .",
+"answer": "34",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-II-1"
+},
+{
+"question": "Triangle $ABC$ with right angle at $C$ , $\\angle BAC < 45^\\circ$ and $AB = 4$ . Point $P$ on $\\overline{AB}$ is chosen such that $\\angle APC = 2\\angle ACP$ and $CP = 1$ . The ratio $\\frac{AP}{BP}$ can be represented in the form $p + q\\sqrt{r}$ , where $p$ , $q$ , $r$ are positive integers and $r$ is not divisible by the square of any prime. Find $p+q+r$ .",
+"answer": "7",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-II-14"
+},
+{
+"question": "Consider all 1000-element subsets of the set $\\{ 1, 2, 3, ... , 2015 \\}$ .  From each such subset choose the least element.  The arithmetic mean of all of these least elements is $\\frac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers.  Find $p + q$ .",
+"answer": "431",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-I-12"
+},
+{
+"question": "Faces $ABC^{}_{}$ and $BCD^{}_{}$ of tetrahedron $ABCD^{}_{}$ meet at an angle of $30^\\circ$ . The area of face $ABC^{}_{}$ is $120^{}_{}$ , the area of face $BCD^{}_{}$ is $80^{}_{}$ , and $BC=10^{}_{}$ . Find the volume of the tetrahedron.",
+"answer": "320",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1992--7"
+},
+{
+"question": "There is a positive real number $x$ not equal to either $\\tfrac{1}{20}$ or $\\tfrac{1}{2}$ such that \\[\\log_{20x} (22x)=\\log_{2x} (202x).\\] The value $\\log_{20x} (22x)$ can be written as $\\log_{10} (\\tfrac{m}{n})$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "112",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-II-4"
+},
+{
+"question": "Twenty distinct points are marked on a circle and labeled $1$ through $20$ in clockwise order. A line segment is drawn between every pair of points whose labels differ by a prime number. Find the number of triangles formed whose vertices are among the original $20$ points.",
+"answer": "72",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-II-5"
+},
+{
+"question": "Let $S$ be the set of positive integers $N$ with the property that the last four digits of $N$ are $2020,$ and when the last four digits are removed, the result is a divisor of $N.$ For example, $42{,}020$ is in $S$ because $4$ is a divisor of $42{,}020.$ Find the sum of all the digits of all the numbers in $S.$ For example, the number $42{,}020$ contributes $4+2+0+2+0=8$ to this total.",
+"answer": "93",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-I-4"
+},
+{
+"question": "Given $\\triangle ABC$ and a point $P$ on one of its sides, call line $\\ell$ the $\\textit{splitting line}$ of $\\triangle ABC$ through $P$ if $\\ell$ passes through $P$ and divides $\\triangle ABC$ into two polygons of equal perimeter. Let $\\triangle ABC$ be a triangle where $BC = 219$ and $AB$ and $AC$ are positive integers. Let $M$ and $N$ be the midpoints of $\\overline{AB}$ and $\\overline{AC},$ respectively, and suppose that the splitting lines of $\\triangle ABC$ through $M$ and $N$ intersect at $30^\\circ.$ Find the perimeter of $\\triangle ABC.$",
+"answer": "459",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-I-14"
+},
+{
+"question": "The terms of an arithmetic sequence add to $715$ . The first term of the sequence is increased by $1$ , the second term is increased by $3$ , the third term is increased by $5$ , and in general, the $k$ th term is increased by the $k$ th odd positive integer. The terms of the new sequence add to $836$ . Find the sum of the first, last, and middle term of the original sequence.",
+"answer": "195",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2012-I-2"
+},
+{
+"question": "Triangle $ABC$ is a right triangle with $AC = 7,$ $BC = 24,$ and right angle at $C.$ Point $M$ is the midpoint of $AB,$ and $D$ is on the same side of line $AB$ as $C$ so that $AD = BD = 15.$ Given that the area of triangle $CDM$ may be expressed as $\\frac {m\\sqrt {n}}{p},$ where $m,$ $n,$ and $p$ are positive integers, $m$ and $p$ are relatively prime, and $n$ is not divisible by the square of any prime, find $m + n + p.$",
+"answer": "578",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2003-II-11"
+},
+{
+"question": "Let $P(x)$ be a nonzero polynomial such that $(x-1)P(x+1)=(x+2)P(x)$ for every real $x$ , and $\\left(P(2)\\right)^2 = P(3)$ . Then $P(\\tfrac72)=\\tfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "109",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-I-11"
+},
+{
+"question": "Let $z_1 = 18 + 83i$ , $z_2 = 18 + 39i,$ and $z_3 = 78 + 99i,$ where $i = \\sqrt{-1}$ . Let $z$ be the unique complex number with the properties that $\\frac{z_3 - z_1}{z_2 - z_1} \\cdot \\frac{z - z_2}{z - z_3}$ is a real number and the imaginary part of $z$ is the greatest possible. Find the real part of $z$ .",
+"answer": "56",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-I-10"
+},
+{
+"question": "Consider the region $A^{}_{}$ in the complex plane that consists of all points $z^{}_{}$ such that both $\\frac{z^{}_{}}{40}$ and $\\frac{40^{}_{}}{\\overline{z}}$ have real and imaginary parts between $0^{}_{}$ and $1^{}_{}$ , inclusive. What is the integer that is nearest the area of $A^{}_{}$ ?",
+"answer": "572",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1992--10"
+},
+{
+"question": "In the array of $13$ squares shown below, $8$ squares are colored red, and the remaining $5$ squares are colored blue. If one of all possible such colorings is chosen at random, the probability that the chosen colored array appears the same when rotated $90^{\\circ}$ around the central square is $\\frac{1}{n}$ , where $n$ is a positive integer. Find $n$ . [asy] draw((0,0)--(1,0)--(1,1)--(0,1)--(0,0)); draw((2,0)--(2,2)--(3,2)--(3,0)--(3,1)--(2,1)--(4,1)--(4,0)--(2,0)); draw((1,2)--(1,4)--(0,4)--(0,2)--(0,3)--(1,3)--(-1,3)--(-1,2)--(1,2)); draw((-1,1)--(-3,1)--(-3,0)--(-1,0)--(-2,0)--(-2,1)--(-2,-1)--(-1,-1)--(-1,1)); draw((0,-1)--(0,-3)--(1,-3)--(1,-1)--(1,-2)--(0,-2)--(2,-2)--(2,-1)--(0,-1)); size(100);[/asy]",
+"answer": "429",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-I-4"
+},
+{
+"question": "The solid shown has a square base of side length $s$ . The upper edge is parallel to the base and has length $2s$ . All other edges have length $s$ . Given that $s=6\\sqrt{2}$ , what is the volume of the solid? [asy] import three; size(170); pathpen = black+linewidth(0.65); pointpen = black; currentprojection = perspective(30,-20,10); real s = 6 * 2^.5; triple A=(0,0,0),B=(s,0,0),C=(s,s,0),D=(0,s,0),E=(-s/2,s/2,6),F=(3*s/2,s/2,6); draw(A--B--C--D--A--E--D); draw(B--F--C);  draw(E--F); label(\"A\",A, S); label(\"B\",B, S); label(\"C\",C, S); label(\"D\",D, S); label(\"E\",E,N); label(\"F\",F,N); [/asy]",
+"answer": "288",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1983--11"
+},
+{
+"question": "Each vertex of a regular dodecagon ( $12$ -gon) is to be colored either red or blue, and thus there are $2^{12}$ possible colorings. Find the number of these colorings with the property that no four vertices colored the same color are the four vertices of a rectangle.",
+"answer": "928",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2023-II-7"
+},
+{
+"question": "A coin that comes up heads with probability $p > 0$ and tails with probability $1 - p > 0$ independently on each flip is flipped eight times. Suppose the probability of three heads and five tails is equal to $\\frac {1}{25}$ of the probability of five heads and three tails. Let $p = \\frac {m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "11",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2009-I-3"
+},
+{
+"question": "A teacher was leading a class of four perfectly logical students. The teacher chose a set $S$ of four integers and gave a different number in $S$ to each student. Then the teacher announced to the class that the numbers in $S$ were four consecutive two-digit positive integers, that some number in $S$ was divisible by $6$ , and a different number in $S$ was divisible by $7$ . The teacher then asked if any of the students could deduce what $S$ is, but in unison, all of the students replied no. However, upon hearing that all four students replied no, each student was able to determine the elements of $S$ . Find the sum of all possible values of the greatest element of $S$ .",
+"answer": "258",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-II-11"
+},
+{
+"question": "Let $R = (8,6)$ . The lines whose equations are $8y = 15x$ and $10y = 3x$ contain points $P$ and $Q$ , respectively, such that $R$ is the midpoint of $\\overline{PQ}$ . The length of $PQ$ equals $\\frac {m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "67",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2001-II-4"
+},
+{
+"question": "If $\\{a_1,a_2,a_3,\\ldots,a_n\\}$ is a set of real numbers , indexed so that $a_1 < a_2 < a_3 < \\cdots < a_n,$ its complex power sum is defined to be $a_1i + a_2i^2+ a_3i^3 + \\cdots + a_ni^n,$ where $i^2 = - 1.$ Let $S_n$ be the sum of the complex power sums of all nonempty subsets of $\\{1,2,\\ldots,n\\}.$ Given that $S_8 = - 176 - 64i$ and $S_9 = p + qi,$ where $p$ and $q$ are integers, find $|p| + |q|.$",
+"answer": "368",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1998--13"
+},
+{
+"question": "Anh read a book. On the first day she read $n$ pages in $t$ minutes, where $n$ and $t$ are positive integers. On the second day Anh read $n + 1$ pages in $t + 1$ minutes. Each day thereafter Anh read one more page than she read on the previous day, and it took her one more minute than on the previous day until she completely read the $374$ page book. It took her a total of $319$ minutes to read the book. Find $n + t$ .",
+"answer": "53",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-I-5"
+},
+{
+"question": "A 100 foot long moving walkway moves at a constant rate of 6 feet per second.  Al steps onto the start of the walkway and stands.  Bob steps onto the start of the walkway two seconds later and strolls forward along the walkway at a constant rate of 4 feet per second.  Two seconds after that, Cy reaches the start of the walkway and walks briskly forward beside the walkway at a constant rate of 8 feet per second.  At a certain time, one of these three persons is exactly halfway between the other two.  At that time, find the distance in feet between the start of the walkway and the middle person.",
+"answer": "52",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-I-2"
+},
+{
+"question": "Rectangle $ABCD$ and a semicircle with diameter $AB$ are coplanar and have nonoverlapping interiors. Let $\\mathcal{R}$ denote the region enclosed by the semicircle and the rectangle. Line $\\ell$ meets the semicircle, segment $AB$ , and segment $CD$ at distinct points $N$ , $U$ , and $T$ , respectively. Line $\\ell$ divides region $\\mathcal{R}$ into two regions with areas in the ratio $1: 2$ . Suppose that $AU = 84$ , $AN = 126$ , and $UB = 168$ . Then $DA$ can be represented as $m\\sqrt {n}$ , where $m$ and $n$ are positive integers and $n$ is not divisible by the square of any prime. Find $m + n$ .",
+"answer": "69",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-I-13"
+},
+{
+"question": "Let $\\triangle{PQR}$ be a right triangle with $PQ = 90$ , $PR = 120$ , and $QR = 150$ . Let $C_{1}$ be the inscribed circle. Construct $\\overline{ST}$ with $S$ on $\\overline{PR}$ and $T$ on $\\overline{QR}$ , such that $\\overline{ST}$ is perpendicular to $\\overline{PR}$ and tangent to $C_{1}$ . Construct $\\overline{UV}$ with $U$ on $\\overline{PQ}$ and $V$ on $\\overline{QR}$ such that $\\overline{UV}$ is perpendicular to $\\overline{PQ}$ and tangent to $C_{1}$ . Let $C_{2}$ be the inscribed circle of $\\triangle{RST}$ and $C_{3}$ the inscribed circle of $\\triangle{QUV}$ . The distance between the centers of $C_{2}$ and $C_{3}$ can be written as $\\sqrt {10n}$ . What is $n$ ?",
+"answer": "725",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2001-II-7"
+},
+{
+"question": "An ellipse has foci at $(9, 20)$ and $(49, 55)$ in the $xy$ -plane and is tangent to the $x$ -axis. What is the length of its major axis?",
+"answer": "85",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1985--11"
+},
+{
+"question": "Triangle $ABC$ has side lengths $AB=4$ , $BC=5$ , and $CA=6$ . Points $D$ and $E$ are on ray $AB$ with $AB<AD<AE$ . The point $F \\neq C$ is a point of intersection of the circumcircles of $\\triangle ACD$ and $\\triangle EBC$ satisfying $DF=2$ and $EF=7$ . Then $BE$ can be expressed as $\\tfrac{a+b\\sqrt{c}}{d}$ , where $a$ , $b$ , $c$ , and $d$ are positive integers such that $a$ and $d$ are relatively prime, and $c$ is not divisible by the square of any prime. Find $a+b+c+d$ .",
+"answer": "32",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2019-I-13"
+},
+{
+"question": "Given that $A_k = \\frac {k(k - 1)}2\\cos\\frac {k(k - 1)\\pi}2,$ find $|A_{19} + A_{20} + \\cdots + A_{98}|.$",
+"answer": "40",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1998--5"
+},
+{
+"question": "Let $r$ , $s$ , and $t$ be the three roots of the equation \\[8x^3 + 1001x + 2008 = 0.\\] Find $(r + s)^3 + (s + t)^3 + (t + r)^3$ .",
+"answer": "753",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2008-II-7"
+},
+{
+"question": "Let $p(x,y) = a_0 + a_1x + a_2y + a_3x^2 + a_4xy + a_5y^2 + a_6x^3 + a_7x^2y + a_8xy^2 + a_9y^3$ . Suppose that $p(0,0) = p(1,0) = p( - 1,0) = p(0,1) = p(0, - 1) = p(1,1) = p(1, - 1) = p(2,2) = 0$ . There is a point $\\left(\\frac {a}{c},\\frac {b}{c}\\right)$ for which $p\\left(\\frac {a}{c},\\frac {b}{c}\\right) = 0$ for all such polynomials, where $a$ , $b$ , and $c$ are positive integers, $a$ and $c$ are relatively prime, and $c > 1$ .  Find $a + b + c$ .",
+"answer": "40",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2008-I-13"
+},
+{
+"question": "A bug walks all day and sleeps all night. On the first day, it starts at point $O,$ faces east, and walks a distance of $5$ units due east. Each night the bug rotates $60^\\circ$ counterclockwise. Each day it walks in this new direction half as far as it walked the previous day. The bug gets arbitrarily close to the point $P.$ Then $OP^2=\\tfrac{m}{n},$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$",
+"answer": "103",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-I-8"
+},
+{
+"question": "If $\\tan x+\\tan y=25$ and $\\cot x + \\cot y=30$ , what is $\\tan(x+y)$ ?",
+"answer": "150",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1986--3"
+},
+{
+"question": "Square $AIME$ has sides of length $10$ units.  Isosceles triangle $GEM$ has base $EM$ , and the area common to triangle $GEM$ and square $AIME$ is $80$ square units.  Find the length of the altitude to $EM$ in $\\triangle GEM$ .",
+"answer": "25",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2008-I-2"
+},
+{
+"question": "Let $N = \\sum_{k = 1}^{1000} k ( \\lceil \\log_{\\sqrt{2}} k \\rceil  - \\lfloor \\log_{\\sqrt{2}} k \\rfloor )$ Find the remainder when $N$ is divided by 1000.  ( $\\lfloor{k}\\rfloor$ is the greatest integer less than or equal to $k$ , and $\\lceil{k}\\rceil$ is the least integer greater than or equal to $k$ .)",
+"answer": "477",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2007-I-7"
+},
+{
+"question": "A positive integer $N$ has base-eleven representation $\\underline{a}\\kern 0.1em\\underline{b}\\kern 0.1em\\underline{c}$ and base-eight representation $\\underline1\\kern 0.1em\\underline{b}\\kern 0.1em\\underline{c}\\kern 0.1em\\underline{a},$ where $a,b,$ and $c$ represent (not necessarily distinct) digits. Find the least such $N$ expressed in base ten.",
+"answer": "621",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2020-I-3"
+},
+{
+"question": "Find the number of pairs $(m,n)$ of positive integers with $1\\le m<n\\le 30$ such that there exists a real number $x$ satisfying \\[\\sin(mx)+\\sin(nx)=2.\\]",
+"answer": "63",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2021-I-7"
+},
+{
+"question": "Teams $T_1$ , $T_2$ , $T_3$ , and $T_4$ are in the playoffs. In the semifinal matches, $T_1$ plays $T_4$ , and $T_2$ plays $T_3$ . The winners of those two matches will play each other in the final match to determine the champion. When $T_i$ plays $T_j$ , the probability that $T_i$ wins is $\\frac{i}{i+j}$ , and the outcomes of all the matches are independent. The probability that $T_4$ will be the champion is $\\frac{p}{q}$ , where $p$ and $q$ are relatively prime positive integers. Find $p+q$ .",
+"answer": "781",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-II-2"
+},
+{
+"question": "The function $f$ , defined on the set of ordered pairs of positive integers, satisfies the following properties: \\[f(x, x) = x,\\; f(x, y) = f(y, x), {\\rm \\ and\\ } (x+y)f(x, y) = yf(x, x+y).\\] Calculate $f(14,52)$ .",
+"answer": "364",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1988--8"
+},
+{
+"question": "Let $N$ be the least positive integer that is both $22$ percent less than one integer and $16$ percent greater than another integer. Find the remainder when $N$ is divided by $1000$ .",
+"answer": "131",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2015-II-1"
+},
+{
+"question": "For each ordered pair of real numbers $(x,y)$ satisfying \\[\\log_2(2x+y) = \\log_4(x^2+xy+7y^2)\\] there is a real number $K$ such that \\[\\log_3(3x+y) = \\log_9(3x^2+4xy+Ky^2).\\] Find the product of all possible values of $K$ .",
+"answer": "189",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-I-5"
+},
+{
+"question": "A group of clerks is assigned the task of sorting $1775$ files. Each clerk sorts at a constant rate of $30$ files per hour. At the end of the first hour, some of the clerks are reassigned to another task; at the end of the second hour, the same number of the remaining clerks are also reassigned to another task, and a similar assignment occurs at the end of the third hour. The group finishes the sorting in $3$ hours and $10$ minutes. Find the number of files sorted during the first one and a half hours of sorting.",
+"answer": "945",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2013-II-7"
+},
+{
+"question": "David found four sticks of different lengths that can be used to form three non-congruent convex cyclic quadrilaterals, $A,\\text{ }B,\\text{ }C$ , which can each be inscribed in a circle with radius $1$ . Let $\\varphi_A$ denote the measure of the acute angle made by the diagonals of quadrilateral $A$ , and define $\\varphi_B$ and $\\varphi_C$ similarly. Suppose that $\\sin\\varphi_A=\\frac{2}{3}$ , $\\sin\\varphi_B=\\frac{3}{5}$ , and $\\sin\\varphi_C=\\frac{6}{7}$ . All three quadrilaterals have the same area $K$ , which can be written in the form $\\dfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "59",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-I-15"
+},
+{
+"question": "Maya lists all the positive divisors of $2010^2$ . She then randomly selects two distinct divisors from this list. Let $p$ be the probability that exactly one of the selected divisors is a perfect square. The probability $p$ can be expressed in the form $\\frac {m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "107",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2010-I-1"
+},
+{
+"question": "For $1 \\leq i \\leq 215$ let $a_i = \\dfrac{1}{2^{i}}$ and $a_{216} = \\dfrac{1}{2^{215}}$ . Let $x_1, x_2, ..., x_{216}$ be positive real numbers such that $\\sum_{i=1}^{216} x_i=1$ and $\\sum_{1 \\leq i < j \\leq 216} x_ix_j = \\dfrac{107}{215} + \\sum_{i=1}^{216} \\dfrac{a_i x_i^{2}}{2(1-a_i)}$ . The maximum possible value of $x_2=\\dfrac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m+n$ .",
+"answer": "863",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-II-15"
+},
+{
+"question": "A triangle has vertices $P_{}^{}=(-8,5)$ , $Q_{}^{}=(-15,-19)$ , and $R_{}^{}=(1,-7)$ . The equation of the bisector of $\\angle P$ can be written in the form $ax+2y+c=0_{}^{}$ . Find $a+c_{}^{}$ .",
+"answer": "89",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1990--7"
+},
+{
+"question": "Three of the edges of a cube are $\\overline{AB}, \\overline{BC},$ and $\\overline{CD},$ and $\\overline{AD}$ is an interior diagonal .  Points $P, Q,$ and $R$ are on $\\overline{AB}, \\overline{BC},$ and $\\overline{CD},$ respectively, so that $AP = 5, PB = 15, BQ = 15,$ and $CR = 10.$ What is the area of the polygon that is the intersection of plane $PQR$ and the cube?",
+"answer": "525",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-1998--11"
+},
+{
+"question": "Kathy has $5$ red cards and $5$ green cards. She shuffles the $10$ cards and lays out $5$ of the cards in a row in a random order. She will be happy if and only if all the red cards laid out are adjacent and all the green cards laid out are adjacent. For example, card orders RRGGG, GGGGR, or RRRRR will make Kathy happy, but RRRGR will not. The probability that Kathy will be happy is $\\frac{m}{n}$ , where $m$ and $n$ are relatively prime positive integers. Find $m + n$ .",
+"answer": "157",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2018-I-3"
+},
+{
+"question": "Fifteen distinct points are designated on $\\triangle ABC$ : the 3 vertices $A$ , $B$ , and $C$ ; $3$ other points on side $\\overline{AB}$ ; $4$ other points on side $\\overline{BC}$ ; and $5$ other points on side $\\overline{CA}$ . Find the number of triangles with positive area whose vertices are among these $15$ points.",
+"answer": "390",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2017-I-1"
+},
+{
+"question": "Triangle $ABC$ has $AB=40,AC=31,$ and $\\sin{A}=\\frac{1}{5}$ . This triangle is inscribed in rectangle $AQRS$ with $B$ on $\\overline{QR}$ and $C$ on $\\overline{RS}$ . Find the maximum possible area of $AQRS$ .",
+"answer": "744",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2016-I-9"
+},
+{
+"question": "In the expansion of $(ax + b)^{2000},$ where $a$ and $b$ are relatively prime positive integers, the coefficients of $x^{2}$ and $x^{3}$ are equal. Find $a + b$ .",
+"answer": "667",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2000-I-3"
+},
+{
+"question": "Adults made up $\\frac5{12}$ of the crowd of people at a concert. After a bus carrying $50$ more people arrived, adults made up $\\frac{11}{25}$ of the people at the concert. Find the minimum number of adults who could have been at the concert after the bus arrived.",
+"answer": "154",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2022-II-1"
+},
+{
+"question": "Consider the L-shaped region formed by three unit squares joined at their sides, as shown below. Two points $A$ and $B$ are chosen independently and uniformly at random from inside the region. The probability that the midpoint of $\\overline{AB}$ also lies inside this L-shaped region can be expressed as $\\frac{m}{n},$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$ [asy] unitsize(2cm); draw((0,0)--(2,0)--(2,1)--(1,1)--(1,2)--(0,2)--cycle); draw((0,1)--(1,1)--(1,0),dashed); [/asy]",
+"answer": "35",
+"level": "AIME",
+"subject": "AIME",
+"id": "AIME-2023-II-6"
+}
+]
