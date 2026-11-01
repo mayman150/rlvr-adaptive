@@ -1544,12 +1544,96 @@ def diagnostic_step(runner, args, answers, adv, rewards, owner, norm, step, entr
     return stats, len(live_a) + len(live_b)
 
 
+class HardSchedule:
+    """A fixed number of each step's problems drawn from a hard subset (shuffled passes), the rest from the usual
+    order: the common batch schedule of the hint-curriculum pilot, so hinted and unhinted arms see the same problems."""
+    def __init__(self, args, problems):
+        path = Path(args.hard_problems) if Path(args.hard_problems).exists() else HERE / "data" / args.hard_problems
+        wanted = json.loads(path.read_text())
+        index = {q["question"]: i for i, q in enumerate(problems)}
+        missing = [q for q in wanted if q not in index]
+        assert not missing, f"{len(missing)} hard problems are not in the training set"
+        self.hard = [index[q] for q in wanted]
+        self.k, self.rng, self.queue, self.pointer = args.hard_per_step, random.Random(args.seed * 7717), [], 0
+        assert 0 < self.k < args.prompts_per_step, "--hard-per-step must leave room for the regular stream"
+
+    def indices(self, order, pps):
+        out = []
+        while len(out) < self.k:
+            if not self.queue:
+                self.queue = list(self.hard)
+                self.rng.shuffle(self.queue)
+            out.append(self.queue.pop())
+        for _ in range(pps - self.k):
+            out.append(order[self.pointer % len(order)])
+            self.pointer += 1
+        return out
+
+
+class HintCurriculum:
+    """MFC-style guidance (Unlocking the Unsolvable, arXiv 2609.13997), ported to the Dr. GRPO core: each guided
+    problem has a hint frontier g_curr in {0..L}, starting at L (the whole pre-answer trace); a visit draws a level
+    uniformly from {0..g_curr} and appends the first g/L of the trace's lines to the question as a hint; if the
+    group's mean reward is at least --hint-success, the frontier drops to the level used (never rises). The final
+    answer is never shown: each trace is cut before its last box. Deviation from MFC (registered): every hint is
+    withdrawn from step --hint-withdraw-step on, whatever the frontier."""
+    def __init__(self, args, problems):
+        path = Path(args.hint_archive) if Path(args.hint_archive).exists() else HERE / "data" / args.hint_archive
+        bank = json.loads(path.read_text())
+        known = {q["question"] for q in problems}
+        self.lines, self.L = {}, args.hint_levels
+        for d in bank:
+            if d["question"] not in known:
+                continue
+            trace = d["trace"]
+            cut = trace.rfind("\\boxed")
+            pre = trace[:cut] if cut >= 0 else trace
+            lines = [x for x in pre.split("\n") if x.strip()]
+            if lines:
+                self.lines[d["question"]] = lines
+        assert self.lines, "no hint trace matches the training set"
+        self.g = {q: self.L for q in self.lines}
+        self.withdraw, self.thresh = args.hint_withdraw_step, args.hint_success
+        self.rng = random.Random(args.seed * 4243)
+        self.visits = 0
+
+    def level(self, step, question):
+        if step >= self.withdraw or question not in self.g:
+            return 0
+        return self.rng.randint(0, self.g[question])
+
+    def text(self, question, g):
+        if g <= 0:
+            return question
+        lines = self.lines[question]
+        n = max(1, math.ceil(len(lines) * g / self.L))
+        return question + "\n\nHere is the beginning of a solution:\n" + "\n".join(lines[:n])
+
+    def update(self, question, g, mean_reward):
+        if question in self.g and mean_reward >= self.thresh:
+            self.g[question] = min(self.g[question], g)
+
+    def stats(self, levels):
+        vals = list(self.g.values())
+        return {"hinted": sum(x > 0 for x in levels), "mean_level": sum(levels) / max(len(levels), 1),
+                "frontier_mean": sum(vals) / len(vals), "unguided_share": sum(v == 0 for v in vals) / len(vals),
+                "frontier_hist": [sum(v == k for v in vals) for k in range(self.L + 1)]}
+
+
 def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=None, calib_problems=None):
     runner = Runner(args)
     opt = torch.optim.AdamW(runner.params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)
     rng = random.Random(args.seed)
     order = list(range(len(problems)))
     rng.shuffle(order)
+    hard_sched = HardSchedule(args, problems) if args.hard_problems else None
+    hints = HintCurriculum(args, problems) if args.hint_archive else None
+    if hard_sched or hints:
+        assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
+            and not args.complete_groups and args.memory_lambda == 0, \
+            "the hard schedule and the hint curriculum are implemented for plain on-policy fixed groups"
+    if hints:
+        print(f"[{arm}] hint curriculum: {len(hints.lines)} guided problems, {hints.L} levels, withdrawal at step {hints.withdraw}", flush=True)
     log, evals, sampled = [], [], []
     norm = args.budget * args.max_new
     calib_groups = (calib or {}).get("groups") or [[1, 8]]
@@ -1745,8 +1829,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
             pps, G = args.prompts_per_step, args.group
             if step % args.reuse == 0:
                 n_pool = pps * args.reuse
-                batch = [problems[order[(step * pps + j) % len(order)]] for j in range(n_pool)]
-                texts = [build_prompt(runner.tok, q["question"]) for q in batch]
+                batch_idx = hard_sched.indices(order, pps) if hard_sched else [order[(step * pps + j) % len(order)] for j in range(n_pool)]
+                batch = [problems[i] for i in batch_idx]
+                levels = [hints.level(step, q["question"]) for q in batch] if hints else None
+                texts = [build_prompt(runner.tok, hints.text(q["question"], g) if hints else q["question"])
+                         for q, g in zip(batch, levels or [0] * len(batch))]
                 if args.alloc_first > 0:
                     pool_answers, pool_rewards, alloc_n, extra["alloc"] = allocated_rollouts(runner, args, step, batch, texts)
                 else:
@@ -1779,7 +1866,13 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                         adv.append(fixed_advantage(arm, r, m, w, args.pos_weight, args.shift, G, args.train_k))
                 groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
-            keys = [order[(step * pps + j) % len(order)] for j in range(pps)] if args.reuse == 1 else None
+            keys = list(batch_idx[:pps]) if args.reuse == 1 else None
+            if hints:
+                for j in range(pps):
+                    hints.update(batch[j]["question"], levels[j], sum(rewards[j * G:(j + 1) * G]) / G)
+                extra["hint"] = hints.stats(levels)
+            if hard_sched:
+                extra["hard_in_batch"] = hard_sched.k
             if args.unlikely_beta > 0:
                 assert arm == "baseline" and not surrogate, "the unlikeliness reward is implemented for on-policy Dr. GRPO"
                 shaped = unlikeliness_rewards(rewards, sequence_logprobs(runner, args, answers), G, args.unlikely_beta)
@@ -2061,6 +2154,12 @@ def main():
     parser.add_argument("--tar-batch", type=int, default=16, help="stored trajectories replayed per step")
     parser.add_argument("--rescue-archive", default=None, help="discovery file: stored successes for group completion / prefix rollouts")
     parser.add_argument("--complete-groups", action="store_true", help="append a stored success to zero-success groups")
+    parser.add_argument("--hard-problems", default=None, help="JSON list of training questions; --hard-per-step of each step's problems come from it")
+    parser.add_argument("--hard-per-step", type=int, default=0)
+    parser.add_argument("--hint-archive", default=None, help="JSON list of {question, trace}: MFC-style hint curriculum")
+    parser.add_argument("--hint-levels", type=int, default=4)
+    parser.add_argument("--hint-success", type=float, default=0.5, help="group mean reward that lowers a problem's hint frontier")
+    parser.add_argument("--hint-withdraw-step", type=int, default=200, help="no hints from this step on (registered deviation from MFC)")
     parser.add_argument("--prefix-rollouts", type=int, default=0, help="rollouts per rare question that continue a stored success's prefix")
     parser.add_argument("--prefix-frac", type=float, default=0.5)
     parser.add_argument("--prefix-anneal-steps", type=int, default=100)
@@ -2142,9 +2241,7 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     parser.add_argument("--out", default=str(HERE / "results"))
-    args, unknown = parser.parse_known_args()
-    if unknown:
-        print("ignoring unknown arguments:", unknown, flush=True)
+    args = parser.parse_args()  # strict: an unknown or misspelled flag is an error, not a silent no-op
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
