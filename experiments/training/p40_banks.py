@@ -37,10 +37,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage0", required=True)
     ap.add_argument("--harvest", required=True)
-    ap.add_argument("--teacher-deep", required=True)
+    ap.add_argument("--teacher-deep", default=None, help="Stage 0b teacher texts; omitted for the preliminary bank")
     ap.add_argument("--audit", required=True)
     ap.add_argument("--tokenizer-json", required=True)
     ap.add_argument("--max-tokens", type=int, default=2000)
+    ap.add_argument("--prefix", default="p40", help="output file prefix (p40 for the final banks)")
     a = ap.parse_args()
     from tokenizers import Tokenizer
     tk = Tokenizer.from_file(a.tokenizer_json)
@@ -63,7 +64,7 @@ def main():
                 k = keep(r, d["answer"])
                 if k:
                     teacher.setdefault(d["question"], []).append(k)
-    deep = json.load(gzip.open(a.teacher_deep, "rt"))
+    deep = json.load(gzip.open(a.teacher_deep, "rt")) if a.teacher_deep else {"samples": [], "problems": []}
     for s in deep["samples"]:
         q = deep["problems"][s["problem"]]
         k = keep(s["text"], q["answer"], s.get("finished", True))
@@ -78,7 +79,7 @@ def main():
                 k = keep(s["text"], train[i]["answer"])
                 if k and ntok(s["text"]) <= 1000:  # finished proxy for the 1,024-token census
                     selfs.setdefault(train[i]["question"], []).append(k)
-    valid = {int(x["index"]) for x in json.loads(Path(a.audit).read_text())["labels"] if x["label"] == "valid"}
+    valid = {int(x["index"]) for x in json.loads(Path(a.audit).read_text())["labels"] if x["label"] == "valid"}  # harvest audit (Gate H)
     c0 = json.loads((HERE / "data" / "p39_train_c0.json").read_text())
     for kk in range(8):
         d = json.load(gzip.open(Path(a.harvest) / f"HARVEST_c0_{kk}" / "eval" / "step0_T1.00_texts.json.gz", "rt"))
@@ -105,13 +106,13 @@ def main():
                 "hard_with_teacher": sum(1 for q in teacher if c[idx[q]] <= 4), "hard_with_self": sum(1 for q in selfs if c[idx[q]] <= 4)})
     out = HERE / "data"
     rep["sha256"] = {}
-    for name, obj in (("p40_guided.json", guided), ("p40_bank_teacher.json", bt), ("p40_bank_self.json", bs),
-                      ("p40_sft_teacher.json", [{"question": x["question"], "answer": x["answer"], "responses": [x["trace"]]} for x in bt]),
-                      ("p40_sft_self.json", [{"question": x["question"], "answer": x["answer"], "responses": [x["trace"]]} for x in bs])):
+    for name, obj in ((f"{a.prefix}_guided.json", guided), (f"{a.prefix}_bank_teacher.json", bt), (f"{a.prefix}_bank_self.json", bs),
+                      (f"{a.prefix}_sft_teacher.json", [{"question": x["question"], "answer": x["answer"], "responses": [x["trace"]]} for x in bt]),
+                      (f"{a.prefix}_sft_self.json", [{"question": x["question"], "answer": x["answer"], "responses": [x["trace"]]} for x in bs])):
         blob = json.dumps(obj).encode()
         (out / name).write_bytes(blob)
         rep["sha256"][name] = hashlib.sha256(blob).hexdigest()
-    (out / "p40_banks_report.json").write_text(json.dumps(rep, indent=1))
+    (out / f"{a.prefix}_banks_report.json").write_text(json.dumps(rep, indent=1))
     print(json.dumps({k: v for k, v in rep.items() if k != "sha256"}, indent=1))
 
 

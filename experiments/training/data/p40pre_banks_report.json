@@ -1,0 +1,19 @@
+{
+ "by_c": {
+  "c=1-4": 228,
+  "c=0": 17
+ },
+ "guided": 245,
+ "teacher_tokens": 125396,
+ "self_tokens": 124017,
+ "mean_abs_pair_diff": 77.39183673469388,
+ "hard_with_teacher": 262,
+ "hard_with_self": 369,
+ "sha256": {
+  "p40pre_guided.json": "e8738cc14fdae99e36d92e8c118dc348e1fffe2bd78ddac886415a0d9df8ceec",
+  "p40pre_bank_teacher.json": "914e9cad1e4b0d9f98c97fc181966aeb8a7b7dbeb734cc99356a03daa399eea3",
+  "p40pre_bank_self.json": "63705f3eeac07c596172ff48e15bc5126a4618f6f75e6e29ed4cd5f30af828da",
+  "p40pre_sft_teacher.json": "2f0488463b7065426d5a3383d76a3615bf79d672d762db5aa8111e2cc014cac2",
+  "p40pre_sft_self.json": "ea443ca29a501b1a579bba58284a289867b034c5fc5d23093997cf8e3411450b"
+ }
+}
