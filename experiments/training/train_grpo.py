@@ -1686,7 +1686,7 @@ class HintCurriculum:
                 self.dropped.append(d["question"])
         assert self.lines, "no hint trace matches the training set"
         self.g = {q: self.L for q in self.lines}
-        self.withdraw, self.thresh = args.hint_withdraw_step, args.hint_success
+        self.withdraw, self.thresh, self.max_frac = args.hint_withdraw_step, args.hint_success, args.hint_max_frac
         self.frontier_at_withdrawal = None
         self.rng = random.Random(args.seed * 4243)
         self.visits = 0
@@ -1700,7 +1700,7 @@ class HintCurriculum:
         if g <= 0:
             return question
         lines = self.lines[question]
-        n = max(1, math.ceil(len(lines) * g / self.L))
+        n = max(1, math.ceil(len(lines) * self.max_frac * g / self.L))  # the top level shows at most max_frac of the safe lines
         return question + "\n\nHere is the beginning of a solution:\n" + "\n".join(lines[:n])
 
     def update(self, question, g, mean_reward):
@@ -2274,6 +2274,7 @@ def main():
     parser.add_argument("--hint-archive", default=None, help="JSON list of {question, trace}: MFC-style hint curriculum")
     parser.add_argument("--hint-levels", type=int, default=4)
     parser.add_argument("--hint-success", type=float, default=0.5, help="group mean reward that lowers a problem's hint frontier")
+    parser.add_argument("--hint-max-frac", type=float, default=0.75, help="largest share of a trace's answer-safe lines shown (registered deviation from MFC's full trace)")
     parser.add_argument("--hint-withdraw-step", type=int, default=200, help="no hints from this step on (registered deviation from MFC)")
     parser.add_argument("--prefix-rollouts", type=int, default=0, help="rollouts per rare question that continue a stored success's prefix")
     parser.add_argument("--prefix-frac", type=float, default=0.5)

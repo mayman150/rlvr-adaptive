@@ -2,7 +2,8 @@
  "excluded": {
   "not both audited valid": 83,
   "no safe prefix": 12,
-  "leak check failed": 0
+  "leak check failed": 0,
+  "semantic leak": 0
  },
  "guided": 150,
  "c=0": 5,

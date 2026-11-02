@@ -21,6 +21,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--banks", nargs="+", required=True)
     ap.add_argument("--audits", nargs="+", required=True)
+    ap.add_argument("--max-frac", type=float, default=0.75, help="hint lines shown at the top level (as train_grpo --hint-max-frac)")
+    ap.add_argument("--leak-audit", default=None, help="semantic leak audit labels: problems flagged in either source are excluded")
     a = ap.parse_args()
     lab = {}
     for f in a.audits:
@@ -36,7 +38,10 @@ def main():
     train = json.loads((HERE / "data" / "train.json").read_text())
     idx = {q["question"]: i for i, q in enumerate(train)}
     c = json.loads((HERE / "data" / "p39_stage0_counts_v2.json").read_text())
-    G, rep = [], {"excluded": {"not both audited valid": 0, "no safe prefix": 0, "leak check failed": 0}}
+    flagged = set()
+    if a.leak_audit:
+        flagged = {x["question"] for x in json.loads(Path(a.leak_audit).read_text())["items"] if x["leak"]}
+    G, rep = [], {"excluded": {"not both audited valid": 0, "no safe prefix": 0, "leak check failed": 0, "semantic leak": 0}}
     for q in sorted(pairs, key=lambda x: idx[x]):
         p = pairs[q]
         if not all(lab.get((q, s)) == "valid" for s in ("teacher", "self")) or len(p) < 2:
@@ -48,6 +53,9 @@ def main():
             continue
         if any(reveals(line, p[s]["answer"]) for s in ("teacher", "self") for line in hint[s]):
             rep["excluded"]["leak check failed"] += 1
+            continue
+        if q in flagged:
+            rep["excluded"]["semantic leak"] += 1
             continue
         G.append(q)
     bt = [pairs[q]["teacher"] for q in G]

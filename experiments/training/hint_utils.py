@@ -13,8 +13,10 @@ from fractions import Fraction
 
 from verifier import as_number, normalize
 
-_FRAC = re.compile(r"\\[dt]?frac\s*(?:\{\s*(-?[\d.]+)\s*\}|(\d))\s*(?:\{\s*(-?[\d.]+)\s*\}|(\d))")
-_NUM = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)(?:\s*/\s*(-?\d+(?:\.\d+)?))?(?![\w]|\.\d)")
+_FRAC = re.compile(r"\\[dtc]?frac\s*(?:\{\s*(-?[\d.]+)\s*\}|(\d))\s*(?:\{\s*(-?[\d.]+)\s*\}|(\d))")
+_NUM = re.compile(r"(?<![A-Za-z\d.])(-?\d+(?:\.\d+)?)(?:\s*/\s*(-?\d+(?:\.\d+)?))?(?![A-Za-z\d]|\.\d)")
+PROSE_BEFORE = re.compile(r"(?:\bthere (?:are|is|were)\b|\bwe (?:have|get|find|obtain)\b|\bexactly\b|\btotal of\b|\bin total\b|\baltogether\b|\bhence\b|\btherefore\b|\bthus\b|\bso\b)[^.;]{0,25}$", re.I)
+PROSE_AFTER = re.compile(r"^\s*(?:possible|distinct|different|ways|values|solutions|outcomes|choices|arrangements|numbers|integers|pairs|cases)\b", re.I)
 LEAD = re.compile(r"(?:=|\bis\b|\bequals\b|answer|\bfind\b|\bget\b|\bobtain\b|\bgives?\b|\byields?\b|\btotal\b|\bare\b|:)\s*$")
 
 
@@ -22,6 +24,8 @@ def norm_line(line):
     s = line.replace("\\(", " ").replace("\\)", " ").replace("\\[", " ").replace("\\]", " ").replace("$", " ")
     s = s.replace("\\left", "").replace("\\right", "").replace("\\!", "").replace("\\,", " ")
     s = _FRAC.sub(lambda m: f"{m.group(1) or m.group(2)}/{m.group(3) or m.group(4)}", s)
+    s = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", s)  # thousands separators: 15,625 -> 15625
+    s = re.sub(r"_\{?\s*(\d+)\s*\}?", r" base\1 ", s)  # base subscripts: 60_{10} -> 60 base10
     return re.sub(r"\s+", " ", s)
 
 
@@ -47,7 +51,7 @@ def reveals(line, answer):
         if not small:
             return True
         before, after = s[:m.start()], s[m.end():]
-        if LEAD.search(before) or re.fullmatch(r"\s*\.?\s*", after):
+        if LEAD.search(before) or PROSE_BEFORE.search(before) or PROSE_AFTER.search(after) or re.fullmatch(r"\s*\.?\s*", after):
             return True
     return False
 
