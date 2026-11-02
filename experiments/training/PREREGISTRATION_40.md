@@ -5,8 +5,9 @@ Declared November 2, 2026, from the agreed plan (paper/debate_2026_11_02/PLAN.md
 and two re-checks; hints: two disclosure audits).
 
 Fixed from Stage 0b: the answer budget is B = 3,072 tokens (the registered rule: base hard_val pass@128 71.2% with 9.9%
-truncation at 3,072, against 18.7% truncation at 2,048). Hardware: one Nibi node, 8 H100 80GB GPUs (all arms on the same
-hardware; experiments/tamia/p40_*.sh). Deviations from Pre-registration 21's recipe, all fixed before any run: 3,072
+truncation at 3,072, against 18.7% truncation at 2,048). Hardware (changed before any run, because Nibi's queue estimated a start
+in three days): one AWS ml.p4de.24xlarge, 8 A100 80GB GPUs, all arms on the same machine
+(experiments/sagemaker/plans/p40_pilot.json; each lane trains, then evaluates every checkpoint with vLLM). Deviations from Pre-registration 21's recipe, all fixed before any run: 3,072
 answer tokens; no calibration hold-out (--calib-prompts 0 --w 1; the baseline arm does not use w), so all 3,920 training
 problems are in the pool except those whose prompt plus 3,072 answer tokens exceeds Qwen's 4,096-token context
 (--fit-context; two problems, dropped identically for every arm); the hard schedule; 300 steps.
@@ -70,5 +71,5 @@ points in every available seed. The teacher-versus-self contrast advances if a t
 counterpart by at least +2 at step 300. Otherwise the pilot is reported as it stands.
 
 ## Cost
-One Nibi node (8 H100s) for training (time limit set from the smoke test's measured step time) and one for
-evaluation; Alliance allocation, no AWS cost.
+One p4de machine for about 50 hours (A100 step time at 2,048 tokens was 5-7 minutes in Stage 0b's smoke test;
+about 9 is expected at 3,072), cap 60 hours: about $1,600, at most about $1,900.

@@ -17,7 +17,7 @@ ev() {  # ev CKPTS_DIR EVAL_OUT [extra eval_vllm args...] -> one command per eva
 SCRIPT=$OUT/eval_job.sh
 {
   echo "#!/bin/bash"
-  echo "module load StdEnv/2023 gcc python/3.12.4 cuda/12.6 opencv/4.10.0"
+  echo "module load StdEnv/2023 gcc python/3.12.4 cuda/12.6 opencv/4.13.0"
   echo "source $R/envvllm/bin/activate"
   echo "export HF_HUB_OFFLINE=1 OMP_NUM_THREADS=8"
   echo "cd $T"

@@ -7,7 +7,7 @@ OUT=$R/results/p40_smoke; mkdir -p $OUT $R/slurm
 sbatch --account=def-machado --gpus-per-node=h100:1 --cpus-per-task=12 --mem=120G --time=2:00:00 --job-name=p40_smoke \
   --output=$R/slurm/%x-%j.out <<SB
 #!/bin/bash
-module load StdEnv/2023 gcc python/3.12.4 cuda/12.6 opencv/4.10.0
+module load StdEnv/2023 gcc python/3.12.4 cuda/12.6 opencv/4.13.0
 export HF_HUB_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True OMP_NUM_THREADS=8 OUT=$OUT STEPS=3
 cd $T
 source $R/env29/bin/activate
