@@ -61,6 +61,8 @@ class Runner:
         self.device = args.device
         self.tok = AutoTokenizer.from_pretrained(args.model)
         self.tok.padding_side = "left"
+        if self.tok.pad_token is None:  # e.g. SmolLM3-3B-Base: batched tokenization needs a pad token (masked out anyway)
+            self.tok.pad_token = self.tok.eos_token
         self.stop_ids = stop_token_ids(self.tok)
         self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else self.stop_ids[0]
         self.model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32).to(self.device)

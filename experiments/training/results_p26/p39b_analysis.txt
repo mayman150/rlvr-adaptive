@@ -1,0 +1,13 @@
+Pre-registration 39, Amendment 1 (Stage 0b) results
+
+Teacher (7B-Instruct, 64 samples) on the 191 hard problems without an archived teacher solution: 112 with >= 1 verified finished solution {'c=0': '37/83', 'c=1-4': '75/108'}
+
+Headroom on hard_val (256 samples): pass@1 / pass@16 / pass@64 / pass@128, truncated; by source (OB = first 100, AIME = last 100)
+   SMOL_val_2k     all 9.8/32.3/43.0/48.8 | OB 16.3/46.7/56.6/61.2 | AIME 3.3/17.9/29.3/36.5; truncated 42.4%
+   SMOL_val_4k     all 12.7/40.3/53.5/60.4 | OB 20.4/55.8/68.4/74.5 | AIME 5.0/24.8/38.6/46.3; truncated 37.3%
+   RE_BASE_val_3k  all 13.4/49.3/64.1/71.2 | OB 16.7/56.5/69.3/74.9 | AIME 10.1/42.0/58.8/67.5; truncated 9.9%
+   Qwen base 2k (Stage 0)  all 13.8/49.3/63.9/69.6; truncated 18.7% (pooled over 408)
+
+Retention probes (143 problems, 256 samples, 1,024 tokens): TEACHF start mean rate 14.58%
+   TEACHF8 step 50: mean rate 19.30%, declining 0.0%, rising 25.9%
+   TEACHF8 step 150: mean rate 24.81%, declining 0.0%, rising 47.6%
