@@ -1940,6 +1940,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                     hcur.frontier_at_withdrawal = dict(hcur.g)
                     (out_dir / f"{arm}_hint_frontier_at_withdrawal.json").write_text(json.dumps(hcur.frontier_at_withdrawal))
                 levels = [hcur.level(step, q["question"]) for q in batch] if hcur else None
+                if hcur:  # the hinted prompt plus the answer budget must fit the model's context: lower the level until it does
+                    limit = getattr(runner.model.config, "max_position_embeddings", 10 ** 9) - args.max_new
+                    for k, q in enumerate(batch):
+                        while levels[k] > 0 and len(runner.tok(build_prompt(runner.tok, hcur.text(q["question"], levels[k]))).input_ids) > limit:
+                            levels[k] -= 1
                 texts = [build_prompt(runner.tok, hcur.text(q["question"], g) if hcur else q["question"])
                          for q, g in zip(batch, levels or [0] * len(batch))]
                 if args.alloc_first > 0:
