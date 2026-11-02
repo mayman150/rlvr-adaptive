@@ -8,7 +8,8 @@ Fixed from Stage 0b: the answer budget is B = 3,072 tokens (the registered rule:
 truncation at 3,072, against 18.7% truncation at 2,048). Hardware: one Nibi node, 8 H100 80GB GPUs (all arms on the same
 hardware; experiments/tamia/p40_*.sh). Deviations from Pre-registration 21's recipe, all fixed before any run: 3,072
 answer tokens; no calibration hold-out (--calib-prompts 0 --w 1; the baseline arm does not use w), so all 3,920 training
-problems are in the pool; the hard schedule; 300 steps.
+problems are in the pool except those whose prompt plus 3,072 answer tokens exceeds Qwen's 4,096-token context
+(--fit-context; two problems, dropped identically for every arm); the hard schedule; 300 steps.
 
 ## Question (pilot: direction and size, not confirmation)
 On hard training problems, does reasoning from a teacher give a coverage gain that the model's own valid solutions do
@@ -34,15 +35,18 @@ not, and does delivering it as hints withdrawn during RL keep the gain after wit
 1. DR: Dr. GRPO with the hard schedule (seeds 8 and 9).
 2. TREE: DR with tree rollouts at an equal rollout count (DATPO-inspired, not a reproduction: 4 roots per problem; if
    any root fails, the first failed root is forked at its highest-entropy sentence start between 10% and 80% of its
-   length and before its box, and 4 branches continue from that prefix; otherwise 4 ordinary rollouts; Dr. GRPO
+   length and before its box, and 4 branches continue from that prefix (branches are generated in groups by fork length,
+   256-token buckets, each with an answer budget that keeps the longest fork in the group within 3,072 tokens); otherwise 4 ordinary rollouts; Dr. GRPO
    group-relative advantages over all 8; train_grpo --tree-branches 4; seed 8). The structured-exploration arm the
    external review asked for.
 3. T-HINT: DR with teacher hints on G (MFC-style curriculum port: 4 levels, uniform level draw up to each problem's
    frontier, frontier lowered when the group mean reward >= 0.5, every hint withdrawn from step 200; seeds 8 and 9).
-   Registered deviations from MFC: the top level shows at most 75% of a trace's answer-safe lines, not the whole trace;
+   Registered deviations from MFC: level g shows floor(0.75 g / 4 x n) of a trace's n answer-safe lines, and at least
+   one line, not the whole trace;
    withdrawal is forced at step 200 whatever the frontier (its state at withdrawal is saved); a level is lowered further
    only if the hinted prompt would not fit the 4,096-token context with a 3,072-token answer.
-4. T-SFT: SFT on the teacher bank (71,000 presented tokens, just under one pass over the bank; AdamW 1e-5, batches of 8),
+4. T-SFT: SFT on the teacher bank (a common threshold of 70,900 presented tokens, reached at a batch boundary: 144
+   problems and 70,973 tokens for the teacher bank, 144 problems and 71,145 tokens for the self bank; AdamW 1e-5, batches of 8),
    then DR (seed 8).
 5. S-HINT: as T-HINT with the self bank (seed 8).
 6. S-SFT: as T-SFT with the self bank (seed 8).

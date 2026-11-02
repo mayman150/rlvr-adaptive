@@ -738,7 +738,15 @@ def tree_rollouts(runner, args, step, batch, texts):
         items.extend([texts[j] + pre] * m)
         cuts.extend([cut] * m)
         owners.extend([j] * m)
-    branch_outs = runner.generate(items, 1, args.max_new - min(cuts), args.seed * 100003 + step + 7919) if items else []
+    branch_outs = [None] * len(items)
+    buckets = {}
+    for k, cut in enumerate(cuts):  # forks grouped by length (256-token buckets): each group's budget fits its longest prefix
+        buckets.setdefault(cut // 256, []).append(k)
+    for b, ks in sorted(buckets.items()):
+        cap_b = args.max_new - max(cuts[k] for k in ks)
+        outs_b = runner.generate([items[k] for k in ks], 1, cap_b, args.seed * 100003 + step + 7919 + b)
+        for k, o in zip(ks, outs_b):
+            branch_outs[k] = o
     plain_outs = runner.generate([texts[j] for j in plain], m, args.max_new, args.seed * 100003 + step + 104729) if plain else []
     extra_by_j = {}
     capped = 0
@@ -1700,7 +1708,7 @@ class HintCurriculum:
         if g <= 0:
             return question
         lines = self.lines[question]
-        n = max(1, math.ceil(len(lines) * self.max_frac * g / self.L))  # the top level shows at most max_frac of the safe lines
+        n = max(1, math.floor(len(lines) * self.max_frac * g / self.L))  # at most max_frac of the safe lines, but at least one
         return question + "\n\nHere is the beginning of a solution:\n" + "\n".join(lines[:n])
 
     def update(self, question, g, mean_reward):
@@ -1720,6 +1728,12 @@ class HintCurriculum:
 def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=None, calib_problems=None):
     runner = Runner(args)
     opt = torch.optim.AdamW(runner.params, lr=args.lr, betas=(0.9, 0.99), weight_decay=0.0)
+    if args.fit_context:
+        limit = getattr(runner.model.config, "max_position_embeddings", 10 ** 9) - args.max_new
+        keep = [q for q in problems if len(runner.tok(build_prompt(runner.tok, q["question"])).input_ids) <= limit]
+        print(f"[{arm}] context filter: {len(problems) - len(keep)} of {len(problems)} training problems dropped "
+              f"(prompt + {args.max_new} answer tokens > context)", flush=True)
+        problems = keep
     rng = random.Random(args.seed)
     order = list(range(len(problems)))
     rng.shuffle(order)
@@ -2273,6 +2287,7 @@ def main():
     parser.add_argument("--tar-batch", type=int, default=16, help="stored trajectories replayed per step")
     parser.add_argument("--rescue-archive", default=None, help="discovery file: stored successes for group completion / prefix rollouts")
     parser.add_argument("--complete-groups", action="store_true", help="append a stored success to zero-success groups")
+    parser.add_argument("--fit-context", action="store_true", help="drop training problems whose prompt plus --max-new exceeds the model's context")
     parser.add_argument("--hard-problems", default=None, help="JSON list of training questions; --hard-per-step of each step's problems come from it")
     parser.add_argument("--hard-per-step", type=int, default=0)
     parser.add_argument("--tree-branches", type=int, default=0, help="DATPO-inspired tree rollouts: branches per group forked from a failed root")

@@ -4,11 +4,11 @@ R=/scratch/mayman/rlvr
 T=$R/code/experiments/training
 MODEL=$R/models/Qwen2.5-Math-1.5B
 STEPS=${STEPS:-300}
-RL_COMMON="--arms baseline --group 8 --prompts-per-step 16 --max-new 3072 --lr 1e-6 --gen-batch 128 --calib-prompts 0 --w 1 \
+RL_COMMON="--arms baseline --group 8 --prompts-per-step 16 --max-new 3072 --lr 1e-6 --gen-batch 128 --calib-prompts 0 --w 1 --fit-context \
  --entropy-every 5 --train train.json --hard-problems p40_guided.json --hard-per-step 4 --eval-steps $STEPS --eval-limit 64 \
  --save-steps 25,50,100,150,200,250,300 --steps $STEPS"
 HINT="--hint-levels 4 --hint-success 0.5 --hint-withdraw-step 200 --hint-max-frac 0.75"
-SFT_DOSE=71000  # just under one pass over each bank (71,145 teacher, 71,252 self presented tokens)
+SFT_DOSE=70900  # common threshold at batch boundaries: 144 problems each, 70,973 (teacher) and 71,145 (self) presented tokens
 lane_cmd() {  # lane_cmd NAME -> the shell commands for that lane, given OUT
   case $1 in
     DRs8)    echo "python $T/train_grpo.py --device cuda --model $MODEL --seed 8 $RL_COMMON --out \$OUT/DRs8" ;;
