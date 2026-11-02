@@ -3,18 +3,18 @@
   "not both audited valid": 83,
   "no safe prefix": 12,
   "leak check failed": 0,
-  "semantic leak": 0
+  "semantic leak": 5
  },
- "guided": 150,
+ "guided": 145,
  "c=0": 5,
- "c=1-4": 145,
- "teacher_tokens": 72619,
- "self_tokens": 73118,
+ "c=1-4": 140,
+ "teacher_tokens": 71145,
+ "self_tokens": 71252,
  "sha256": {
-  "p40_guided.json": "8edf8ba74b3447dd7e6becd5cc372eb2168a464d0f0a6806ba2961af5d1c3b6e",
-  "p40_bank_teacher.json": "332f490ea8ef9f320b318e11ea521ea8801020bf0f12e2ecbc5bf94555fc200a",
-  "p40_bank_self.json": "8b54ef03c965da6d379f3c53250fda97b432696ba2bf2282ba366f0b6abc3f08",
-  "p40_sft_teacher.json": "8c8b5dd64c875cf4a8fea1a7dc402c948725df5b09d1da77d1ea5f03f1f7e31e",
-  "p40_sft_self.json": "6c104c36b0934cc348d17b18c571d91ab9e58e9c7276a8da7efa8fafea2d2292"
+  "p40_guided.json": "134dad5e9bcc5ee0895a780af031cbae3ba4fbb0bcc7416a754b181ab9cab268",
+  "p40_bank_teacher.json": "7b0f40d4b1e1128251fabcc033e99f3fd892a26aaf608ceb68389b5ad40b4bc7",
+  "p40_bank_self.json": "968aa7d0d25de0435ca1b9be76f7b01ee7994e73c25e91ecbefed6e8fcd48687",
+  "p40_sft_teacher.json": "2766e77b00974fb51381a12d7cc135a562fda2e46cad36a677b6505cc6bacc68",
+  "p40_sft_self.json": "d7426eaa2db926c905c700582a140933d4677c78ed33ec5aef18457c1ec1321c"
  }
 }
