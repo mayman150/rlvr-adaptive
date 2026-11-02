@@ -738,7 +738,7 @@ def tree_rollouts(runner, args, step, batch, texts):
         items.extend([texts[j] + pre] * m)
         cuts.extend([cut] * m)
         owners.extend([j] * m)
-    branch_outs = [None] * len(items)
+    branch_outs, branch_caps = [None] * len(items), [None] * len(items)
     buckets = {}
     for k, cut in enumerate(cuts):  # forks grouped by length (256-token buckets): each group's budget fits its longest prefix
         buckets.setdefault(cut // 256, []).append(k)
@@ -746,12 +746,11 @@ def tree_rollouts(runner, args, step, batch, texts):
         cap_b = args.max_new - max(cuts[k] for k in ks)
         outs_b = runner.generate([items[k] for k in ks], 1, cap_b, args.seed * 100003 + step + 7919 + b)
         for k, o in zip(ks, outs_b):
-            branch_outs[k] = o
+            branch_outs[k], branch_caps[k] = o, cap_b
     plain_outs = runner.generate([texts[j] for j in plain], m, args.max_new, args.seed * 100003 + step + 104729) if plain else []
     extra_by_j = {}
     capped = 0
-    for (pi, ri), cut, j in zip(branch_outs, cuts, owners):
-        cap = args.max_new - cut
+    for (pi, ri), cut, j, cap in zip(branch_outs, cuts, owners, branch_caps):  # cap: the budget the branch was generated with
         if len(ri) >= cap:
             ri = ri[:cap]
             capped += int(int(ri[-1]) not in runner.stop_ids)
