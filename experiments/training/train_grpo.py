@@ -1705,8 +1705,8 @@ class HintCurriculum:
         if question in self.g and mean_reward >= self.thresh:
             self.g[question] = min(self.g[question], g)
 
-    def hint_chars(self, question, g):
-        return 0 if g <= 0 else len(self.text(question, g)) - len(question)
+    def suffix(self, question, g):
+        return "" if g <= 0 else self.text(question, g)[len(question):]
 
     def stats(self, levels):
         vals = list(self.g.values())
@@ -1731,6 +1731,9 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
         assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
             and not args.complete_groups and not hcur and 0 < args.tree_branches < args.group, \
             "tree rollouts are implemented for plain on-policy fixed groups without hints"
+    if hcur and hard_sched:  # one common guided set: every guided problem must have an answer-safe hint in this bank
+        missing = [problems[i]["question"] for i in hard_sched.hard if problems[i]["question"] not in hcur.lines]
+        assert not missing, f"{len(missing)} guided problems lack an answer-safe hint prefix in {args.hint_archive}"
     if hcur:
         print(f"[{arm}] hint curriculum: {len(hcur.lines)} guided problems ({len(hcur.dropped)} without an answer-safe prefix), "
               f"{hcur.L} levels, withdrawal at step {hcur.withdraw}", flush=True)
@@ -1976,7 +1979,8 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 for j in range(pps):
                     hcur.update(batch[j]["question"], levels[j], sum(rewards[j * G:(j + 1) * G]) / G)
                 extra["hint"] = hcur.stats(levels)
-                extra["hint"]["exposure_chars"] = G * sum(hcur.hint_chars(q["question"], g) for q, g in zip(batch[:pps], levels))
+                extra["hint"]["exposure_tokens"] = G * sum(len(runner.tok(hcur.suffix(q["question"], g), add_special_tokens=False).input_ids)
+                                                           for q, g in zip(batch[:pps], levels) if g > 0)
             if hard_sched:
                 gi = [j for j in range(pps) if batch_idx[j] in hard_sched.hard_set]
                 extra["hard"] = {"n": len(gi), "reward": sum(sum(rewards[j * G:(j + 1) * G]) for j in gi) / max(G * len(gi), 1),
