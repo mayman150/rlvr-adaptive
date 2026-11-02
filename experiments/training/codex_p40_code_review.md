@@ -1,0 +1,17 @@
+- **BLOCKING — [train_grpo.py:1672](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:1672): Answer leakage and unequal hint coverage.** Cutting at the last box retains earlier answers. Preliminary prefixes already pass the verifier for 1 teacher and 7 self entries. Unboxed conclusions such as `S_{10}=75` also remain. An answer-only self trace is silently discarded. **Fix:** replace `rfind` with `find`, cut earlier at gold-answer equalities/conclusions, audit the resulting prefixes, and require nonempty safe prefixes for every question in the common guided set.
+
+- **BLOCKING — [train_grpo.py:2368](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:2368): Calibration breaks the hard schedule.** With seed 9, the default calibration split removes one preliminary guided question; line 1638 then asserts. `--calib-prompts 0` instead empties training through `[:-0]`. **Fix:** explicitly set training to all problems and calibration to `[]` when the count is zero; require `--w` in that case. Use `--calib-prompts 0 --w 1` for the registered 3,920-problem pilot, or reserve calibration outside G.
+
+- **BLOCKING — [train_grpo.py:1762](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:1762): Existing minimum-help modes crash.** This assignment overwrites the curriculum variable `hints` with a list, even without `--hint-archive`; line 1921 subsequently calls `hints.level`. **Fix:** rename the variable and its validation references on lines 1762–1763 to `mh_levels`.
+
+- **BLOCKING — [train_grpo.py:1962](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:1962), [2161](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:2161): Required diagnostics are missing or wrong.** Guidance exposure and guided-subset reward are absent. Branches truncated at `max_new-cut` never satisfy the shared truncation test. **Fix:** log batch IDs, levels, tokenized visible hints multiplied by G, and guided-group rewards; retain aligned branch caps/prefix lengths and count non-EOS cap hits, as `prefix_rollouts` does. Snapshot frontier state before withdrawal sampling.
+
+Non-blocking issues:
+
+- **[train_grpo.py:692](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:692): Memory.** At chunk 4, 2,048 response tokens and approximately 151k vocabulary entries require roughly 7.5 GB for BF16 logits plus FP32 entropy intermediates, excluding model/optimizer memory and prompts. There is no OOM backoff. Compute entropy in token-row chunks, release intermediates, and make sequence batching configurable; reducing `--train-batch` currently leaves this batch at four.
+
+- **[train_grpo.py:360](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:360): Entropy comparability.** When `G-m < ref_block`, the probe includes conditioned branches. Restrict unassisted probes to roots and report continuation entropy separately.
+
+- **[train_grpo.py:1887](/Users/mmayman/Desktop/adaptive-rlvr/experiments/training/train_grpo.py:1887): Checkpoints.** Save paths collide across arms, and exports omit curriculum/schedule state. Namespace paths by arm; for resumption, persist frontiers, queues, pointers, RNGs, optimizer and step.
+
+Static tracing and CPU mocks found no layout, sampled-prompt conditioning, response-mask, prefix-reward, unhinted-evaluation, or monotone-frontier defect. GPU peak memory was not measured. Files unchanged.

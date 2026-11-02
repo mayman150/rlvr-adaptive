@@ -673,7 +673,7 @@ def prefix_rollouts(runner, args, step, batch, texts, answers, rewards, keys, re
             "prefix_tokens": sum(cuts), "prefix_only_correct": prefix_only}
 
 
-def token_entropies(runner, pairs, chunk=4):
+def token_entropies(runner, pairs, chunk=1, rows=256):
     """Per-token entropies (no gradient) of each (prompt_ids, response_ids) pair's response tokens."""
     out = []
     with torch.no_grad():
@@ -689,9 +689,13 @@ def token_entropies(runner, pairs, chunk=4):
             with runner.autocast:
                 logits = runner.model(input_ids=ids, attention_mask=mask).logits
             for i, (pi, ri) in enumerate(part):
-                rows = logits[i, len(pi) - 1: len(pi) - 1 + len(ri)].float()
-                lp = torch.log_softmax(rows, dim=-1)
-                out.append((-(lp.exp() * lp).sum(-1)).cpu())
+                ents = []
+                for r0 in range(0, len(ri), rows):  # row chunks bound the fp32 softmax over a ~151k vocabulary
+                    z = logits[i, len(pi) - 1 + r0: len(pi) - 1 + min(len(ri), r0 + rows)].float()
+                    lp = torch.log_softmax(z, dim=-1)
+                    ents.append(-(lp.exp() * lp).sum(-1))
+                    del z, lp
+                out.append(torch.cat(ents).cpu())
             del logits
     return out
 
@@ -735,9 +739,12 @@ def tree_rollouts(runner, args, step, batch, texts):
     branch_outs = runner.generate(items, 1, args.max_new - min(cuts), args.seed * 100003 + step + 7919) if items else []
     plain_outs = runner.generate([texts[j] for j in plain], m, args.max_new, args.seed * 100003 + step + 104729) if plain else []
     extra_by_j = {}
+    capped = 0
     for (pi, ri), cut, j in zip(branch_outs, cuts, owners):
         cap = args.max_new - cut
-        ri = ri[:cap]
+        if len(ri) >= cap:
+            ri = ri[:cap]
+            capped += int(int(ri[-1]) not in runner.stop_ids)
         extra_by_j.setdefault(j, []).append(((pi, ri), reward(runner.tok.decode(roots[parents[j]][1][:cut]) + runner.tok.decode(ri), batch[j]["answer"])))
     for idx, j in enumerate(plain):
         for (pi, ri) in plain_outs[idx * m:(idx + 1) * m]:
@@ -752,7 +759,7 @@ def tree_rollouts(runner, args, step, batch, texts):
         rewards.extend(r for _, r in ex)
     branched = [j for j in range(len(batch)) if j in parents and j not in plain]
     stats = {"branched": len(branched), "branch_solved": sum(r for j in branched for _, r in extra_by_j[j]),
-             "root_solved": sum(rr), "prefix_tokens": sum(cuts) // max(m, 1)}
+             "root_solved": sum(rr), "prefix_tokens": sum(cuts) // max(m, 1), "capped": capped}
     return answers, rewards, stats
 
 
@@ -1637,6 +1644,7 @@ class HardSchedule:
         missing = [q for q in wanted if q not in index]
         assert not missing, f"{len(missing)} hard problems are not in the training set"
         self.hard = [index[q] for q in wanted]
+        self.hard_set = set(self.hard)
         self.k, self.rng, self.queue, self.pointer = args.hard_per_step, random.Random(args.seed * 7717), [], 0
         assert 0 < self.k < args.prompts_per_step, "--hard-per-step must leave room for the regular stream"
 
@@ -1662,21 +1670,22 @@ class HintCurriculum:
     withdrawn from step --hint-withdraw-step on, whatever the frontier."""
     def __init__(self, args, problems):
         path = Path(args.hint_archive) if Path(args.hint_archive).exists() else HERE / "data" / args.hint_archive
+        from hint_utils import safe_hint_lines
         bank = json.loads(path.read_text())
-        known = {q["question"] for q in problems}
-        self.lines, self.L = {}, args.hint_levels
+        answers = {q["question"]: q["answer"] for q in problems}
+        self.lines, self.L, self.dropped = {}, args.hint_levels, []
         for d in bank:
-            if d["question"] not in known:
+            if d["question"] not in answers:
                 continue
-            trace = d["trace"]
-            cut = trace.rfind("\\boxed")
-            pre = trace[:cut] if cut >= 0 else trace
-            lines = [x for x in pre.split("\n") if x.strip()]
+            lines = safe_hint_lines(d["trace"], answers[d["question"]])  # cut before the first box and any stated answer
             if lines:
                 self.lines[d["question"]] = lines
+            else:
+                self.dropped.append(d["question"])
         assert self.lines, "no hint trace matches the training set"
         self.g = {q: self.L for q in self.lines}
         self.withdraw, self.thresh = args.hint_withdraw_step, args.hint_success
+        self.frontier_at_withdrawal = None
         self.rng = random.Random(args.seed * 4243)
         self.visits = 0
 
@@ -1696,6 +1705,9 @@ class HintCurriculum:
         if question in self.g and mean_reward >= self.thresh:
             self.g[question] = min(self.g[question], g)
 
+    def hint_chars(self, question, g):
+        return 0 if g <= 0 else len(self.text(question, g)) - len(question)
+
     def stats(self, levels):
         vals = list(self.g.values())
         return {"hinted": sum(x > 0 for x in levels), "mean_level": sum(levels) / max(len(levels), 1),
@@ -1710,17 +1722,18 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
     order = list(range(len(problems)))
     rng.shuffle(order)
     hard_sched = HardSchedule(args, problems) if args.hard_problems else None
-    hints = HintCurriculum(args, problems) if args.hint_archive else None
-    if hard_sched or hints:
+    hcur = HintCurriculum(args, problems) if args.hint_archive else None
+    if hard_sched or hcur:
         assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
             and not args.complete_groups and args.memory_lambda == 0, \
             "the hard schedule and the hint curriculum are implemented for plain on-policy fixed groups"
     if args.tree_branches > 0:
         assert arm in FIXED_ARMS and args.reuse == 1 and args.alloc_first == 0 and args.prefix_rollouts == 0 \
-            and not args.complete_groups and not hints and 0 < args.tree_branches < args.group, \
+            and not args.complete_groups and not hcur and 0 < args.tree_branches < args.group, \
             "tree rollouts are implemented for plain on-policy fixed groups without hints"
-    if hints:
-        print(f"[{arm}] hint curriculum: {len(hints.lines)} guided problems, {hints.L} levels, withdrawal at step {hints.withdraw}", flush=True)
+    if hcur:
+        print(f"[{arm}] hint curriculum: {len(hcur.lines)} guided problems ({len(hcur.dropped)} without an answer-safe prefix), "
+              f"{hcur.L} levels, withdrawal at step {hcur.withdraw}", flush=True)
     log, evals, sampled = [], [], []
     norm = args.budget * args.max_new
     calib_groups = (calib or {}).get("groups") or [[1, 8]]
@@ -1918,8 +1931,11 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 n_pool = pps * args.reuse
                 batch_idx = hard_sched.indices(order, pps) if hard_sched else [order[(step * pps + j) % len(order)] for j in range(n_pool)]
                 batch = [problems[i] for i in batch_idx]
-                levels = [hints.level(step, q["question"]) for q in batch] if hints else None
-                texts = [build_prompt(runner.tok, hints.text(q["question"], g) if hints else q["question"])
+                if hcur and step == hcur.withdraw and hcur.frontier_at_withdrawal is None:
+                    hcur.frontier_at_withdrawal = dict(hcur.g)
+                    (out_dir / f"{arm}_hint_frontier_at_withdrawal.json").write_text(json.dumps(hcur.frontier_at_withdrawal))
+                levels = [hcur.level(step, q["question"]) for q in batch] if hcur else None
+                texts = [build_prompt(runner.tok, hcur.text(q["question"], g) if hcur else q["question"])
                          for q, g in zip(batch, levels or [0] * len(batch))]
                 if args.alloc_first > 0:
                     pool_answers, pool_rewards, alloc_n, extra["alloc"] = allocated_rollouts(runner, args, step, batch, texts)
@@ -1956,12 +1972,15 @@ def train_arm(args, arm, w, problems, eval_set, out_dir, calib=None, final_set=N
                 groups = [[sum(rewards[j * G:(j + 1) * G]), G] for j in range(pps)]
             extra["stale"] = step % args.reuse
             keys = list(batch_idx[:pps]) if args.reuse == 1 else None
-            if hints:
+            if hcur:
                 for j in range(pps):
-                    hints.update(batch[j]["question"], levels[j], sum(rewards[j * G:(j + 1) * G]) / G)
-                extra["hint"] = hints.stats(levels)
+                    hcur.update(batch[j]["question"], levels[j], sum(rewards[j * G:(j + 1) * G]) / G)
+                extra["hint"] = hcur.stats(levels)
+                extra["hint"]["exposure_chars"] = G * sum(hcur.hint_chars(q["question"], g) for q, g in zip(batch[:pps], levels))
             if hard_sched:
-                extra["hard_in_batch"] = hard_sched.k
+                gi = [j for j in range(pps) if batch_idx[j] in hard_sched.hard_set]
+                extra["hard"] = {"n": len(gi), "reward": sum(sum(rewards[j * G:(j + 1) * G]) for j in gi) / max(G * len(gi), 1),
+                                 "ids": [batch_idx[j] for j in gi], "levels": [levels[j] for j in gi] if levels else None}
             if args.unlikely_beta > 0:
                 assert arm == "baseline" and not surrogate, "the unlikeliness reward is implemented for on-policy Dr. GRPO"
                 shaped = unlikeliness_rewards(rewards, sequence_logprobs(runner, args, answers), G, args.unlikely_beta)
@@ -2348,6 +2367,8 @@ def main():
     random.Random(args.seed).shuffle(problems)
 
     calib = None
+    if args.calib_prompts == 0:
+        assert args.w is not None, "--calib-prompts 0 needs an explicit --w"
     if args.w is None:
         runner = Runner(args)
         calib = runner.measure_ratio(problems[-args.calib_prompts:], args.calib_prompts, args.group, args.seed + 7)
@@ -2364,9 +2385,10 @@ def main():
     else:
         w = args.w
     (out_dir / "config.json").write_text(json.dumps({**vars(args), "w_used": w}, indent=1))
+    n_cal = args.calib_prompts
+    train_set, cal_set = (problems, []) if n_cal == 0 else (problems[:-n_cal], problems[-n_cal:])
     for arm in args.arms.split(","):
-        train_arm(args, arm, w, problems[: -args.calib_prompts], eval_set, out_dir, calib, final_set,
-                  problems[-args.calib_prompts:])
+        train_arm(args, arm, w, train_set, eval_set, out_dir, calib, final_set, cal_set)
     print("done", flush=True)
 
 
